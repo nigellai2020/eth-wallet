@@ -1,2 +1,4 @@
-# wallet
-Wallet Plugin for IJS Secure Node
+# @ijstech/wallet
+npm i
+npm run build
+npm test

@@ -1,0 +1,15 @@
+{ 
+    "compilerOptions": {
+        "target": "es2017",
+        // "moduleResolution": "node",
+        // "esModuleInterop": true,
+        "module": "commonjs",        
+        "outDir": "lib",                
+        "removeComments": true,
+        "rootDir": "src",
+    },
+    "exclude": [
+        "node_modules",
+        "test"
+    ]
+}
