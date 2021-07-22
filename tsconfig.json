@@ -1,15 +1,19 @@
 { 
     "compilerOptions": {
         "target": "es2017",
-        // "moduleResolution": "node",
-        // "esModuleInterop": true,
+        "allowJs": true,
         "module": "commonjs",        
+        "esModuleInterop": true,
         "outDir": "lib",                
-        "removeComments": true,
-        "rootDir": "src",
+        "removeComments": true,         
+        "declaration": true
     },
+    "include": [
+        "src/**/*"
+    ],
     "exclude": [
         "node_modules",
+        "example",
         "test"
     ]
 }

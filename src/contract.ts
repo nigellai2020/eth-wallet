@@ -1,4 +1,4 @@
-import * as Wallet from "./wallet";
+import {Wallet} from "./wallet";
 import {BigNumber} from "bignumber.js";
 
 module Contract {
@@ -14,14 +14,14 @@ module Contract {
     export interface IEventType{
 		name: string
 	}
-    export class TContract {
-        public wallet: Wallet.TWallet;
+    export class Contract {
+        public wallet: Wallet;
         public _abi: any;
         public _bytecode: any;
         public _address: string;
         public privateKey: string;
         
-        constructor(wallet: Wallet.TWallet, address?: string, abi?: any, bytecode?: any) {            
+        constructor(wallet: Wallet, address?: string, abi?: any, bytecode?: any) {            
             this.wallet = wallet;                        
             if (typeof(abi) == 'string')
                 this._abi = JSON.parse(abi)
@@ -32,7 +32,7 @@ module Contract {
             if (address)
                 this._address = address;
         }    
-        at(address: string): TContract {
+        at(address: string): Contract {
             this._address = address;
             return this;
         }
@@ -101,7 +101,7 @@ module Contract {
             return this.wallet.methods.apply(this.wallet, args);
         }
     }
-    export class TAuthContract extends TContract {
+    export class TAuthContract extends Contract {
         rely(address: string): Promise<any>{
             return this.methods('rely', address)
         }

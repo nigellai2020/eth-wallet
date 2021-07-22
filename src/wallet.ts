@@ -2,6 +2,7 @@ import * as W3 from 'web3';
 const Web3 = require('web3'); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {ERC20} from './contracts/erc20';
+import {KMS} from './kms';
 
 module Wallet{    
     export interface IEvent{
@@ -115,16 +116,17 @@ module Wallet{
         sign?(): Promise<string>;
         signTransaction?(): Promise<any>;
     }    
-    export class TWallet{        
+    export class Wallet{        
 		private _web3: W3.default;		
         private _account: IAccount;
+		private _kms: KMS;		
 		public chainId: number;        
 
 		constructor(provider?: string, account?: IAccount){
-            this._account = account;			
-            this._web3 = new Web3(provider);
+			this._web3 = new Web3(provider);
+            this._account = account;
 		}
-		get address(): string{    
+		get address(): string{    			
 			if (!this._account)        
 				this._account = this.createAccount();
 				
@@ -146,6 +148,11 @@ module Wallet{
         		privateKey: acc.privateKey
         	};
         };
+		async getChainId(){
+			if (!this.chainId)
+				this.chainId = await this._web3.eth.getChainId();
+			return this.chainId;
+		}
         async methods(...args){
         	let _web3 = this._web3;
         	if ((<any>_web3).methods){
@@ -220,6 +227,9 @@ module Wallet{
 						return result.contractAddress;
 					return result;
         		}
+				else if (this._account.kms){
+
+				}
         		else{
         			result = await method.send(
 		        		{
@@ -259,13 +269,23 @@ module Wallet{
 		// get network(): INetwork{
 		// 	return Networks[this.chainId];
 		// };
-		set kms(value: IKMS){
-			this._account = {
-				address: '',
-				kms: value
+		async initKMS(value?: IKMS){			
+			value = value || this._account.kms;			
+			if (value){
+				this._kms = new KMS(value);
+				this._account = {
+					address: await this._kms.getAddress(),
+					kms: value
+				};
 			}
 		}
+		get kms(): KMS{
+			if (!this._kms && this._account.kms)
+				this._kms = new KMS(this._account.kms);
+			return this._kms;
+		}
         set privateKey(value: string){
+			this._kms = null;
         	this._account = {
 				address: '',
 				privateKey: value
@@ -342,9 +362,9 @@ module Wallet{
         	let self = this;
         	return new Promise(async function(resolve, reject){
         		try{
-        			let value = _web3.utils.toWei(amount.toString()).toString();
+        			let value = '0x' + new BigNumber(_web3.utils.toWei(amount.toString())).toString(16);// toString();
         			let result;
-        			if (self._account.privateKey){
+        			if (self._account.privateKey || self.kms){
         				let nonce = await _web3.eth.getTransactionCount(address);
         				let gas = await _web3.eth.estimateGas({
 						     from: address,       
@@ -358,8 +378,15 @@ module Wallet{
 						    to: to,     
 					    	value: value
 						};
-						let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-						result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
+						if (self.kms){
+							let chainId = await self.getChainId();
+							let txHash = await self.kms.signTransaction(chainId, tx);
+							result = await _web3.eth.sendSignedTransaction(txHash);			
+						}
+						else{
+							let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);							
+							result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
+						}						
 						resolve(result);	
         			}
         			else{
