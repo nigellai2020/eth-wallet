@@ -11,30 +11,45 @@ suite('##Wallet', function() {
     const kmsWallet = new Wallet(Config.provider, Config.account);
     const token = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
 
-    // test ('KMS address', async function(){
-    //     await kmsWallet.initKMS();
-    //     assert.strictEqual(kmsWallet.address, '0xf4a4e7add5bda8acc049fae3edd97ff90095c3d1');
-    // });    
-    // test ('KMS send ETH', async function(){
-    //     let kmsBalance = await kmsWallet.balance;
+    test ('KMS address', async function(){
+        await kmsWallet.initKMS();
+        assert.strictEqual(kmsWallet.address, '0xf4a4e7add5bda8acc049fae3edd97ff90095c3d1');
+    });    
+    test ('KMS Sign Message', async function(){
+        let sig = await kmsWallet.signMessage('hello');        
+        let verified = await wallet.verifyMessage(kmsWallet.address, 'hello', sig);
+        assert.strictEqual(verified, true);
+    })
+    test ('KMS send ETH', async function(){
+        let kmsBalance = await kmsWallet.balance;
 
-    //     const wallet = new Wallet(Config.provider);
-    //     wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896        
-    //     let walletBalance = await wallet.balance;
+        const wallet = new Wallet(Config.provider);
+        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896        
+        let walletBalance = await wallet.balance;
 
-    //     console.dir(`KSM Balance ${kmsWallet.address}: ${kmsBalance}`);
-    //     console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
-    //     let tx = await kmsWallet.send(wallet.address, 0.0001);        
-    //     console.dir(tx);
-    //     walletBalance = await wallet.balance;
-    //     console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
-    // })
-    // return;
+        // console.dir(`KSM Balance ${kmsWallet.address}: ${kmsBalance}`);
+        // console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
+        let tx = await kmsWallet.send(wallet.address, 0.0001);                
+        walletBalance = await wallet.balance;
+        // console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
+    })    
+    test("KMS send token", async function(){ 
+        const wallet = new Wallet(Config.provider);
+        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896
+
+        let walletToken = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
+        let kmsToken = kmsWallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
+        let walletBalance = await walletToken.balance;        
+        let kmsBalance = await kmsToken.balance;
+        let balance = walletBalance.plus(0.0001);
+        let tx = await kmsToken.transfer(wallet.address, 0.0001);
+        assert.strictEqual(balance.eq(await walletToken.balance), true);
+    })
     test ('wallet.signMessage', async function(){
-        let sig = await wallet.signMessage('hello');
+        let sig = await wallet.signMessage('hello');        
         let verified = await wallet.verifyMessage(wallet.address, 'hello', sig);
         assert.strictEqual(verified, true);
-    })    
+    })        
     test('set private key, check address', async function() {
         const wallet = new Wallet(Config.provider);
         wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'

@@ -11,11 +11,13 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "dependencies": {
-        "asn1.js": "2.1.1",
+        "asn1.js": "5.4.1",
         "aws-sdk": "^2.944.0",
         "bignumber.js": "9.0.1",
         "bn.js": "5.2.0",
         "ethereumjs-tx": "2.1.2",
+        "ethereumjs-util": "7.0.7",
+        "js-sha3": "0.8.0",
         "web3": "1.4.0"
     },
     "scripts": {

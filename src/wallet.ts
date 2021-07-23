@@ -228,7 +228,23 @@ module Wallet{
 					return result;
         		}
 				else if (this._account.kms){
-
+					let nonce = await _web3.eth.getTransactionCount(this.address);
+					let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
+					let tx = {
+						from: address,
+						nonce: nonce,
+						gasPrice: price,
+						gasLimit: gas,
+						gas: gas,
+						to: address,
+						data: method.encodeABI(),
+					};
+					let chainId = await this.getChainId();
+					let txHash = await this.kms.signTransaction(chainId, tx);
+					result = await _web3.eth.sendSignedTransaction(txHash)
+					if (methodName == 'deploy')
+						return result.contractAddress;
+					return result;
 				}
         		else{
         			result = await method.send(
@@ -362,18 +378,22 @@ module Wallet{
         	let self = this;
         	return new Promise(async function(resolve, reject){
         		try{
-        			let value = '0x' + new BigNumber(_web3.utils.toWei(amount.toString())).toString(16);// toString();
+        			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
         			if (self._account.privateKey || self.kms){
-        				let nonce = await _web3.eth.getTransactionCount(address);
+						let nonce = await _web3.eth.getTransactionCount(address);        				
         				let gas = await _web3.eth.estimateGas({
 						     from: address,       
 						     nonce: nonce, 
 						     to: to,     
 						     value: value
 						});
+						let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
         				let tx = {
         					from: address,
+							nonce: nonce,
+							gasPrice: price,
+        					gasLimit: gas,
 						    gas: gas,
 						    to: to,     
 					    	value: value
@@ -381,10 +401,10 @@ module Wallet{
 						if (self.kms){
 							let chainId = await self.getChainId();
 							let txHash = await self.kms.signTransaction(chainId, tx);
-							result = await _web3.eth.sendSignedTransaction(txHash);			
+							result = await _web3.eth.sendSignedTransaction(txHash);
 						}
 						else{
-							let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);							
+							let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
 							result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
 						}						
 						resolve(result);	
@@ -394,7 +414,7 @@ module Wallet{
         				resolve(result);	
         			}
         		}
-        		catch(err){
+        		catch(err){					
         			reject(err);
         		}
         	})
@@ -406,9 +426,15 @@ module Wallet{
 			return new Promise(async function(resolve, reject){
 				try{
 					let result;
-					if (self._account.privateKey){
-						result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
-						resolve(result.signature);
+					if (self._account.privateKey || self.kms){
+						if (self.kms){
+							result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg))
+							resolve(result);
+						}
+						else{
+							result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
+							resolve(result.signature);
+						}
 					}
 					else{
 						result = await _web3.eth.personal.sign(msg, address, null);

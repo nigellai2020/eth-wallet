@@ -59,20 +59,27 @@ module KMS {
                 SigningAlgorithm: 'ECDSA_SHA_256',
                 MessageType: 'DIGEST'
             };
-            const res = await this._sdk.sign(params).promise();
-            return res;
+            return await this._sdk.sign(params).promise();
+        }
+        async signMessage(chainId: number, message: string){            
+            let hash = ethutil.hashPersonalMessage(ethutil.toBuffer(message)); 
+            let sig = await this.findEthereumSig(hash);
+            let address = await this.getAddress();
+            let recoveredPubAddr = this.findRightKey(hash, sig.r, sig.s, address);
+            let r = sig.r.toBuffer();
+            let s = sig.s.toBuffer();
+            let v = new BN(recoveredPubAddr.v + (chainId > 1 ? (8 + chainId * 2) : 0)).toBuffer();
+            return '0x' + Buffer.concat([r,s,v]).toString('hex');
         }
         async findEthereumSig(plaintext: any) {
-            console.dir(plaintext)
             let signature = await this.sign(plaintext);
             if (signature.Signature == undefined) {
                 throw new Error('Signature is undefined.');
-            }
-            console.dir(signature.Signature)
+            }            
             let decoded = EcdsaSigAsnParse.decode(signature.Signature, 'der');
-            let r : BN = new BN(decoded.r);
-            let s : BN = new BN(decoded.s);            
-            console.dir(s.gt);
+            let r: BN = decoded.r;
+            let s: BN = decoded.s;  
+            
             let secp256k1N = new BN("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16); // max value on the curve
             let secp256k1halfN = secp256k1N.div(new BN(2)); // half of the curve
             // Because of EIP-2 not all elliptic curve signatures are accepted
