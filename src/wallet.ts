@@ -1,10 +1,12 @@
 import * as W3 from 'web3';
+import {BlockTransactionObject} from 'web3-eth';
+import {rlp} from 'ethereumjs-util';
 const Web3 = require('web3'); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
-import {ERC20} from './contracts/erc20';
+import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
 
-// module Wallet{    
+module Wallet{    
     export interface IEvent{
 		name: string;
         address: string;
@@ -39,7 +41,7 @@ import {KMS} from './kms';
 	        topics: string[]
 	    }
 	}
-    export interface ITransactionReceipt {
+    export interface TransactionReceipt {
 	    transactionHash: string;
 	    transactionIndex: number;
 	    blockHash: string;
@@ -54,6 +56,11 @@ import {KMS} from './kms';
             [eventName: string]: IEventLog
         };
         status: string;
+	}
+	export interface Transaction{
+		to: string;
+		gas: number,
+		data: string;
 	}
     export const Networks = {
 		1: {
@@ -116,29 +123,61 @@ import {KMS} from './kms';
         sign?(): Promise<string>;
         signTransaction?(): Promise<any>;
     }    
-    export class Wallet{        
+	const WalletUtils = {
+		fromWei(value: any): BigNumber{
+			return new BigNumber(W3.default.utils.fromWei(value))
+		}
+	}
+	interface IDictionary {
+		[index: string]: any;
+   	}
+    export class Wallet{
 		private _web3: W3.default;		
         private _account: IAccount;
 		private _kms: KMS;		
+		private _provider: any;
+		private _abiHashDict: IDictionary = {};
+		private _abiAddressDict: IDictionary = {};
+		private _abiEventDict: IDictionary = {};
 		public chainId: number;        
 
-		constructor(provider?: string, account?: IAccount){
+		constructor(provider?: any, account?: IAccount){			
+			this._provider = provider;
 			this._web3 = new Web3(provider);
             this._account = account;
 		}
-		get address(): string{    			
-			if (!this._account)        
-				this._account = this.createAccount();
-				
-        	if (this._account.privateKey){
+		get accounts(): Promise<string[]>{
+			return new Promise((resolve)=>{
+				if (this._account)
+					return resolve([this._account.address]);
+				resolve(this._web3.eth.getAccounts())
+			});
+		}
+		get address(): string{
+        	if (this._account && this._account.privateKey){
 				if (!this._account.address)
 					this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
         		return this._account.address;
         	}
+			else if (this._kms && this._account){
+				return this._account.address
+			}
+			else if (this._web3.eth.defaultAccount){			
+				return this._web3.eth.defaultAccount;
+			}
+			if (!this._account){        
+				this._account = this.createAccount();
+				return this._account.address;
+			}
         	else
         		return this._account.address;
         }
+		get account(): IAccount{
+			return this._account;
+		}
         set account(value: IAccount){
+			this._kms = null;
+			this._web3.eth.defaultAccount = '';
             this._account = value;
         }
         createAccount(): IAccount{
@@ -148,12 +187,133 @@ import {KMS} from './kms';
         		privateKey: acc.privateKey
         	};
         };
+		get defaultAccount(): string{
+			return this._web3.eth.defaultAccount;
+		}
+		set defaultAccount(address: string){
+			this._web3.eth.defaultAccount = address;
+		}
 		async getChainId(){
 			if (!this.chainId)
 				this.chainId = await this._web3.eth.getChainId();
 			return this.chainId;
 		}
-        async methods(...args){
+		sendSignedTransaction(tx: string): Promise<any>{
+			let _web3 = this._web3;        	
+			return _web3.eth.sendSignedTransaction(tx);
+		}
+		async signTransaction(tx: any, privateKey?: string): Promise<string>{
+			let _web3 = this._web3;  
+			// let gasPrice = tx.gasPrice ||  _web3.utils.numberToHex(await _web3.eth.getGasPrice());     	
+			let gas = tx.gas || await _web3.eth.estimateGas({
+				from: this.address,				
+				to: tx.to,
+				data: tx.data,
+			})		
+			let gasLimit = tx.gasLimit || gas;				
+			let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
+			if (privateKey || (this._account && this._account.privateKey)){
+				let signedTx = await _web3.eth.accounts.signTransaction(<any>{
+					nonce: nonce,
+					// gasPrice: gasPrice,
+					gas: gas,
+					gasLimit: gasLimit,
+					data: tx.data,
+					from: this.address,
+					to: tx.to
+				}, privateKey?privateKey:this._account.privateKey);
+				return signedTx.rawTransaction;
+			}
+			else if (this._account && this._account.kms){	
+				let chainId = await this.getChainId();
+				let txHash = await this.kms.signTransaction(chainId, {
+					from: this.address,
+					nonce: nonce,
+					// gasPrice: gasPrice,
+					gasLimit: gas,
+					gas: gas,
+					to: tx.to,
+					data: tx.data
+				});
+				return txHash;
+			}
+			else{
+				let t = await _web3.eth.signTransaction(<any>{
+					from: this.address,
+					nonce: nonce,
+					// gasPrice: gasPrice,
+					gasLimit: gasLimit,
+					gas: gas,
+					to: tx.to,
+					data: tx.data
+				}, this.address);
+				return t.raw;
+			}
+		}
+		async _methods(...args){
+			let _web3 = this._web3;        	
+			let result: any;
+			let value: any;
+			let method: any;
+			let methodAbi: any;
+			let byteCode: any;
+			
+			let abi = args.shift();
+			let address = args.shift();
+			let methodName = args.shift();
+			if (methodName == 'deploy')
+				byteCode = args.shift();
+			let contract = new this._web3.eth.Contract(abi, address);
+			if (methodName == 'deploy'){
+				method = contract[methodName]({
+					data: byteCode,
+					arguments: args
+				});
+			}
+			else {
+				for (let i = 0; i < abi.length; i ++)	{
+					if (abi[i].name == methodName){
+						methodAbi = abi[i];
+						break;
+					}
+				}						
+				if (methodAbi.payable)
+					value = args.pop();
+				for (let i = 0; i < methodAbi.inputs.length; i ++){
+					if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
+						args[i] = args[i] || '';
+						if (methodAbi.inputs[i].type.indexOf('[]') > 0){
+							let a = [];
+							for (let k = 0; k < args[i].length; k ++){
+								let s = args[i][k] || '';
+								if (s.indexOf('0x') != 0)
+									a.push(_web3.utils.fromAscii(s))
+								else
+									a.push(s);
+							}
+							args[i] = a;
+						}
+						else if (args[i].indexOf('0x') != 0)
+							args[i] = _web3.utils.fromAscii(args[i]);
+					}
+					else if (methodAbi.inputs[i].type == 'address'){
+						if (!args[i])
+							args[i] = _web3.eth.abi.encodeParameter('address', 0);
+					}
+				}
+				method = contract.methods[methodName].apply(contract, args);
+			}
+			// let gas = await method.estimateGas({from: this.address, value: value});
+			let tx = {
+				// from: this.address,
+				// nonce: nonce,
+				// gas: gas,
+				to: address,
+				data: method.encodeABI(),
+			};
+			return tx;
+        }
+		async methods(...args){
         	let _web3 = this._web3;
         	if ((<any>_web3).methods){
         		return (<any>_web3).methods.apply(_web3, args);
@@ -207,14 +367,15 @@ import {KMS} from './kms';
 	        				if (!args[i])
 	        					args[i] = _web3.eth.abi.encodeParameter('address', 0);
 	        			}
-	        		}
+	        		}					
 	        		method = contract.methods[methodName].apply(contract, args);
         		}				
         		if (methodAbi && methodAbi.constant)
         			return method.call({from: this.address});
 
         		let gas = await method.estimateGas({from: this.address, value: value});
-        		if (this._account.privateKey){
+
+        		if (this._account && this._account.privateKey){
         			var tx = {
 					    gas: gas,
 					    data: method.encodeABI(),
@@ -227,11 +388,11 @@ import {KMS} from './kms';
 						return result.contractAddress;
 					return result;
         		}
-				else if (this._account.kms){
+				else if (this._account && this._account.kms){
 					let nonce = await _web3.eth.getTransactionCount(this.address);
 					let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
 					let tx = {
-						from: address,
+						from: this.address,
 						nonce: nonce,
 						gasPrice: price,
 						gasLimit: gas,
@@ -279,9 +440,49 @@ import {KMS} from './kms';
 				}	
 			})
 		}
+		balanceOf(address: string): Promise<BigNumber>{
+			let self = this;
+            let _web3 = this._web3;
+			return new Promise(async function(resolve){
+				try{
+					let network = Networks[self.chainId];
+					let decimals = 18;
+					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
+						decimals = network.nativeCurrency.decimals;
+					
+					let result = await _web3.eth.getBalance(address);	
+					resolve(new BigNumber(result).div(10 ** decimals));
+				}
+				catch(err){
+					resolve(new BigNumber(0));
+				}	
+			})
+		}
+		recoverSigner(msg: string, signature: string): Promise<string>{
+			let _web3 = this._web3;
+			return new Promise(async function(resolve, reject){
+				try{
+					var signing_address = await _web3.eth.accounts.recover(msg, signature);
+	        		resolve(signing_address);
+				}
+				catch(err){
+					reject(err);
+				};	
+			})
+        };
+		getBlock(blockHashOrBlockNumber: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>{
+			return this._web3.eth.getBlock(blockHashOrBlockNumber, returnTransactionObjects);
+		};
 		getBlockNumber(): Promise<number>{
 			return this._web3.eth.getBlockNumber();
-		}		
+		};		
+		async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{	
+			let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', false);
+			if (typeof(block.timestamp) == 'string')
+				return parseInt(block.timestamp)
+			else	
+				return <number>block.timestamp
+		};		
 		// get network(): INetwork{
 		// 	return Networks[this.chainId];
 		// };
@@ -295,19 +496,22 @@ import {KMS} from './kms';
 				};
 			}
 		}
-		get kms(): KMS{
-			if (!this._kms && this._account.kms)
+		private get kms(): KMS{
+			if (this._account && !this._kms && this._account.kms)
 				this._kms = new KMS(this._account.kms);
 			return this._kms;
 		}
         set privateKey(value: string){
-			this._kms = null;
+			if (value){
+				this._kms = null;
+				this._web3.eth.defaultAccount = '';
+			}			
         	this._account = {
 				address: '',
 				privateKey: value
 			}
         }
-        getAbiEvents(abi) {
+        getAbiEvents(abi: any[]): any {
         	let _web3 = this._web3;
 		    let events = abi.filter(e => e.type=="event");    
 		    let eventMap = {};
@@ -318,7 +522,7 @@ import {KMS} from './kms';
 		    }
 		    return eventMap;
 		}
-        getAbiTopics(abi, eventNames: string[]){
+        getAbiTopics(abi: any[], eventNames: string[]){
 			if (!eventNames)
 				return;
 			let _web3 = this._web3;
@@ -332,22 +536,55 @@ import {KMS} from './kms';
 		    }
 		    return result;
 		}
-        scanEvents(abi, address: string, fromBlock: number, toBlock: number, eventNames?: string[]): Promise<IEvent[]>{
-        	let _web3 = this._web3;
-        	let topics = this.getAbiTopics(abi, eventNames);
-        	let events = this.getAbiEvents(abi);
-        	return new Promise(async function(resolve, reject){
+		getContractAbi(address: string){
+			return this._abiAddressDict[address];
+		}
+		getContractAbiEvents(address: string){
+			let events = this._abiEventDict[address];
+			if (events)
+				return events;			
+			let abi = this._abiHashDict[this._abiAddressDict[address]];
+			if (abi){
+				events = this.getAbiEvents(abi)
+				this._abiEventDict[address] = events;
+				return events;
+			}
+		}
+		registerAbi(abi: any[], addresses?: string[]): string{
+			let hash = this.web3.utils.sha3(JSON.stringify(abi));
+			this._abiHashDict[hash] = abi;
+			if (addresses)
+				this.registerAbiContracts(hash, addresses)
+			return hash;
+		}
+		registerAbiContracts(abiHash: string, addresses: string[]){			
+			for (let i = 0; i < addresses.length; i ++)
+				this._abiAddressDict[addresses[i]] = abiHash;
+		}
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string, ): Promise<IEvent[]>{
+        	let _web3 = this._web3;        	
+        	return new Promise(async (resolve, reject)=>{
         		try{
         			let logs = await _web3.eth.getPastLogs({
 		                fromBlock: fromBlock,   
 		                toBlock: toBlock,
 		                address: address,
 		                topics: topics?topics:null
-		            });		            
+		            });		
+					console.dir(logs)            
 		            let result = [];
+					let event;
 		            for (let i = 0 ; i < logs.length ; i++) {
-		                let e = logs[i];
-		                let event = events[e.topics[0]];
+		                let e = logs[i];				
+						if (events)
+		                	event = events[e.topics[0]]
+						else{
+							let _events = this.getContractAbiEvents(e.address);
+							if (_events)
+								event = _events[e.topics[0]]
+							else
+								event = null;
+						}
 		                if (event){
 		                    let data = <any>_web3.eth.abi.decodeLog(event.inputs, e.data, e.topics.slice(1));
 		                    if (data.__length__){
@@ -356,11 +593,13 @@ import {KMS} from './kms';
 		                    	delete data['__length__'];
 		                    };
 		                    let log = {
+								address: e.address,
+								blockNumber: e.blockNumber,
+								data: data,
+								logIndex: e.logIndex,
 		                    	name: event.name,
-			                    blockNumber: e.blockNumber,
 			                    transactionHash: e.transactionHash,
-			                    transactionIndex: e.transactionIndex,			                    
-			                    data: data
+			                    transactionIndex: e.transactionIndex
 		                    };
 		                    result.push(log);
 		                }
@@ -372,7 +611,7 @@ import {KMS} from './kms';
         		}
         	})
         };
-        send(to: string, amount: number): Promise<ITransactionReceipt>{
+        send(to: string, amount: number): Promise<TransactionReceipt>{
         	let _web3 = this._web3;
         	let address = this.address;
         	let self = this;
@@ -380,7 +619,7 @@ import {KMS} from './kms';
         		try{
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
-        			if (self._account.privateKey || self.kms){
+        			if ((self._account && self._account.privateKey) || self.kms){
 						let nonce = await _web3.eth.getTransactionCount(address);        				
         				let gas = await _web3.eth.estimateGas({
 						     from: address,       
@@ -419,6 +658,21 @@ import {KMS} from './kms';
         		}
         	})
 		}
+		setBlockTime(time: number): Promise<any>{
+			return new Promise((resolve, reject) => {
+				(<any>this._web3.currentProvider).send({
+					jsonrpc: '2.0',
+					method: time > 1000000000 ? 'evm_mine' : 'evm_increaseTime', 
+					params: [time], //[(3600*24*60*60)], //[time],
+					id: new Date().getTime()
+				}, 
+				(err, result) => {
+					if (err)
+						return reject(err); 
+					resolve(result);
+				})
+			});
+		}
 		signMessage(msg: string): Promise<string> {
 			let _web3 = this._web3;
 			let address = this.address;
@@ -426,7 +680,7 @@ import {KMS} from './kms';
 			return new Promise(async function(resolve, reject){
 				try{
 					let result;
-					if (self._account.privateKey || self.kms){
+					if ((self._account && self._account.privateKey) || self.kms){
 						if (self.kms){
 							result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg))
 							resolve(result);
@@ -437,7 +691,8 @@ import {KMS} from './kms';
 						}
 					}
 					else{
-						result = await _web3.eth.personal.sign(msg, address, null);
+						// result = await _web3.eth.personal.sign(msg, address, null);
+						result = await _web3.eth.sign(msg, address, null);
 						resolve(result);	
 					}
 				}	
@@ -446,8 +701,8 @@ import {KMS} from './kms';
 				}
 			})
         };
-		token(tokenAddress: string): ERC20{
-			return new ERC20(this, tokenAddress);
+		token(tokenAddress: string, decimals?: number): Erc20{
+			return new Erc20(this, tokenAddress, decimals);
 		}
         get utils(){
             return this._web3.utils;
@@ -463,7 +718,10 @@ import {KMS} from './kms';
 					reject(err);
 				};	
 			})
-        };		
+        };
+		public get web3(): W3.default{
+			return this._web3;
+		}		
     }
-// };
-// export = Wallet;
+};
+export = Wallet;

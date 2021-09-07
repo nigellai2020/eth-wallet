@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "devDependencies": {
         "@types/mocha": "*",
         "@types/node": "14.17",
@@ -21,7 +21,7 @@
         "web3": "1.4.0"
     },
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin",
         "test": "mocha --ui tdd --exit --require ts-node/register test/*.ts"
     }
 }
