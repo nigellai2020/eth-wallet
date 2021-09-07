@@ -9,6 +9,7 @@ declare module KMS {
         constructor(options: any);
         getEthereumAddress(publicKey: Buffer): string;
         sign(msgHash: any): Promise<import("aws-sdk/lib/request").PromiseResult<AwsSDK.KMS.SignResponse, AwsSDK.AWSError>>;
+        signMessage(chainId: number, message: string): Promise<string>;
         findEthereumSig(plaintext: any): Promise<{
             r: BN;
             s: BN;

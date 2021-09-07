@@ -4,7 +4,7 @@ import {BigNumber} from 'bignumber.js';
 import {ERC20} from './contracts/erc20';
 import {KMS} from './kms';
 
-module Wallet{    
+// module Wallet{    
     export interface IEvent{
 		name: string;
         address: string;
@@ -465,5 +465,5 @@ module Wallet{
 			})
         };		
     }
-};
-export = Wallet;
+// };
+// export = Wallet;

@@ -1,5 +1,5 @@
 import 'mocha';
-import {Wallet} from "../src/wallet";
+import {Wallet} from "../src";
 import * as assert from 'assert';
 
 import {sleep} from '../src/utils';
