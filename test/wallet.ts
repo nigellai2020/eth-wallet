@@ -1,49 +1,115 @@
 import 'mocha';
 import {Wallet} from "../src";
+import {Utils} from "../src";
+import * as Ganache from "ganache-cli";
 import * as assert from 'assert';
 
-import {sleep} from '../src/utils';
 const Config = require('./config').wallet;
 
-suite('##Wallet', function() {    
+suite('##Wallet Ganache', async function() {
     this.timeout(20000);
-    const wallet = new Wallet(Config.provider, {address: '0x80E2fE38D90608b4Bc253C940dB372F44f290816', privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'});
-    const kmsWallet = new Wallet(Config.provider, Config.account);
-    const token = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
-
-    test ('KMS address', async function(){
-        await kmsWallet.initKMS();
-        assert.strictEqual(kmsWallet.address, '0xf4a4e7add5bda8acc049fae3edd97ff90095c3d1');
-    });    
-    test ('KMS Sign Message', async function(){
-        let sig = await kmsWallet.signMessage('hello');        
-        let verified = await wallet.verifyMessage(kmsWallet.address, 'hello', sig);
-        assert.strictEqual(verified, true);
+    let provider = Ganache.provider()
+    let erc20Address = '';
+    let accounts: string[];
+    const wallet = new Wallet(provider); 
+    
+    suiteSetup(async function(){
+        accounts = await wallet.accounts;        
     })
-    test ('KMS send ETH', async function(){
-        let kmsBalance = await kmsWallet.balance;
+    test('wallet.setPrivateKey', async function(){
+        wallet.defaultAccount = accounts[0];
+        assert.strictEqual(wallet.address, accounts[0]);
+        let wallet2 = new Wallet(provider);
+        wallet2.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1';
+        assert.strictEqual(wallet2.address, '0x80E2fE38D90608b4Bc253C940dB372F44f290816');        
+        assert.strictEqual((await wallet2.balance).toNumber(), 0);        
+        await wallet.send(wallet2.address, 2);
+        assert.strictEqual((await wallet.balanceOf(wallet2.address)).toNumber(), 2);
+        assert.strictEqual((await wallet2.balance).toNumber(), 2);
+    })
+    test('Sign Transaction', async function(){
+        accounts = await wallet.accounts;        
+        wallet.defaultAccount = accounts[0];
+        let wallet2 = new Wallet(provider);
+        let account = wallet2.createAccount();
+        await wallet.send(wallet2.address, 20);        
+        assert.strictEqual((await wallet2.balance).toNumber(), 20);
 
-        const wallet = new Wallet(Config.provider);
-        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896        
-        let walletBalance = await wallet.balance;
-
-        // console.dir(`KSM Balance ${kmsWallet.address}: ${kmsBalance}`);
-        // console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
-        let tx = await kmsWallet.send(wallet.address, 0.0001);                
-        walletBalance = await wallet.balance;
-        // console.dir(`Wallet Balance ${wallet.address}: ${walletBalance}`);
+        let token = wallet2.token('');
+        await token.deploy('oswap', 'oswap', wallet2.address);
+        await token.mint(wallet2.address, 100);
+        assert.strictEqual((await token.balance).toNumber(), 100);
+        let tx = await token._mint(wallet.address, 100);        
+        let signedTx = await wallet2.signTransaction(tx);
+        await wallet2.sendSignedTransaction(signedTx);        
+        assert.strictEqual((await token.balanceOf(wallet.address)).toNumber(), 100);
+    });
+    test('setBlockTime', async function(){        
+        let block1 = await wallet.getBlock('latest');
+        await wallet.setBlockTime(Utils.toNumber(block1.timestamp) + 60);
+        let block2 = await wallet.getBlock('latest');        
+        assert.strictEqual((Utils.toNumber(block1.timestamp) + 60), block2.timestamp)
+    });
+    test('Erc20.deploy', async function(){        
+        wallet.defaultAccount = accounts[0];
+        assert.strictEqual(wallet.address, accounts[0]);        
+        let erc20 = wallet.token('');// new Erc20(wallet);
+        erc20Address = await erc20.deploy('DUMMY Token', 'DUMMY');        
+        assert.strictEqual(await erc20.symbol, 'DUMMY');
+        assert.strictEqual(await erc20.name, 'DUMMY Token');        
+        assert.strictEqual(await erc20.decimals, 18);        
+    }) 
+    test('Erc20.mint', async function(){
+        let erc20 = wallet.token(erc20Address);
+        let fromBlock = await wallet.getBlockNumber();
+        await erc20.mint(accounts[1], 1001);
+        assert.strictEqual((await erc20.totalSupply).toNumber(), 1001);
+        assert.strictEqual((await erc20.balanceOf(accounts[1])).toNumber(), 1001);        
+        let events = await erc20.scanEvents(fromBlock, 'latest', ['Transfer']);
+        let event = events[0];        
+        assert.strictEqual(wallet.utils.fromWei(event.data.value), '1001');
+    })
+    test('Erc20.transfer', async function(){
+        let erc20 = wallet.token(erc20Address);
+        wallet.defaultAccount = accounts[1];
+        await erc20.transfer(accounts[0], 101);
+        assert.strictEqual((await erc20.balanceOf(accounts[0])).toNumber(), 101);
+    })
+    test("Erc20.events", async function(){
+        let block = await wallet.getBlockNumber();        
+        let erc20 = wallet.token(erc20Address);
+        let events = await erc20.scanEvents(block, block, ['Transfer']);        
+        let event = events[0];        
+        assert.strictEqual(event.data.from, accounts[1]);
+        assert.strictEqual(event.data.to, accounts[0]);
+    })
+    test('Erc20.approve', async function(){
+        let erc20 = wallet.token(erc20Address);
+        wallet.defaultAccount = accounts[1];
+        await erc20.approve(accounts[0], 100001);
+        assert.strictEqual((await erc20.allowance(accounts[1], accounts[0])).toNumber(), 100001);
+    })
+    test('Wallet.signMessage', async function(){
+        assert.strictEqual(wallet.address, accounts[1]);
+        let sig = await wallet.signMessage('hello');        
+        let verified = await wallet.verifyMessage(wallet.address, 'hello', sig);
+        assert.strictEqual(verified, true);
+        let address = await wallet.recoverSigner('hello', sig);
+        assert.strictEqual(address, accounts[1]);
+    })  
+    test('Wallet.send ETH', async function(){
+        wallet.defaultAccount = accounts[2];
+        assert.strictEqual((await wallet.balance).toNumber(), 100);
+        await wallet.send(accounts[3], 2);
+        assert.strictEqual((await wallet.balanceOf(accounts[3])).toNumber(), 102);        
     })    
-    test("KMS send token", async function(){ 
-        const wallet = new Wallet(Config.provider);
-        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896
+})
+suite('##Wallet', function() {
+    this.timeout(20000);
+    const wallet = new Wallet(Config.provider, {address: '0x80E2fE38D90608b4Bc253C940dB372F44f290816', privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'});    
+    const token = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
+    suiteSetup(async function(){
 
-        let walletToken = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
-        let kmsToken = kmsWallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
-        let walletBalance = await walletToken.balance;        
-        let kmsBalance = await kmsToken.balance;
-        let balance = walletBalance.plus(0.0001);
-        let tx = await kmsToken.transfer(wallet.address, 0.0001);
-        assert.strictEqual(balance.eq(await walletToken.balance), true);
     })
     test ('wallet.signMessage', async function(){
         let sig = await wallet.signMessage('hello');        
@@ -59,7 +125,7 @@ suite('##Wallet', function() {
         const wallet = new Wallet(Config.provider);
         wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'
         let balance = await wallet.balance;
-        assert.strictEqual(balance.eq(0.11), true);
+        assert.strictEqual(balance.eq((await wallet.balanceOf('0x80E2fE38D90608b4Bc253C940dB372F44f290816'))), true);
     });
     test('wallet.send 0xefffE5b341471ff7002f2a38f8eC31cBfE11b9FD => 0x3E38C203a196b1bB1bb90016A984AD9578910896', async function() {        
         const wallet1 = new Wallet(Config.provider);
@@ -111,9 +177,45 @@ suite('##Wallet', function() {
     })
     test("token.events", async function(){
         let block = await wallet.getBlockNumber();        
-        let events = await token.scanEvents(block - 10, block, ['Transfer']);
+        let events = await token.scanEvents(block - 10, block, ['Transfer']);        
         let event = events.find(event => event.transactionHash == txHash);
         assert.strictEqual(event.data.from, '0xefffE5b341471ff7002f2a38f8eC31cBfE11b9FD');
         assert.strictEqual(event.data.to, '0x3E38C203a196b1bB1bb90016A984AD9578910896');
+    })
+})
+suite('##Wallet AWS KMS', async function() {   
+    this.timeout(40000);
+    const wallet = new Wallet(Config.provider);    
+    const kmsWallet = new Wallet(Config.provider, Config.account);        
+
+    suiteSetup(async function(){        
+        await kmsWallet.initKMS();
+    })
+    test ('KMS address', async function(){        
+        assert.strictEqual(kmsWallet.address, '0xf4a4e7add5bda8acc049fae3edd97ff90095c3d1');
+    });    
+    test ('KMS Sign Message', async function(){
+        let sig = await kmsWallet.signMessage('hello');        
+        let verified = await kmsWallet.verifyMessage(kmsWallet.address, 'hello', sig);
+        assert.strictEqual(verified, true);
+    })
+    test ('KMS send ETH', async function(){        
+        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896                
+        assert.strictEqual(wallet.address, '0x3E38C203a196b1bB1bb90016A984AD9578910896');
+        let walletBalance = await wallet.balance;
+        let expectedWalletbalance = walletBalance.plus(0.0001);
+        let tx = await kmsWallet.send(wallet.address, 0.0001);                
+        assert.strictEqual(expectedWalletbalance.eq(await wallet.balance), true);
+    })    
+    test("KMS send token", async function(){                 
+        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896
+        assert.strictEqual(wallet.address, '0x3E38C203a196b1bB1bb90016A984AD9578910896');
+        let walletToken = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
+        let kmsToken = kmsWallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');        
+        let walletBalance = await walletToken.balance;        
+        let kmsBalance = await kmsToken.balance;
+        let balance = walletBalance.plus(0.0001);        
+        let tx = await kmsToken.transfer(wallet.address, 0.0001);
+        assert.strictEqual(balance.eq(await walletToken.balance), true);
     })
 })

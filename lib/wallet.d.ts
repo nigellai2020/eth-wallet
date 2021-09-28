@@ -2,28 +2,31 @@ import * as W3 from 'web3';
 import { BlockTransactionObject } from 'web3-eth';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
+import { Utils } from 'web3-utils';
 declare module Wallet {
-    interface IEvent {
+    interface Event {
         name: string;
         address: string;
         blockNumber: number;
+        logIndex: number;
+        topics: string[];
         transactionHash: string;
         transactionIndex: number;
-        type: string;
         data: any;
+        rawData: any;
     }
-    interface ILog {
+    interface Log {
         address: string;
         data: string;
         topics: Array<string>;
         logIndex: number;
-        transactionHash: string;
+        transactionHash?: string;
         transactionIndex: number;
-        blockHash: string;
-        type: string;
+        blockHash?: string;
+        type?: string;
         blockNumber: number;
     }
-    interface IEventLog {
+    interface EventLog {
         event: string;
         address: string;
         returnValues: any;
@@ -47,9 +50,9 @@ declare module Wallet {
         contractAddress: string;
         cumulativeGasUsed: number;
         gasUsed: number;
-        logs?: Array<ILog>;
+        logs?: Array<Log>;
         events?: {
-            [eventName: string]: IEventLog;
+            [eventName: string]: EventLog;
         };
         status: string;
     }
@@ -126,6 +129,8 @@ declare module Wallet {
         private _abiHashDict;
         private _abiAddressDict;
         private _abiEventDict;
+        private _eventHandler;
+        private _contracts;
         chainId: number;
         constructor(provider?: any, account?: IAccount);
         get accounts(): Promise<string[]>;
@@ -136,6 +141,7 @@ declare module Wallet {
         get defaultAccount(): string;
         set defaultAccount(address: string);
         getChainId(): Promise<number>;
+        get provider(): any;
         sendSignedTransaction(tx: string): Promise<any>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         _methods(...args: any[]): Promise<{
@@ -156,14 +162,15 @@ declare module Wallet {
         getAbiTopics(abi: any[], eventNames: string[]): any[];
         getContractAbi(address: string): any;
         getContractAbiEvents(address: string): any;
-        registerAbi(abi: any[], addresses?: string[]): string;
-        registerAbiContracts(abiHash: string, addresses: string[]): void;
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string): Promise<IEvent[]>;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
+        decodeEventData(data: Log, events?: any): Promise<Event>;
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string): Promise<Event[]>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
-        get utils(): import("web3-utils").Utils;
+        get utils(): Utils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
         get web3(): W3.default;
     }

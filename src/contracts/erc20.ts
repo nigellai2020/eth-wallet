@@ -1,5 +1,5 @@
-import {Wallet, Transaction} from '../wallet';
-import {Contract, TransactionReceipt} from '../contract';
+import {Wallet, Transaction, TransactionReceipt} from '../wallet';
+import {Contract} from '../contract';
 import {BigNumber} from 'bignumber.js';
 import * as Utils from '../utils';
 

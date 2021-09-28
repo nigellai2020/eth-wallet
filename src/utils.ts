@@ -9,7 +9,7 @@ export function sleep(millisecond: number){
     });
 };
 export function numberToBytes32(value: number|BigNumber, prefix?:boolean) {
-    var v = new BigNumber(value).toString(16)
+    let v = new BigNumber(value).toString(16)
     v = v.replace("0x", "");
     v = padLeft(v, 64);
     if (prefix)
@@ -28,14 +28,15 @@ export function stringToBytes32(value: string, prefix?: boolean): string{
     
     let v = value
     v = v.replace("0x", "");
-    v = v.split('').map((c) => {var c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');    
+    v = v.split('').map((c) => {c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');    
+    // v = v.split('').map((c) => {var c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');    
     v = padRight(v, 64);
     if (prefix)
         v = '0x' + v;
     return v;
 }
 export function addressToBytes32(value: string, prefix?: boolean): string{
-    var v = value
+    let v = value
     v = v.replace("0x", "");
     v = padLeft(v, 64);
     if (prefix)
@@ -49,7 +50,7 @@ export function bytes32ToString(value: string): string{
     return Web3.utils.hexToUtf8(value);
 }
 export function addressToBytes32Right(value: string, prefix?: boolean): string{
-    var v = value
+    let v = value
     v = v.replace("0x", "");
     v = padRight(v, 64);
     if (prefix)

@@ -1,11 +1,11 @@
 const kms = {
+    keyId: '',
     region: '',
     accessKeyId: '',
     secretAccessKey: ''
 }
 const infuraId = '';
 const accountPrivateKey = '';
-
 module.exports = {        
     wallet: {
         chainName: 'kovan',

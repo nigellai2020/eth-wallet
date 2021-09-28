@@ -1,61 +1,11 @@
-import {Wallet, TransactionReceipt} from "./wallet";
+import {Wallet, TransactionReceipt, Event, Log, EventLog} from "./wallet";
 import {BigNumber} from "bignumber.js";
 import * as W3 from 'web3';
 const Web3 = require('web3'); // tslint:disable-line
 
 module Contract {
-    export interface IEvent{
-		name: string;
-        address: string;
-        blockNumber: number;
-        transactionHash: string;
-        transactionIndex: number;
-        type: string;
-        data: any;
-	}
-    export interface IEventType{
+    export interface EventType{
 		name: string
-	}
-    export interface Log {
-	    address: string;
-	    data: string;
-	    topics: Array <string>;
-        logIndex: number;
-	    transactionHash: string;
-	    transactionIndex: number;
-	    blockHash: string;
-	    type: string;
-	    blockNumber: number;
-	}
-	export interface EventLog {
-	    event: string;
-	    address: string;
-	    returnValues: any;
-	    logIndex: number;
-	    transactionIndex: number;
-	    transactionHash: string;
-	    blockHash: string;
-	    blockNumber: number;
-	    raw ? : {
-	        data: string,
-	        topics: string[]
-	    };
-	}
-    export interface TransactionReceipt {
-	    transactionHash: string;
-	    transactionIndex: number;
-	    blockHash: string;
-	    blockNumber: number;
-	    from: string;
-	    to: string;
-	    contractAddress: string;
-	    cumulativeGasUsed: number;
-	    gasUsed: number;
-	    logs ? : Array < Log >;
-        events ? : {
-            [eventName: string]: EventLog
-        };
-        status: string;
 	}
     export class Contract {
         public wallet: Wallet;
@@ -72,13 +22,16 @@ module Contract {
             else
                 this._abi = abi
             this._bytecode = bytecode
-            var self = this;
+            let self = this;
             if (address)
                 this._address = address;
         }    
         at(address: string): Contract {
             this._address = address;
             return this;
+        }
+        set address(value: string){
+            this._address = value;
         }
         get address(): string{
             return this._address || '';
@@ -93,45 +46,45 @@ module Contract {
             }
             return result;
         }
-        get events(): IEventType[]{
+        get events(): EventType[]{
             let result = [];
-            for (var i = 0; i < this._abi.length; i ++)	{
+            for (let i = 0; i < this._abi.length; i ++)	{
                 if (this._abi[i].type == 'event')
                     result.push(this._abi[i])
             }
             return result;
         }
         protected methodsToUtf8(...args): Promise<string>{
-            var self = this;            
+            let self = this;            
             return new Promise<string>(async function(resolve, reject){
                 let result = await self.methods.apply(self, args);
                 resolve(self.wallet.utils.toUtf8(result));
             })
         }
         protected methodsToUtf8Array(...args): Promise<string[]>{
-            var self = this;            
+            let self = this;            
             return new Promise<string[]>(async function(resolve, reject){
                 let result = await self.methods.apply(self, args);
-                var arr = [];
-                for (var i = 0; i < result.length; i ++){
+                let arr = [];
+                for (let i = 0; i < result.length; i ++){
                     arr.push(self.wallet.utils.toUtf8(result[i]))
                 }
                 resolve(arr);
             })
         }
         protected methodsFromWeiArray(...args): Promise<BigNumber[]>{            
-            var self = this;            
+            let self = this;            
             return new Promise<BigNumber[]>(async function(resolve, reject){
                 let result = await self.methods.apply(self, args)
-                var arr = [];
-                for (var i = 0; i < result.length; i ++){
+                let arr = [];
+                for (let i = 0; i < result.length; i ++){
                     arr.push(new BigNumber(self.wallet.utils.fromWei(result[i])))
                 }
                 resolve(arr);
             })
         }
         protected methodsFromWei(...args): Promise<BigNumber>{            
-            var self = this;
+            let self = this;
             return new Promise<BigNumber>(async function(resolve, reject){
                 let result = await self.methods.apply(self, args);
                 return resolve(new BigNumber(self.wallet.utils.fromWei(result)));
@@ -155,7 +108,7 @@ module Contract {
                 this._events = this.wallet.getAbiEvents(this._abi);
             return this._events;
         }
-        scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<IEvent[]>{
+        scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<Event[]>{
             let topics = this.getAbiTopics(eventNames);
         	let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
