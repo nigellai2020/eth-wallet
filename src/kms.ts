@@ -3,9 +3,7 @@ import * as asn1 from 'asn1.js';
 import BN from 'bn.js';
 import * as ethutil from 'ethereumjs-util';
 import { Transaction, TxData } from 'ethereumjs-tx';
-import BigNumber from 'bignumber.js';
-
-const keccak256 = require('./sha3').keccak256;
+// const keccak256 = require('./sha3').keccak256;
 
 module KMS {
     const EcdsaSigAsnParse = asn1.define('EcdsaSig', function(this: any) {
@@ -46,10 +44,13 @@ module KMS {
         
             pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length);
         
-            const address = keccak256(pubKeyBuffer);
-            const buf2 = Buffer.from(address, 'hex');
-            const ethAddr = "0x" + buf2.slice(-20).toString('hex');
-            return ethAddr;
+            // const address = keccak256(pubKeyBuffer);                        
+            // const buf2 = Buffer.from(address, 'hex');
+            // const ethAddr = "0x" + buf2.slice(-20).toString('hex');
+            // return ethAddr;
+            
+            let buf = ethutil.keccak256(pubKeyBuffer);            
+            return "0x" + buf.slice(-20).toString('hex');
         }
         async sign(msgHash: any) {            
             const params = {
