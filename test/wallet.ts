@@ -106,24 +106,47 @@ suite('##Wallet Ganache', async function() {
 })
 suite('##Wallet', function() {
     this.timeout(20000);
-    const wallet = new Wallet(Config.provider, {address: '0x80E2fE38D90608b4Bc253C940dB372F44f290816', privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'});    
+    const wallet = new Wallet(Config.provider,  [
+        {
+            address: '',//'0x80E2fE38D90608b4Bc253C940dB372F44f290816',
+            privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'              
+        },
+        {
+            address: '',//'0x3E38C203a196b1bB1bb90016A984AD9578910896',
+            privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'
+        },
+        {
+            address: '',//'0xefffE5b341471ff7002f2a38f8eC31cBfE11b9FD',
+            privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b3'
+        }
+    ]);    
     const token = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
     suiteSetup(async function(){
 
     })
+    test ('wallet.accounts', async function(){
+        let accounts = await wallet.accounts;
+        assert.strictEqual(accounts[0], '0x80E2fE38D90608b4Bc253C940dB372F44f290816');
+        assert.strictEqual(accounts[1], '0x3E38C203a196b1bB1bb90016A984AD9578910896');
+        assert.strictEqual(accounts[2], '0xefffE5b341471ff7002f2a38f8eC31cBfE11b9FD');
+    })        
     test ('wallet.signMessage', async function(){
+        wallet.defaultAccount = '0x80E2fE38D90608b4Bc253C940dB372F44f290816';
         let sig = await wallet.signMessage('hello');        
         let verified = await wallet.verifyMessage(wallet.address, 'hello', sig);
         assert.strictEqual(verified, true);
+
+        wallet.defaultAccount = '0x3E38C203a196b1bB1bb90016A984AD9578910896';        
+        verified = await wallet.verifyMessage(wallet.address, 'hello', sig);
+        assert.strictEqual(verified, false);
     })        
-    test('set private key, check address', async function() {
-        const wallet = new Wallet(Config.provider);
-        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'
+    test('set private key, check address', async function() {        
+        let wallet = new Wallet();
+        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'        
         assert.strictEqual(wallet.address, '0x80E2fE38D90608b4Bc253C940dB372F44f290816');
     });
     test('wallet.balance', async function() {
-        const wallet = new Wallet(Config.provider);
-        wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'
+        wallet.defaultAccount = '0x80E2fE38D90608b4Bc253C940dB372F44f290816';        
         let balance = await wallet.balance;
         assert.strictEqual(balance.eq((await wallet.balanceOf('0x80E2fE38D90608b4Bc253C940dB372F44f290816'))), true);
     });
@@ -152,12 +175,12 @@ suite('##Wallet', function() {
     })
     test("token.balance = 0.11", async function(){
         let balance = await token.balance;
-        assert.strictEqual(balance.eq(0.11), true);
+        assert.strictEqual(balance.eq(0.1099), true);
     })
     test("token.balanceOf('0x80E2fE38D90608b4Bc253C940dB372F44f290816')", async function(){ 
         //https://kovan.etherscan.io/token/0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4?a=0x80E2fE38D90608b4Bc253C940dB372F44f290816
         let balance = await token.balanceOf('0x80E2fE38D90608b4Bc253C940dB372F44f290816');
-        assert.strictEqual(balance.eq(0.11), true);
+        assert.strictEqual(balance.eq(0.1099), true);
     })
     let txHash = '';
     test("token.transfer", async function(){ 
@@ -170,8 +193,8 @@ suite('##Wallet', function() {
         let token2 = wallet2.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');
         let balance1 = await token1.balance;
         let balance2 = await token2.balance;
-        let balance = balance1.plus(0.0001);
-        let tx = await token2.transfer(wallet1.address, 0.0001);
+        let balance = balance1.plus(0.00001);
+        let tx = await token2.transfer(wallet1.address, 0.00001);
         txHash = tx.transactionHash;
         assert.strictEqual(balance.eq(await token1.balance), true);
     })
@@ -186,7 +209,7 @@ suite('##Wallet', function() {
 suite('##Wallet AWS KMS', async function() {   
     this.timeout(40000);
     const wallet = new Wallet(Config.provider);    
-    const kmsWallet = new Wallet(Config.provider, Config.account);        
+    const kmsWallet = new Wallet(Config.provider, Config.kmsAccount);        
 
     suiteSetup(async function(){        
         await kmsWallet.initKMS();

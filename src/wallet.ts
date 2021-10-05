@@ -137,6 +137,7 @@ module Wallet{
     export class Wallet{
 		private _web3: W3.default;		
         private _account: IAccount;
+		private _accounts: IAccount[];
 		private _kms: KMS;		
 		private _provider: any;
 		private _abiHashDict: IDictionary = {};
@@ -146,14 +147,31 @@ module Wallet{
 		private _contracts = {};
 		public chainId: number;        
 
-		constructor(provider?: any, account?: IAccount){			
+		constructor(provider?: any, account?: IAccount|IAccount[]){			
 			this._provider = provider;
 			this._web3 = new Web3(provider);
-            this._account = account;
+			if (Array.isArray(account)){
+				this._accounts = account;
+				this._account = account[0];
+			}
+			else
+            	this._account = account;
+
+			if (this._account && this._account.privateKey && !this._account.address)
+				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
-				if (this._account)
+				if (this._accounts){
+					let result = [];
+					for (let i = 0; i < this._accounts.length; i ++){
+						if (!this._accounts[i].address && this._accounts[i].privateKey )
+							this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address
+						result.push(this._accounts[i].address)
+					}
+					return resolve(result);
+				}
+				else if (this._account)
 					return resolve([this._account.address]);
 				resolve(this._web3.eth.getAccounts())
 			});
@@ -193,10 +211,26 @@ module Wallet{
         	};
         };
 		get defaultAccount(): string{
+			if (this._account)
+				return this._account.address
 			return this._web3.eth.defaultAccount;
 		}
 		set defaultAccount(address: string){
-			this._web3.eth.defaultAccount = address;
+			if (this._accounts){
+				for (let i = 0; i < this._accounts.length; i ++){
+					if (!this._accounts[i].address && this._accounts[i].privateKey)
+						this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
+					if (this._accounts[i].address && this._accounts[i].address.toLowerCase() == address.toLowerCase()){
+						this._account = this._accounts[i];
+						return;
+					}
+				}
+			}
+			else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()){
+				return;
+			}
+			else
+				this._web3.eth.defaultAccount = address;
 		}
 		async getChainId(){
 			if (!this.chainId)
@@ -270,8 +304,7 @@ module Wallet{
 			let address = args.shift();
 			let methodName = args.shift();
 			if (methodName == 'deploy')
-				byteCode = args.shift();
-
+				byteCode = args.shift();			
 			let contract;
 			let hash;
 			if (this._contracts[address])
@@ -354,9 +387,9 @@ module Wallet{
         		if (methodName == 'deploy')
         			byteCode = args.shift();
 
-				let contract;
+				let contract;				
 				let hash;
-				if (this._contracts[address])
+				if (address && this._contracts[address])
 					contract = this._contracts[address]
 				else{
 					hash = this._web3.utils.sha3(JSON.stringify(abi));
@@ -366,7 +399,8 @@ module Wallet{
 				};
 				if (!contract){
 					contract = new this._web3.eth.Contract(abi);			
-					this._contracts[address] = contract;
+					if (address)
+						this._contracts[address] = contract;
 					this._contracts[hash] = contract;
 				};
 				if (methodName == 'deploy'){
@@ -447,7 +481,7 @@ module Wallet{
 						return result.contractAddress;
 					return result;
 				}
-				else{
+				else{					
 					contract.options.address = address;
 					result = await method.send(
 						{
