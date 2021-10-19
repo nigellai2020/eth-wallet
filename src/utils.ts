@@ -22,25 +22,18 @@ export function padLeft(string: string, chars: number, sign?: string): string{
 export function padRight(string: string, chars: number, sign?: string): string{
     return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
 }
-export function stringToBytes32(value: string|string[], prefix?: boolean): string|string[]{
+export function stringToBytes32(value: string|string[]): string|string[]{
     if (Array.isArray(value)){
         let result = [];
         for (let i = 0; i < value.length; i ++){
-            result.push(stringToBytes32(value[i]), prefix);
+            result.push(stringToBytes32(value[i]));
         }
         return result;
     }
     else{
         if (value.length == 66 && value.startsWith('0x'))
             return value;
-        
-        let v = value
-        v = v.replace("0x", "");
-        v = v.split('').map((c) => {c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');        
-        v = padRight(v, 64);
-        if (prefix)
-            v = '0x' + v;
-        return v;
+        return Web3.utils.padRight(Web3.utils.asciiToHex(value),64)
     }
 }
 export function addressToBytes32(value: string, prefix?: boolean): string{
