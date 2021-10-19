@@ -22,18 +22,26 @@ export function padLeft(string: string, chars: number, sign?: string): string{
 export function padRight(string: string, chars: number, sign?: string): string{
     return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
 }
-export function stringToBytes32(value: string, prefix?: boolean): string{
-    if (value.length == 66 && value.startsWith('0x'))
-        return value;
-    
-    let v = value
-    v = v.replace("0x", "");
-    v = v.split('').map((c) => {c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');    
-    // v = v.split('').map((c) => {var c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');    
-    v = padRight(v, 64);
-    if (prefix)
-        v = '0x' + v;
-    return v;
+export function stringToBytes32(value: string|string[], prefix?: boolean): string|string[]{
+    if (Array.isArray(value)){
+        let result = [];
+        for (let i = 0; i < value.length; i ++){
+            result.push(stringToBytes32(value[i]), prefix);
+        }
+        return result;
+    }
+    else{
+        if (value.length == 66 && value.startsWith('0x'))
+            return value;
+        
+        let v = value
+        v = v.replace("0x", "");
+        v = v.split('').map((c) => {c = c.charCodeAt(0).toString(16); return (c.length < 2 ? ("0" + c) : c);}).join('');        
+        v = padRight(v, 64);
+        if (prefix)
+            v = '0x' + v;
+        return v;
+    }
 }
 export function addressToBytes32(value: string, prefix?: boolean): string{
     let v = value
