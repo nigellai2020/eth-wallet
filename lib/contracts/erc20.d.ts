@@ -14,6 +14,7 @@ declare module ERC20 {
         get decimals(): Promise<number>;
         mint(address: string, amount: number | BigNumber): Promise<any>;
         _mint(address: string, amount: number | BigNumber): Promise<Transaction>;
+        minter(): Promise<string>;
         get name(): Promise<string>;
         get symbol(): Promise<string>;
         get totalSupply(): Promise<BigNumber>;

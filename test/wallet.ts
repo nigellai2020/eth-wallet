@@ -230,7 +230,7 @@ suite('##Wallet AWS KMS', async function() {
         let tx = await kmsWallet.send(wallet.address, 0.0001);                
         assert.strictEqual(expectedWalletbalance.eq(await wallet.balance), true);
     })    
-    test("KMS send token", async function(){                 
+    test("KMS send token", async function(){
         wallet.privateKey = 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b2'// address: 0x3E38C203a196b1bB1bb90016A984AD9578910896
         assert.strictEqual(wallet.address, '0x3E38C203a196b1bB1bb90016A984AD9578910896');
         let walletToken = wallet.token('0xbe62ba98f5d671445ac19e22b7b99cd6c969fdc4');

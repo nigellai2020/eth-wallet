@@ -73,3 +73,14 @@ export function fromDecimals(value: BigNumber|number|string, decimals?: number):
     decimals = decimals || 18;
     return new BigNumber(value).shiftedBy(-decimals);
 }
+export function toString(value:number|BigNumber|number[]|BigNumber[]){
+    if (Array.isArray(value)){
+        let result = [];
+        for (let i = 0; i < value.length; i ++){
+            result.push(value[i].toString())
+        }
+        return result;
+    }
+    else
+        return value.toString();
+}

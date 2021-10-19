@@ -17,29 +17,6 @@ module ERC20{
         async deploy(name: string, symbol: string, minter?: string, cap?: number): Promise<string>{ 
             return this._deploy(name, symbol, minter || this.wallet.address, this.wallet.utils.toWei(cap?cap.toString():'1000000000'));
         }
-        // private toUnit(value: BigNumber|number|string): Promise<BigNumber>{
-        //     return new Promise(async (resolve, reject)=>{
-        //         try{
-        //             let decimals = await this.decimals;
-        //             let base = new BigNumber(10).pow(decimals);
-        //             resolve(new BigNumber(value).multipliedBy(base));
-        //         }
-        //         catch(err){
-        //             reject(err)
-        //         }
-        //     })
-        // }
-        // private fromUnit(value: BigNumber|number|string): Promise<BigNumber>{
-        //     return new Promise(async (resolve, reject)=>{
-        //         try{
-        //             let decimals = await this.decimals;
-        //             resolve(new BigNumber(value).div(new BigNumber(10).pow(decimals)));      
-        //         }
-        //         catch(err){
-        //             reject(err)
-        //         }
-        //     })
-        // }
         async allowance(owner: string, spender: string): Promise<BigNumber>{
         	return Utils.fromDecimals(await this.methods('allowance', owner, spender), await this.decimals)        	
         }
@@ -100,6 +77,9 @@ module ERC20{
         }
         async _mint(address: string, amount: number|BigNumber): Promise<Transaction>{
             return this._methods('mint', address, await Utils.toDecimals(amount, await this.decimals))
+        }
+        minter(): Promise<string>{
+            return this.methods('minter');
         }
         get name(): Promise<string>{
         	return this.methods('name');

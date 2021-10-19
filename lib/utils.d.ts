@@ -11,3 +11,4 @@ export declare function addressToBytes32Right(value: string, prefix?: boolean): 
 export declare function toNumber(value: string | number | BigNumber): number;
 export declare function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+export declare function toString(value: number | BigNumber | number[] | BigNumber[]): string | any[];

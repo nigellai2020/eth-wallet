@@ -196,7 +196,9 @@ module Wallet{
         		return this._account.address;
         }
 		get account(): IAccount{
-			return this._account;
+			return {
+				address: this.address
+			}
 		}
         set account(value: IAccount){
 			this._kms = null;

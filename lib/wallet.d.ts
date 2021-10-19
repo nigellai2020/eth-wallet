@@ -124,6 +124,7 @@ declare module Wallet {
     class Wallet {
         private _web3;
         private _account;
+        private _accounts;
         private _kms;
         private _provider;
         private _abiHashDict;
@@ -132,7 +133,7 @@ declare module Wallet {
         private _eventHandler;
         private _contracts;
         chainId: number;
-        constructor(provider?: any, account?: IAccount);
+        constructor(provider?: any, account?: IAccount | IAccount[]);
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;
@@ -152,7 +153,7 @@ declare module Wallet {
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
         recoverSigner(msg: string, signature: string): Promise<string>;
-        getBlock(blockHashOrBlockNumber: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>;
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         initKMS(value?: IKMS): Promise<void>;
