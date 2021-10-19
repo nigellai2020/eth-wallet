@@ -85,3 +85,4 @@ export function toString(value:number|BigNumber|number[]|BigNumber[]){
     else
         return value.toString(10);
 }
+export const nullAddress = "0x0000000000000000000000000000000000000000";

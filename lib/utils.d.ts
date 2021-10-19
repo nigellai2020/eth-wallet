@@ -12,3 +12,4 @@ export declare function toNumber(value: string | number | BigNumber): number;
 export declare function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function toString(value: number | BigNumber | number[] | BigNumber[]): string | any[];
+export declare const nullAddress = "0x0000000000000000000000000000000000000000";
