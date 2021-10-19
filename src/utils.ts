@@ -77,10 +77,10 @@ export function toString(value:number|BigNumber|number[]|BigNumber[]){
     if (Array.isArray(value)){
         let result = [];
         for (let i = 0; i < value.length; i ++){
-            result.push(value[i].toString())
+            result.push(value[i].toString(10))
         }
         return result;
     }
     else
-        return value.toString();
+        return value.toString(10);
 }
