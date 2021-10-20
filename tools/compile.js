@@ -138,18 +138,14 @@ function findImports(path) {
     }
     console.log("import contract not found: " + path);
 }
-async function run(version, sourceDir, binOutputDir, libOutputDir) {
-    sourceDir = path.join(RootPath, sourceDir);    
+async function run(version, sourceDir, binOutputDir, libOutputDir) {    
     if (!binOutputDir)
         binOutputDir = path.join(sourceDir, 'bin');
-    else
-        binOutputDir = path.join(RootPath, binOutputDir);
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(SolcjsPath, { recursive: true });    
-    fs.mkdirSync(binOutputDir, { recursive: true });
-    if (libOutputDir)
-        fs.mkdirSync(libOutputDir, { recursive: true });    
+    fs.mkdirSync(path.join(RootPath, SolcjsPath), { recursive: true });    
+    fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });    
+    fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });    
     try {                
         var solcjsPath = getCache(version);        
         if (!solcjsPath) {
@@ -159,7 +155,6 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
             return null;
         }        
         var solc = solcWrapper(require(solcjsPath));
-        // sourceDir = path.resolve(sourceDir); // comment this line for hardhat, enable it for truffle
         var input = buildInput(sourceDir);        
         var output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));        
         function prettyPrint1(s) {
