@@ -9,6 +9,9 @@
         "typescript": "4.2.4"
     },
     "main": "lib/index.js",
+    "bin": {
+        "eth-wallet-build": "tools/compile.js"
+    },
     "types": "lib/index.d.ts",
     "dependencies": {
         "asn1.js": "5.4.1",
