@@ -6,7 +6,7 @@ module.exports = function(name, abiPath, abi){
         else
             result.push(code);
     }
-    function dataType(item){        
+    function dataType(item){
         if (item.type == 'address' || item.type == 'string')
             return 'string'
         else if (item.type == 'address[]' || item.type == 'string[]')
@@ -31,21 +31,32 @@ module.exports = function(name, abiPath, abi){
             return name.replace(/_/g,'')
         else
             return 'param' + (idx + 1)
-    }    
+    }
     function outputDataType(type){
         if (type == 'address' || type == 'string')
             return 'string'
+        else if (type == 'address[]' || type == 'string[]')
+            return 'string[]'
         else if (type == 'bool')
             return 'boolean'
+        else if (type == 'bool[]')
+            return 'boolean[]'
+        else if (type.indexOf('bytes') == 0 && type.indexOf('[]') > 0)
+            return 'string[]'
         else if (type.indexOf('bytes') == 0)
             return 'string'
+        else if (type.indexOf('uint') == 0 && type.indexOf('[]') > 0)
+            return 'BigNumber[]'
         else if (type.indexOf('uint') == 0)
             return 'BigNumber'
         else
             return 'any'
     }
     function outputs(item){
-        if (item.outputs.length > 1){
+        if (item.stateMutability != 'view'){
+            return 'TransactionReceipt'
+        }
+        else if (item.outputs.length > 1){
             if (item.outputs[0].name){
                 let result = '{';
                 for (let i = 0; i < item.outputs.length; i ++){
@@ -67,11 +78,8 @@ module.exports = function(name, abiPath, abi){
                 return result;
             }
         }
-        else if (item.outputs.length == 1){            
+        else if (item.outputs.length == 1){
             return outputDataType(item.outputs[0].type)
-        }
-        else if (item.stateMutability != 'view'){
-            return 'TransactionReceipt'
         }
         else
             return 'any';
@@ -90,8 +98,8 @@ module.exports = function(name, abiPath, abi){
                         result += ',';
                     result += `${paramName(item.inputs[i].name,i)}:${dataType(item.inputs[i])}`
                 }
-            }     
-            return result+'}';   
+            }
+            return result+'}';
         }
     }
     function inputNames(item){
@@ -110,51 +118,66 @@ module.exports = function(name, abiPath, abi){
                 else
                     result += `params.${paramName(item.inputs[i].name,i)}`
             }
-        }     
-        return result;   
+        }
+        return result;
     }
+    function payable(item) {
+        if (item.stateMutability=='payable') {
+            return (item.inputs.length == 0 ? '':',') + '_value:number|BigNumber';
+        } else {
+            return '';
+        }
+    }
+    
+        // if (item.stateMutability=='payable') {
+        //     result += ',value';
+        // }
     function addFunction(item){
         if (item.inputs.length > 0){
-            addLine(1, `async ${item.name}(${inputs(item)}): Promise<${outputs(item)}>{
-        let result = await this.methods('${item.name}',${inputNames(item)});`)
+            addLine(1, `async ${item.name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
+        let result = await this.methods('${item.name}',${inputNames(item)}${item.stateMutability=='payable'?',_value':''});`)
         }
         else{
-            addLine(1, `async ${item.name}(${inputs(item)}): Promise<${outputs(item)}>{
-        let result = await this.methods('${item.name}');`)
+            addLine(1, `async ${item.name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
+        let result = await this.methods('${item.name}'${item.stateMutability=='payable'?',_value':''});`)
         };
-        if (item.outputs.length > 1){
-            if (item.outputs[0].name){
-                addLine(2, 'return {');
-                for (let i = 0; i < item.outputs.length; i ++){
-                    let line;
-                    if (outputDataType(item.outputs[i].type) == 'BigNumber')
-                        line = `${item.outputs[i].name}: new BigNumber(result.${item.outputs[i].name})`                    
-                    else
-                        line = `${item.outputs[i].name}: result.${item.outputs[i].name}`
-                    if (i < item.outputs.length -1)
-                        line += ','
-                    addLine(3, line);
+        if (item.stateMutability == 'view') {
+            if (item.outputs.length > 1){
+                if (item.outputs[0].name){
+                    addLine(2, 'return {');
+                    for (let i = 0; i < item.outputs.length; i ++){
+                        let line;
+                        if (outputDataType(item.outputs[i].type) == 'BigNumber')
+                            line = `${item.outputs[i].name}: new BigNumber(result.${item.outputs[i].name})`
+                        else
+                            line = `${item.outputs[i].name}: result.${item.outputs[i].name}`
+                        if (i < item.outputs.length -1)
+                            line += ','
+                        addLine(3, line);
+                    }
+                    addLine(2, '}');
                 }
-                addLine(2, '}');
-            }
-            else{
-                addLine(2, 'return [');
-                for (let i = 0; i < item.outputs.length; i ++){
-                    let line;
-                    if (outputDataType(item.outputs[i].type) == 'BigNumber')
-                        line = `new BigNumber(result[${i}])`                    
-                    else
-                        line = `result[${i}]`
-                    if (i < item.outputs.length -1)
-                        line += ','
-                    addLine(3, line);
+                else{
+                    addLine(2, 'return [');
+                    for (let i = 0; i < item.outputs.length; i ++){
+                        let line;
+                        if (outputDataType(item.outputs[i].type) == 'BigNumber')
+                            line = `new BigNumber(result[${i}])`
+                        else
+                            line = `result[${i}]`
+                        if (i < item.outputs.length -1)
+                            line += ','
+                        addLine(3, line);
+                    }
+                    addLine(2, ']');
                 }
-                addLine(2, ']');
             }
-        }
-        else if (item.outputs.length == 1){
-            if (outputDataType(item.outputs[0].type) == 'BigNumber')
-                addLine(2, 'return new BigNumber(result);')                
+            else if (item.outputs.length == 1){
+                if (outputDataType(item.outputs[0].type) == 'BigNumber')
+                    addLine(2, 'return new BigNumber(result);')
+                else
+                    addLine(2, 'return result;')
+            }
             else
                 addLine(2, 'return result;')
         }
@@ -162,29 +185,51 @@ module.exports = function(name, abiPath, abi){
             addLine(2, 'return result;')
         addLine(1, '}');
     }
+    function eventInputs(item){
+        if (item.inputs.length > 0){
+                let result = '{';
+                for (let i = 0; i < item.inputs.length; i ++){
+                    if (i > 0)
+                        result +=','
+                    result += item.inputs[i].name + ':' + outputDataType(item.inputs[i].type);
+                }
+                result += '}[]'
+                return result;
+        }
+        else
+            return 'any';
+    }
+    function addEvent(item){
+        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${eventInputs(item)}{`);
+        addLine(2, `return this.parseEvents(receipt, "${item.name}");`);
+        addLine(1, '}');
+    }
     function addConstructor(abi){
         for (let i = 0; i < abi.length; i ++){
             if (abi[i].type == 'constructor'){
                 return addLine(1, `deploy(${inputs(abi[i])}): Promise<string>{        	
         return this._deploy(${inputNames(abi[i])});
-    }`);   
+    }`);
             }
-        }; 
+        };
         addLine(1, `deploy(): Promise<string>{        	
         return this._deploy();
-    }`);       
+    }`);
     }
     function addAbi(item){
         switch (item.type){
             case "function":
                 addFunction(item);
                 break;
+            case "event":
+                addEvent(item);
+                break;
         }
     }
     addLine(0, `import {Wallet, Contract, TransactionReceipt, Utils, BigNumber} from "@ijstech/eth-wallet";`);
     addLine(0, `const Bin = require("${abiPath}/${name}.json");`);
     addLine(0, ``);
-    addLine(0, `export class ${name} extends Contract{`);    
+    addLine(0, `export class ${name} extends Contract{`);
     addLine(1, `constructor(wallet: Wallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
     }`)

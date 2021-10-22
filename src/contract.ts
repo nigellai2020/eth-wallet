@@ -46,6 +46,18 @@ module Contract {
             }
             return result;
         }
+        protected parseEvents(receipt: TransactionReceipt, eventName: string): any[]{
+            let events = this.getAbiEvents();
+            let result = [];
+            for (let name in receipt.events){
+                if (name == eventName) {
+                    let data = receipt.events[name].raw;
+                    let event = events[data.topics[0]];
+                    result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                }
+            }
+            return result;
+        }
         get events(): EventType[]{
             let result = [];
             for (let i = 0; i < this._abi.length; i ++)	{
