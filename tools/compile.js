@@ -143,7 +143,7 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(path.join(RootPath, SolcjsPath), { recursive: true });    
+    fs.mkdirSync(SolcjsPath, { recursive: true });    
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });    
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });    
     try {                
