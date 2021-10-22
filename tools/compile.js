@@ -48,7 +48,7 @@ function recursiveAdd(root, srcPath, sources) {
             if (sources[files[i]]) {
                 console.log(files[i] + " already exists");
             } else {
-                sources[path.join(srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };                
+                sources['contracts/'+path.join(srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };                
             }
         }
     }
@@ -143,7 +143,7 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(SolcjsPath, { recursive: true });    
+    fs.mkdirSync(path.join(RootPath, SolcjsPath), { recursive: true });    
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });    
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });    
     try {                
@@ -166,7 +166,7 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
         }
         if (output.contracts) {            
             for (var i in output.contracts) {
-                let p = path.dirname(i);                
+                let p = path.dirname(i.replace(/^contracts\//,''));                
                 for (var j in output.contracts[i]) {
                     let bytecode = output.contracts[i][j].evm?.bytecode?.object;
                     if (bytecode){    
