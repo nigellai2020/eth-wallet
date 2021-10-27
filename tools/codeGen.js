@@ -9,17 +9,17 @@ module.exports = function(name, abiPath, abi){
     function dataType(item){
         if (item.type == 'address' || item.type == 'string')
             return 'string'
-        else if (item.type == 'address[]' || item.type == 'string[]')
+        else if (/address.*\[\d*\]$/.test(item.type) || /string.*\[\d*\]$/.test(item.type))
             return 'string[]'
         else if (item.type == 'bool')
             return 'boolean'
-        else if (item.type == 'bool[]')
+        else if (/bool.*\[\d*\]$/.test(item.type))
             return 'boolean[]'
-        else if (item.type.indexOf('bytes') == 0 && item.type.indexOf('[]') > 0)
+        else if (/bytes.*\[\d*\]$/.test(item.type))
             return 'string[]'
         else if (item.type.indexOf('bytes') == 0)
             return 'string'
-        else if (item.type.indexOf('uint') == 0 && item.type.indexOf('[]') > 0)
+        else if (/uint.*\[\d*\]$/.test(item.type))
             return 'number[]|BigNumber[]'
         else if (item.type.indexOf('uint') == 0)
             return 'number|BigNumber'
@@ -35,17 +35,17 @@ module.exports = function(name, abiPath, abi){
     function outputDataType(type){
         if (type == 'address' || type == 'string')
             return 'string'
-        else if (type == 'address[]' || type == 'string[]')
+        else if (/address.*\[\d*\]$/.test(type) || /string.*\[\d*\]$/.test(type))
             return 'string[]'
         else if (type == 'bool')
             return 'boolean'
-        else if (type == 'bool[]')
+        else if (/bool.*\[\d*\]$/.test(type))
             return 'boolean[]'
-        else if (type.indexOf('bytes') == 0 && type.indexOf('[]') > 0)
+        else if (/bytes.*\[\d*\]$/.test(type))
             return 'string[]'
         else if (type.indexOf('bytes') == 0)
             return 'string'
-        else if (type.indexOf('uint') == 0 && type.indexOf('[]') > 0)
+        else if (/uint.*\[\d*\]$/.test(type))
             return 'BigNumber[]'
         else if (type.indexOf('uint') == 0)
             return 'BigNumber'
