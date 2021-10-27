@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "devDependencies": {
         "@types/mocha": "9.0.0",
         "@types/node": "14.17",
@@ -25,6 +25,7 @@
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin",
-        "test": "mocha --ui tdd --exit --require ts-node/register test/*.ts"
+        "test": "mocha --ui tdd --exit --require ts-node/register test/*.ts",
+        "postinstall": "mkdir tools/solcjs"
     }
 }
