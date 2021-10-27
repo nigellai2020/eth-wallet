@@ -32,7 +32,7 @@ const request = function(url){
 };
 
 function recursiveAdd(root, srcPath, sources) {
-    var currPath = path.join(root, srcPath);    
+    var currPath = path.join(root, srcPath);p
     // signle file
     if (fs.statSync(currPath).isFile()) {
         sources[currPath] = { content: fs.readFileSync(currPath, "utf8") };
@@ -48,7 +48,7 @@ function recursiveAdd(root, srcPath, sources) {
             if (sources[files[i]]) {
                 console.log(files[i] + " already exists");
             } else {
-                sources['contracts/'+path.join(srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };                
+                sources['contracts/'+path.join(srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };p
             }
         }
     }
@@ -81,7 +81,7 @@ function buildInput(source) {
     recursiveAdd(source, "", input.sources);
     return input;
 }
-function getCache(version) {    
+function getCache(version) {p
     var files = fs.readdirSync(SolcjsPath);
     files = files.filter(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
     return (files && files.length == 1) ? (path.resolve(SolcjsPath, files[0])) : null;
@@ -96,7 +96,7 @@ async function getSolc(version) {
                 var build = list.builds.filter(e => e.path == file);
                 if (build && build.length == 1) {
                     var filename = build[0].path;
-                    var solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);                    
+                    var solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);p
                     solcjs = solcjs.body;
                     var solcjsPath = path.resolve(SolcjsPath, filename);
                     fs.writeFileSync(solcjsPath, solcjs);
@@ -106,9 +106,9 @@ async function getSolc(version) {
         }
     } catch (e) { console.log(e) }
 }
-function findImports(path) {    
+function findImports(path) {p
     if (path.startsWith("@")) {
-        let target = "node_modules/" + path;        
+        let target = "node_modules/" + path;p
         if (fs.existsSync(target)) {
             return {
                 contents:
@@ -138,25 +138,25 @@ function findImports(path) {
     }
     console.log("import contract not found: " + path);
 }
-async function run(version, sourceDir, binOutputDir, libOutputDir) {    
+async function run(version, sourceDir, binOutputDir, libOutputDir) {p
     if (!binOutputDir)
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(SolcjsPath, { recursive: true });    
-    fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });    
-    fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });    
-    try {                
-        var solcjsPath = getCache(version);        
+    fs.mkdirSync(SolcjsPath, { recursive: true });p
+    fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });p
+    fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });p
+    try {p
+        var solcjsPath = getCache(version);p
         if (!solcjsPath) {
             solcjsPath = await getSolc(version);
         }
         if (!solcjsPath) {
             return null;
-        }        
+        }p
         var solc = solcWrapper(require(solcjsPath));
-        var input = buildInput(sourceDir);        
-        var output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));        
+        var input = buildInput(sourceDir);p
+        var output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));p
         function prettyPrint1(s) {
             let i = 0;
             return s.split('').map(e => {
@@ -164,15 +164,17 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
                 return i == 0 ? e == "{" ? "{\n  " : e == "," ? ",\n  " : e == "}" ? "\n}" : e : e;
             }).join('');
         }
-        if (output.contracts) {            
+        if (output.contracts) {p
+            let index = '';
             for (var i in output.contracts) {
-                let p = path.dirname(i.replace(/^contracts\//,''));                
+                let p = path.dirname(i.replace(/^contracts\//,''));p
+                p = p=='.' ? '' : (p + '/');
                 for (var j in output.contracts[i]) {
                     let bytecode = output.contracts[i][j].evm?.bytecode?.object;
-                    if (bytecode){    
-                        if (!fs.existsSync(binOutputDir + '/' + p))  
+                    if (bytecode){p
+                        if (!fs.existsSync(binOutputDir + '/' + p))p
                             fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
-                        fs.writeFileSync(binOutputDir + '/' + p + '/' + j +  '.json', JSON.stringify({
+                        fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
                                 abi: output.contracts[i][j].abi,
                                 bytecode: bytecode
                             }, null, 4)
@@ -183,12 +185,15 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
                             let relPath = path.relative(`/${libOutputDir}/${p}`,`/${binOutputDir}/${p}`);
                             if (relPath && relPath.indexOf('.') < 0)
                                 relPath = './' + relPath;
-                            let code = codeGen(j, relPath, output.contracts[i][j].abi);                             
-                            fs.writeFileSync(libOutputDir + '/' + p + '/' + j +  '.ts', code);
+                            let code = codeGen(j, relPath, output.contracts[i][j].abi);p
+                            fs.writeFileSync(libOutputDir + '/' + p + j +  '.ts', code);
+
+                            index += `export { ${j} } from \'./${p + j}\';\n`;
                         }
                     }
                 }
             }
+            fs.writeFileSync(libOutputDir + '/index.ts', index);
         }
         if (output.errors) {
             output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
