@@ -40,22 +40,28 @@ module Contract {
             let events = this.getAbiEvents();
             let result = [];
             for (let name in receipt.events){
-                let data = receipt.events[name].raw;
-                let event = events[data.topics[0]];
-                result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
+                events.forEach(e=>{
+                    let data = e.raw;
+                    let event = events[data.topics[0]];
+                    result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                });
             }
             return result;
         }
         protected parseEvents(receipt: TransactionReceipt, eventName: string): any[]{
-            let events = this.getAbiEvents();
+            let eventAbis = this.getAbiEvents();
             let result = [];
             let topic0 = this.getAbiTopics([eventName])[0];
             for (let name in receipt.events){
-                let data = receipt.events[name].raw;
-                if (topic0 == data.topics[0]) {
-                    let event = events[data.topics[0]];
-                    result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
-                }
+                let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
+                events.forEach(e=>{
+                    let data = e.raw;
+                    if (topic0 == data.topics[0]) {
+                        let event = eventAbis[data.topics[0]];
+                        result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                    }
+                });
             }
             return result;
         }

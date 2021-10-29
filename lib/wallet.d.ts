@@ -52,7 +52,7 @@ declare module Wallet {
         gasUsed: number;
         logs?: Array<Log>;
         events?: {
-            [eventName: string]: EventLog;
+            [eventName: string]: EventLog | EventLog[];
         };
         status: string;
     }
