@@ -53,15 +53,26 @@ module Contract {
             let eventAbis = this.getAbiEvents();
             let result = [];
             let topic0 = this.getAbiTopics([eventName])[0];
-            for (let name in receipt.events){
-                let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
-                events.forEach(e=>{
-                    let data = e.raw;
-                    if (topic0 == data.topics[0]) {
-                        let event = eventAbis[data.topics[0]];
-                        result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+            if (receipt.events) {
+                for (let name in receipt.events){
+                    let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
+                    events.forEach(e=>{
+                        let raw = e.raw;
+                        if (topic0 == raw.topics[0]) {
+                            let event = eventAbis[topic0];
+                            result.push(Object.assign({_name:eventName},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
+                        }
+                    });
+                }
+            } else if (receipt.logs) {
+                for (let i = 0 ; i < receipt.logs.length ; i++) {
+                    let log = receipt.logs[i];
+                    if (topic0 == log.topics[0]) {
+                        let event = eventAbis[topic0];
+                        result.push(Object.assign({_name:eventName},this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
                     }
-                });
+                }
+
             }
             return result;
         }
