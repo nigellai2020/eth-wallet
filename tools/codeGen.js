@@ -132,15 +132,23 @@ module.exports = function(name, abiPath, abi){
         // if (item.stateMutability=='payable') {
         //     result += ',value';
         // }
+    let functionNames = {};
     function addFunction(item){
+        let name = item.name;
+        let counter = 1;
+        while(functionNames[name]){
+            name = name + "_" + counter;
+            counter++;
+        }
+        functionNames[name] = true;
         if (item.inputs.length > 0){
-            addLine(1, `async ${item.name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
+            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
         let result = await this.methods('${item.name}',${inputNames(item)}${item.stateMutability=='payable'?',_value':''});`)
         }
         else{
-            addLine(1, `async ${item.name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
+            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
         let result = await this.methods('${item.name}'${item.stateMutability=='payable'?',_value':''});`)
-        };
+        }
         if (item.stateMutability == 'view') {
             if (item.outputs.length > 1){
                 if (item.outputs[0].name){
