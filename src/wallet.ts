@@ -449,14 +449,30 @@ module Wallet{
 				if (methodAbi && methodAbi.constant){
 					return method.call({from: this.address});
 				}				
-				let gas = await method.estimateGas({from: this.address, to: address, value: value});
+
+                let gas;
+                try {
+                    gas = await method.estimateGas({ from: this.address, to: address, value: value });
+                    gas = Math.round(gas * 1.5);
+                } catch (e) {
+                    if (e.message == "Returned error: out of gas"){ // amino
+                        console.log(e.message);
+                        gas = 10000000; // FIXME: use block limit instead
+                    } else {
+                        throw e;
+                    }
+                }
+
+                let gasPrice = await _web3.eth.getGasPrice();
 
 				if (this._account && this._account.privateKey){
 					let tx = {
 						gas: gas,
+                        gasPrice: gasPrice,
 						data: method.encodeABI(),
 						from: this.address,
-						to: address
+						to: address,
+                        value: value
 					};
 					let signedTx = await _web3.eth.accounts.signTransaction(tx, this._account.privateKey);
 					result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
