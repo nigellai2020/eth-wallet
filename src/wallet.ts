@@ -145,6 +145,7 @@ module Wallet{
 		private _abiEventDict: IDictionary = {};
 		private _eventHandler = {};
 		private _contracts = {};
+		private _blockGasLimit: number;
 		public chainId: number;        
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){			
@@ -450,14 +451,17 @@ module Wallet{
 					return method.call({from: this.address});
 				}				
 
+                if (!this._blockGasLimit) {
+                    this._blockGasLimit = (await _web3.eth.getBlock('latest')).gasLimit;
+                }
                 let gas;
                 try {
                     gas = await method.estimateGas({ from: this.address, to: address, value: value });
-                    gas = Math.round(gas * 1.5);
+                    gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
                 } catch (e) {
                     if (e.message == "Returned error: out of gas"){ // amino
                         console.log(e.message);
-                        gas = 10000000; // FIXME: use block limit instead
+                        gas = Math.round(this._blockGasLimit * 0.5);
                     } else {
                         throw e;
                     }

@@ -132,6 +132,7 @@ declare module Wallet {
         private _abiEventDict;
         private _eventHandler;
         private _contracts;
+        private _blockGasLimit;
         chainId: number;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         get accounts(): Promise<string[]>;
