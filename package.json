@@ -10,7 +10,8 @@
     },
     "main": "lib/index.js",
     "bin": {
-        "eth-wallet-build": "tools/compile.js"
+        "eth-wallet-build": "tools/compile.js",
+        "eth-wallet-build-2": "tools/compileV2.js"
     },
     "types": "lib/index.d.ts",
     "dependencies": {

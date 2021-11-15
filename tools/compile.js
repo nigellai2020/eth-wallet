@@ -48,7 +48,7 @@ function recursiveAdd(root, srcPath, sources) {
             if (sources[files[i]]) {
                 console.log(files[i] + " already exists");
             } else {
-                sources['contracts/'+path.join(srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
+                sources[path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
             }
         }
     }
@@ -107,13 +107,18 @@ async function getSolc(version) {
     } catch (e) { console.log(e) }
 }
 function findImports(path) {
-    if (path.startsWith("@")) {
-        let target = "node_modules/" + path;
-        if (fs.existsSync(target)) {
-            return {
-                contents:
-                    fs.readFileSync(target, "utf8")
-            }
+    if (fs.existsSync(path)) {
+        return {
+            contents:
+               fs.readFileSync(path, "utf8")
+        }
+    }
+
+    let target = "node_modules/" + path;
+    if (fs.existsSync(target)) {
+        return {
+            contents:
+                fs.readFileSync(target, "utf8")
         }
     }
 
@@ -139,6 +144,8 @@ function findImports(path) {
     console.log("import contract not found: " + path);
 }
 async function run(version, sourceDir, binOutputDir, libOutputDir) {
+    if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
+        sourceDir = sourceDir + '/';
     if (!binOutputDir)
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
@@ -167,14 +174,14 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
         if (output.contracts) {
             let index = '';
             for (var i in output.contracts) {
-                let p = path.dirname(i.replace(/^contracts\//,''));
+                let p = path.dirname(i.replace(new RegExp(`^${sourceDir}`),''));
                 p = p=='.' ? '' : (p + '/');
                 for (var j in output.contracts[i]) {
                     let bytecode = output.contracts[i][j].evm?.bytecode?.object;
                     if (bytecode){
                         if (!fs.existsSync(binOutputDir + '/' + p))
                             fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
-                        fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
+                            fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
                                 abi: output.contracts[i][j].abi,
                                 bytecode: bytecode
                             }, null, 4)
@@ -203,7 +210,7 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
 
 
 if (process.argv.length < 4) {
-    return console.log("Usage: node compile.js <version> <src_dir> <out_dir> [<lib_map>]\ne.g.: node tools\\compile.js 0.6.11 contracts build")
+    return console.log("Usage: node compile.js <version> <src_dir> <out_dir> <lib_dir> [<lib_map>]\ne.g.: node tools/compile.js 0.6.11 contracts bin/contracts src/contracts")
 }
 // node compile <version> <src_dir> <out_dir> <lib_dir>
 run(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
