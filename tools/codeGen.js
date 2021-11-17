@@ -23,6 +23,15 @@ module.exports = function(name, abiPath, abi){
             return 'number[]|BigNumber[]'
         else if (item.type.indexOf('uint') == 0)
             return 'number|BigNumber'
+        else if (item.type == 'tuple') {
+            let result = '{';
+            for (let i = 0; i < item.components.length; i ++){
+                if (i > 0)
+                    result += ',';
+                result += `${paramName(item.components[i].name,i)}:${dataType(item.components[i])}`
+            }
+            return result+'}';
+        }
         else
             return 'any'
     }

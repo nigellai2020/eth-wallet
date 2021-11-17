@@ -74,15 +74,20 @@ export function fromDecimals(value: BigNumber|number|string, decimals?: number):
     decimals = decimals || 18;
     return new BigNumber(value).shiftedBy(-decimals);
 }
-export function toString(value:number|BigNumber|number[]|BigNumber[]){
+export function toString(value:any){
     if (Array.isArray(value)){
         let result = [];
         for (let i = 0; i < value.length; i ++){
-            result.push(value[i].toString(10))
+            if (typeof value[i] === "number" || BigNumber.isBigNumber(value[i]))
+                result.push(value[i].toString(10))
+            else
+                result.push(value[i]);
         }
         return result;
     }
-    else
+    else if (typeof value === "number" || BigNumber.isBigNumber(value))
         return value.toString(10);
+    else
+        return value;
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
