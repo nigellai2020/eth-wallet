@@ -447,7 +447,7 @@ module Wallet{
 				};
 
 				contract.options.address = address;				
-				if (methodAbi && methodAbi.constant || (methodAbi.stateMutability == 'view')) {
+				if (methodAbi && (methodAbi.constant || methodAbi.stateMutability == 'view')) {
 					return method.call({from: this.address});
 				}				
 
