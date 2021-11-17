@@ -9,19 +9,19 @@ module.exports = function(name, abiPath, abi){
     function dataType(item){
         if (item.type == 'address' || item.type == 'string')
             return 'string'
-        else if (/address.*\[\d*\]$/.test(item.type) || /string.*\[\d*\]$/.test(item.type))
+        else if (/^address.*\[\d*\]$/.test(item.type) || /string.*\[\d*\]$/.test(item.type))
             return 'string[]'
         else if (item.type == 'bool')
             return 'boolean'
-        else if (/bool.*\[\d*\]$/.test(item.type))
+        else if (/^bool\[\d*\]$/.test(item.type))
             return 'boolean[]'
-        else if (/bytes.*\[\d*\]$/.test(item.type))
+        else if (/^bytes\d*\[\d*\]$/.test(item.type))
             return 'string[]'
         else if (item.type.indexOf('bytes') == 0)
             return 'string'
-        else if (/uint.*\[\d*\]$/.test(item.type))
+        else if (/^u?int\d*\[\d*\]$/.test(item.type))
             return 'number[]|BigNumber[]'
-        else if (item.type.indexOf('uint') == 0)
+        else if (/^u?int\d*$/.test(item.type))
             return 'number|BigNumber'
         else if (item.type == 'tuple') {
             let result = '{';
@@ -44,19 +44,19 @@ module.exports = function(name, abiPath, abi){
     function outputDataType(type){
         if (type == 'address' || type == 'string')
             return 'string'
-        else if (/address.*\[\d*\]$/.test(type) || /string.*\[\d*\]$/.test(type))
+        else if (/^address.*\[\d*\]$/.test(type) || /^string.*\[\d*\]$/.test(type))
             return 'string[]'
         else if (type == 'bool')
             return 'boolean'
-        else if (/bool.*\[\d*\]$/.test(type))
+        else if (/^bool\[\d*\]$/.test(type))
             return 'boolean[]'
-        else if (/bytes.*\[\d*\]$/.test(type))
+        else if (/^bytes\d*\[\d*\]$/.test(type))
             return 'string[]'
         else if (type.indexOf('bytes') == 0)
             return 'string'
-        else if (/uint.*\[\d*\]$/.test(type))
+        else if (/^u?int\d*\[\d*\]$/.test(type))
             return 'BigNumber[]'
-        else if (type.indexOf('uint') == 0)
+        else if (/^u?int\d*$/.test(type))
             return 'BigNumber'
         else
             return 'any'
@@ -114,15 +114,25 @@ module.exports = function(name, abiPath, abi){
     function inputNames(item){
         let result = '';
         if (item.inputs.length == 1){
-            return `${paramName(item.inputs[0].name,0)}`
+            let i = 0;
+            if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
+                result += `Utils.toString(${paramName(item.inputs[i].name,i)})`
+            else if (item.inputs[i].type == 'tuple')
+                result += `Utils.toString(Object.values(${paramName(item.inputs[i].name,i)}))`
+            else if (/^bytes32(\[\d*\])$/.test(item.inputs[i].type))
+                result += `Utils.stringToBytes32(${paramName(item.inputs[i].name,i)})`
+            else
+                result += `${paramName(item.inputs[i].name,i)}`
         }
         else{
             for (let i = 0; i < item.inputs.length; i ++){
                 if (i > 0)
                     result += ',';
-                if (item.inputs[i].type.indexOf('uint') == 0)
+                if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
                     result += `Utils.toString(params.${paramName(item.inputs[i].name,i)})`
-                else if (item.inputs[i].type.indexOf('bytes32') == 0)
+                else if (item.inputs[i].type == 'tuple')
+                    result += `Utils.toString(Object.values(params.${paramName(item.inputs[i].name,i)}))`
+                else if (/^bytes32(\[\d*\])$/.test(item.inputs[i].type))
                     result += `Utils.stringToBytes32(params.${paramName(item.inputs[i].name,i)})`
                 else
                     result += `params.${paramName(item.inputs[i].name,i)}`
