@@ -180,7 +180,7 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, include) {
             if (include && !include.includes(i))
                 continue;
 
-            let p = path.dirname(i.replace(new RegExp(`^${sourceDir}`),''));
+            let p = path.dirname(i.replace(/^contracts\//,''));
             p = p=='.' ? '' : (p + '/');
 
             for (let j in output.contracts[i]) {

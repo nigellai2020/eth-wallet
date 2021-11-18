@@ -175,7 +175,7 @@ async function main(version, sourceDir, binOutputDir, libOutputDir) {
         if (output.contracts) {
             let index = '';
             for (let i in output.contracts) {
-                let p = path.dirname(i.replace(new RegExp(`^${sourceDir}`),''));
+                let p = path.dirname(i.replace(/^contracts\//,''));
                 p = p=='.' ? '' : (p + '/');
                 for (let j in output.contracts[i]) {
                     let bytecode = output.contracts[i][j].evm?.bytecode?.object;
