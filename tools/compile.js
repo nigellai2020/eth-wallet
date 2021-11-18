@@ -32,27 +32,28 @@ const request = function(url){
 };
 
 function recursiveAdd(root, srcPath, sources) {
-    var currPath = path.join(root, srcPath);
+    let currPath = path.join(root, srcPath);
     // signle file
     if (fs.statSync(currPath).isFile()) {
-        sources[currPath] = { content: fs.readFileSync(currPath, "utf8") };
+        sources[currPath.replace(root,'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
         return sources;
     }
     else if (fs.existsSync(path.join(currPath, '.ignoreAll')))
         return;
 
-    var files = fs.readdirSync(currPath);
-    var stats = files.map(e => fs.statSync(path.resolve(currPath, e)))
-    for (var i = 0; i < files.length; i++) {
+    let files = fs.readdirSync(currPath);
+    let stats = files.map(e => fs.statSync(path.resolve(currPath, e)))
+    for (let i = 0; i < files.length; i++) {
         if (files[i].endsWith(".sol") && stats[i].isFile()) {
             if (sources[files[i]]) {
                 console.log(files[i] + " already exists");
             } else {
-                sources[path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1")] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
+                let _path = path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1");
+                sources[_path.replace(root,'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
             }
         }
     }
-    for (var i = 0; i < files.length; i++) {
+    for (let i = 0; i < files.length; i++) {
         if (stats[i].isDirectory()) {
             recursiveAdd(root, path.join(srcPath, files[i]), sources);
         }
@@ -60,7 +61,7 @@ function recursiveAdd(root, srcPath, sources) {
     return sources;
 }
 function buildInput(source) {
-    var input = {
+    let input = {
         language: "Solidity",
         sources: {},
         settings:
@@ -82,7 +83,7 @@ function buildInput(source) {
     return input;
 }
 function getCache(version) {
-    var files = fs.readdirSync(SolcjsPath);
+    let files = fs.readdirSync(SolcjsPath);
     files = files.filter(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
     return (files && files.length == 1) ? (path.resolve(SolcjsPath, files[0])) : null;
 }
@@ -91,14 +92,14 @@ async function getSolc(version) {
         let data = await request("https://solc-bin.ethereum.org/bin/list.json");
         let list = JSON.parse(data.body)
         if (list) {
-            var file = list.releases[version];
+            let file = list.releases[version];
             if (file) {
-                var build = list.builds.filter(e => e.path == file);
+                let build = list.builds.filter(e => e.path == file);
                 if (build && build.length == 1) {
-                    var filename = build[0].path;
-                    var solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
+                    let filename = build[0].path;
+                    let solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
                     solcjs = solcjs.body;
-                    var solcjsPath = path.resolve(SolcjsPath, filename);
+                    let solcjsPath = path.resolve(SolcjsPath, filename);
                     fs.writeFileSync(solcjsPath, solcjs);
                     return solcjsPath;
                 }
@@ -122,7 +123,7 @@ function findImports(path) {
         }
     }
 
-    for (var i in libMap) {
+    for (let i in libMap) {
         if (path.startsWith(i)) {
             let _sourceDir = sourceDir;
             if (_sourceDir.endsWith(".sol")) {
@@ -143,7 +144,7 @@ function findImports(path) {
     }
     console.log("import contract not found: " + path);
 }
-async function run(version, sourceDir, binOutputDir, libOutputDir) {
+async function main(version, sourceDir, binOutputDir, libOutputDir) {
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
     if (!binOutputDir)
@@ -154,16 +155,16 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });
     try {
-        var solcjsPath = getCache(version);
+        let solcjsPath = getCache(version);
         if (!solcjsPath) {
             solcjsPath = await getSolc(version);
         }
         if (!solcjsPath) {
             return null;
         }
-        var solc = solcWrapper(require(solcjsPath));
-        var input = buildInput(sourceDir);
-        var output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
+        let solc = solcWrapper(require(solcjsPath));
+        let input = buildInput(sourceDir);
+        let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
         function prettyPrint1(s) {
             let i = 0;
             return s.split('').map(e => {
@@ -173,10 +174,10 @@ async function run(version, sourceDir, binOutputDir, libOutputDir) {
         }
         if (output.contracts) {
             let index = '';
-            for (var i in output.contracts) {
+            for (let i in output.contracts) {
                 let p = path.dirname(i.replace(new RegExp(`^${sourceDir}`),''));
                 p = p=='.' ? '' : (p + '/');
-                for (var j in output.contracts[i]) {
+                for (let j in output.contracts[i]) {
                     let bytecode = output.contracts[i][j].evm?.bytecode?.object;
                     if (bytecode){
                         if (!fs.existsSync(binOutputDir + '/' + p))
@@ -213,4 +214,4 @@ if (process.argv.length < 4) {
     return console.log("Usage: node compile.js <version> <src_dir> <out_dir> <lib_dir> [<lib_map>]\ne.g.: node tools/compile.js 0.6.11 contracts bin/contracts src/contracts")
 }
 // node compile <version> <src_dir> <out_dir> <lib_dir>
-run(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
+main(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);

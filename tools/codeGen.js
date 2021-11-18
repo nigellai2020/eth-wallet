@@ -119,7 +119,7 @@ module.exports = function(name, abiPath, abi){
                 result += `Utils.toString(${paramName(item.inputs[i].name,i)})`
             else if (item.inputs[i].type == 'tuple')
                 result += `Utils.toString(Object.values(${paramName(item.inputs[i].name,i)}))`
-            else if (/^bytes32(\[\d*\])$/.test(item.inputs[i].type))
+            else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                 result += `Utils.stringToBytes32(${paramName(item.inputs[i].name,i)})`
             else
                 result += `${paramName(item.inputs[i].name,i)}`
@@ -132,7 +132,7 @@ module.exports = function(name, abiPath, abi){
                     result += `Utils.toString(params.${paramName(item.inputs[i].name,i)})`
                 else if (item.inputs[i].type == 'tuple')
                     result += `Utils.toString(Object.values(params.${paramName(item.inputs[i].name,i)}))`
-                else if (/^bytes32(\[\d*\])$/.test(item.inputs[i].type))
+                else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                     result += `Utils.stringToBytes32(params.${paramName(item.inputs[i].name,i)})`
                 else
                     result += `params.${paramName(item.inputs[i].name,i)}`

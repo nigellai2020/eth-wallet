@@ -15,6 +15,7 @@ https://ethereum.github.io/solc-bin/bin/list.json
 */
 
 let _libMap;
+let _sourceDir;
 
 const request = function(url){
     return new Promise(function(resolve, reject){
@@ -74,7 +75,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
     let currPath = path.join(root, srcPath);
     // signle file
     if (fs.statSync(currPath).isFile()) {
-        sources[currPath] = { content: fs.readFileSync(currPath, "utf8") };
+        sources[currPath.replace(root,'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
         return sources;
     }
     else if (fs.existsSync(path.join(currPath, '.ignoreAll')))
@@ -89,7 +90,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
             } else {
                 let _path = path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1");
                 if ((!exclude || !exclude.includes(_path)))
-                    sources[_path] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
+                    sources[_path.replace(root,'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
             }
         }
     }
@@ -100,7 +101,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
     }
     return sources;
 }
-function buildInput(source, optimizerRuns, exclude) {
+function buildInput(root, source, optimizerRuns, exclude) {
     let input = {
         language: "Solidity",
         sources: {},
@@ -119,10 +120,10 @@ function buildInput(source, optimizerRuns, exclude) {
             }
         },
     };
-    if (Array.isArray(source)){
-        source.forEach(e=>recursiveAdd(e, "", input.sources, exclude));
+    if (source && Array.isArray(source)){
+        source.forEach(e=>recursiveAdd(root, e, input.sources, exclude));
     } else {
-        recursiveAdd(source, "", input.sources, exclude);
+        recursiveAdd(root, "", input.sources, exclude);
     }
     return input;
 }
@@ -143,16 +144,16 @@ function findImports(path) {
         }
     }
 
-    for (let i in _libMap) {
-        if (path.startsWith(i)) {
-            let _sourceDir = sourceDir;
-            if (_sourceDir.endsWith(".sol")) {
-                _sourceDir = _sourceDir.replace(/[a-zA-Z0-9_-]+\.sol$/, "");
+    for (let prefix in _libMap) {
+        if (path.startsWith(prefix)) {
+            let sourceDir = _sourceDir;
+            if (sourceDir.endsWith(".sol")) {
+                sourceDir = sourceDir.replace(/[a-zA-Z0-9_-]+\.sol$/, "");
             }
-            let targetList = _libMap[i];
+            let targetList = _libMap[prefix];
             if (!Array.isArray(targetList)) targetList = [targetList];
             for (let j = 0; j < targetList.length; j++) {
-                let target = path.replace(i, _sourceDir + targetList[j]);
+                let target = path.replace(prefix, sourceDir + targetList[j]);
                 if (fs.existsSync(target)) {
                     return {
                         contents:
@@ -210,7 +211,7 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, include) {
     return index;
 }
 
-async function run(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir, customSettings, libMap) {
+async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir, customSettings, libMap) {
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
     if (!binOutputDir)
@@ -220,13 +221,13 @@ async function run(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir
     fs.mkdirSync(SolcjsPath, { recursive: true });
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });
-    customSettings = customSettings || "{}";
-    customSettings = JSON.parse(customSettings);
-    _libMap = libMap || {}
+    customSettings = JSON.parse(customSettings || "[]");
+    _libMap = JSON.parse(libMap || "{}");
     try {
         let solc = await getSolc(version);
-        let customSources = customSettings && customSettings.map(e=>e.sources).reduce((a,b)=>a.concat(b),[]);
-        let input = buildInput(sourceDir, optimizerRuns, customSources);
+        let customSources = customSettings && customSettings.map(e=>e.sources.map(f=>e.root+f)).reduce((a,b)=>a.concat(b),[]);
+        _sourceDir = sourceDir;
+        let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
         let index = processOutput(sourceDir, output, binOutputDir, libOutputDir);
         if (output.errors) {
@@ -238,7 +239,8 @@ async function run(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir
                 if (customSettings[s].version && customSettings[s]!=version) {
                     solc = await getSolc(customSettings[s].version);
                 }
-                input = buildInput(customSettings[s].sources, customSettings[s].optimizerRuns)
+                _sourceDir = customSettings[s].root;
+                input = buildInput(customSettings[s].root, customSettings[s].sources, customSettings[s].optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
                 index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, customSources);
                 if (output.errors) {
@@ -254,4 +256,4 @@ async function run(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir
 if (process.argv.length < 6) {
     return console.log("Usage: node compile.js <version> <optimizer_runs> <src_dir> <out_dir> [<custom_settings> [<lib_map>]]\ne.g.: node tools/compile.js 0.6.11 999999 contracts  bin/contracts src/contracts \"[{\\\"sources\\\":[\\\"contracts/HugeContract.sol\\\"], \\\"optimizerRuns\\\":10000}]\"")
 }
-run(process.argv[2], parseInt(process.argv[3]), process.argv[4], process.argv[5], process.argv[6], process.argv[7], process.argv[8]);
+main(process.argv[2], parseInt(process.argv[3]), process.argv[4], process.argv[5], process.argv[6], process.argv[7], process.argv[8]);
