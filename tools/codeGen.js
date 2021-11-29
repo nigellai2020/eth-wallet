@@ -61,37 +61,32 @@ module.exports = function(name, abiPath, abi){
         else
             return 'any'
     }
+
+
+    function viewFunctionOutputType(items){
+        if (items.length > 1){
+            let result = '{';
+            for (let i = 0; i < items.length; i ++){
+                if (i > 0)
+                    result +=','
+                result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i].type);
+            }
+            result += '}'
+            return result;
+        }
+        else if (items.length == 1){
+            return outputDataType(items[0].type)
+        }
+        else
+            return 'any';
+    }
     function outputs(item){
         if (item.stateMutability != 'view'){
             return 'TransactionReceipt'
         }
-        else if (item.outputs.length > 1){
-            if (item.outputs[0].name){
-                let result = '{';
-                for (let i = 0; i < item.outputs.length; i ++){
-                    if (i > 0)
-                        result +=','
-                    result += item.outputs[i].name + ':' + outputDataType(item.outputs[i].type);
-                }
-                result += '}'
-                return result;
-            }
-            else{
-                let result = '[';
-                for (let i = 0; i < item.outputs.length; i ++){
-                    if (i > 0)
-                        result +=','
-                    result += outputDataType(item.outputs[i].type);
-                }
-                result += ']'
-                return result;
-            }
+        else {
+            return viewFunctionOutputType(item.outputs);
         }
-        else if (item.outputs.length == 1){
-            return outputDataType(item.outputs[0].type)
-        }
-        else
-            return 'any';
     }
     function inputs(item){
         if (item.inputs.length == 0)
@@ -148,6 +143,32 @@ module.exports = function(name, abiPath, abi){
         }
     }
     
+    function returnOutputs(items, isEvent) {
+        let lines = []
+        if (items.length > 1){
+            lines.push({indent:0, text:'{'});
+            for (let i = 0; i < items.length; i ++){
+                let line;
+                if (outputDataType(items[i].type) == 'BigNumber')
+                    line = (items[i].name || (`param${i + 1}`)) + ": new BigNumber(result" + (items[i].name ? `.${items[i].name}` : `[${i}]`) + ")";
+                else
+                    line = (items[i].name || (`param${i + 1}`)) + ": result" + (items[i].name ? `.${items[i].name}` : `[${i}]`);
+                if (i < items.length -1)
+                    line += ','
+                lines.push({indent:1, text:line});
+            }
+            lines.push({indent:0, text:'};'});
+        }
+        else if (items.length == 1){
+            if (outputDataType(items[0].type) == 'BigNumber')
+                lines.push({indent:0, text: isEvent ? 'new BigNumber(result[0]);': 'new BigNumber(result);'});
+            else
+                lines.push({indent:0, text: isEvent ? 'result[0];' : 'result;'});
+        }
+        else
+            lines.push({indent:0, text:';'});
+        return lines;
+    }
         // if (item.stateMutability=='payable') {
         //     result += ',value';
         // }
@@ -169,66 +190,18 @@ module.exports = function(name, abiPath, abi){
         let result = await this.methods('${item.name}'${item.stateMutability=='payable'?',_value':''});`)
         }
         if (item.stateMutability == 'view') {
-            if (item.outputs.length > 1){
-                if (item.outputs[0].name){
-                    addLine(2, 'return {');
-                    for (let i = 0; i < item.outputs.length; i ++){
-                        let line;
-                        if (outputDataType(item.outputs[i].type) == 'BigNumber')
-                            line = `${item.outputs[i].name}: new BigNumber(result.${item.outputs[i].name})`
-                        else
-                            line = `${item.outputs[i].name}: result.${item.outputs[i].name}`
-                        if (i < item.outputs.length -1)
-                            line += ','
-                        addLine(3, line);
-                    }
-                    addLine(2, '}');
-                }
-                else{
-                    addLine(2, 'return [');
-                    for (let i = 0; i < item.outputs.length; i ++){
-                        let line;
-                        if (outputDataType(item.outputs[i].type) == 'BigNumber')
-                            line = `new BigNumber(result[${i}])`
-                        else
-                            line = `result[${i}]`
-                        if (i < item.outputs.length -1)
-                            line += ','
-                        addLine(3, line);
-                    }
-                    addLine(2, ']');
-                }
-            }
-            else if (item.outputs.length == 1){
-                if (outputDataType(item.outputs[0].type) == 'BigNumber')
-                    addLine(2, 'return new BigNumber(result);')
-                else
-                    addLine(2, 'return result;')
-            }
-            else
-                addLine(2, 'return result;')
+            returnOutputs(item.outputs).forEach((e,i)=>addLine(e.indent+2, (i==0?"return ":"") + e.text));
         }
         else
             addLine(2, 'return result;')
         addLine(1, '}');
     }
-    function eventInputs(item){
-        if (item.inputs.length > 0){
-                let result = '{';
-                for (let i = 0; i < item.inputs.length; i ++){
-                    if (i > 0)
-                        result +=','
-                    result += item.inputs[i].name + ':' + outputDataType(item.inputs[i].type);
-                }
-                result += '}[]'
-                return result;
-        }
-        else
-            return 'any';
-    }
     function addEvent(item){
-        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${eventInputs(item)}{`);
-        addLine(2, `return this.parseEvents(receipt, "${item.name}");`);
+        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs)}[]{`);
+        addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
+        addLine(2, `return events.map(result => {`);
+        returnOutputs(item.inputs, true).forEach((e,i)=>addLine(e.indent+3, (i==0?"return ":"") + e.text))
+        addLine(2, '});');
         addLine(1, '}');
     }
     function addConstructor(abi){
