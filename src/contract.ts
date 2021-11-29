@@ -44,7 +44,7 @@ module Contract {
                 events.forEach(e=>{
                     let data = e.raw;
                     let event = events[data.topics[0]];
-                    result.push(Object.assign({_name:name},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                    result.push(Object.assign({_name:name, _address:this.address},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
                 });
             }
             return result;
@@ -58,16 +58,16 @@ module Contract {
                     let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
                     events.forEach(e=>{
                         let raw = e.raw;
-                        if (topic0 == raw.topics[0]) {
+                        if (topic0 == raw.topics[0] && (this.address && this.address==e.address)) {
                             let event = eventAbis[topic0];
-                            result.push(Object.assign({_name:eventName},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
+                            result.push(Object.assign({_name:eventName, _address:this.address},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
                         }
                     });
                 }
             } else if (receipt.logs) {
                 for (let i = 0 ; i < receipt.logs.length ; i++) {
                     let log = receipt.logs[i];
-                    if (topic0 == log.topics[0]) {
+                    if (topic0 == log.topics[0] && (this.address && this.address==log.address)) {
                         let event = eventAbis[topic0];
                         result.push(Object.assign({_name:eventName},this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
                     }
