@@ -140,30 +140,45 @@ module.exports = function(name, abiPath, abi){
         }
     }
     
-    function returnOutputs(items, isEvent) {
+    function returnOutputs(items, isEvent, parent, indent) {
+        parent = parent || "";
+        indent = indent || 0;
         let lines = []
         if (items.length > 1){
-            lines.push({indent:0, text:'{'});
+            lines.push({indent:indent, text:'{'});
             for (let i = 0; i < items.length; i ++){
-                let line;
-                if (outputDataType(items[i]) == 'BigNumber')
-                    line = (items[i].name || (`param${i + 1}`)) + ": new BigNumber(result" + (items[i].name ? `.${items[i].name}` : `[${i}]`) + ")";
-                else
-                    line = (items[i].name || (`param${i + 1}`)) + ": result" + (items[i].name ? `.${items[i].name}` : `[${i}]`);
-                if (i < items.length -1)
-                    line += ','
-                lines.push({indent:1, text:line});
+                if (items[i].type == 'tuple') {
+                    lines.push({indent:indent+1, text:items[i].name +':'});
+                    lines = lines.concat(returnOutputs(items[i].components, isEvent, items[i].name, indent+1));
+                    if (i < items.length -1)
+                        lines[lines.length-1].text+=','
+                }else {
+                    let line;
+                    let objPath = "result" + (parent ? `.${parent}` : ``) + (items[i].name ? `.${items[i].name}` : `[${i}]`);
+                    if (outputDataType(items[i]) == 'BigNumber')
+                        line = (items[i].name || `param${i + 1}`) + ": " + `new BigNumber(${objPath})`;
+                    else
+                        line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}`;
+                    if (i < items.length -1)
+                        line += ','
+                    lines.push({indent:indent+1, text:line});
+                }
             }
-            lines.push({indent:0, text:'};'});
+            lines.push({indent:indent, text:'}'});
         }
         else if (items.length == 1){
-            if (outputDataType(items[0]) == 'BigNumber')
-                lines.push({indent:0, text: isEvent ? 'new BigNumber(result[0]);': 'new BigNumber(result);'});
-            else
-                lines.push({indent:0, text: isEvent ? 'result[0];' : 'result;'});
+            if (items[0].type == 'tuple')
+                lines.push(returnOutputs(items[0].components, isEvent));
+            else {
+                let objPath = "result" + (parent ? `.${parent}` : ``) + (isEvent ? "[0]" : "");
+                if (outputDataType(items[0]) == 'BigNumber')
+                    lines.push({indent:indent, text: `new BigNumber(${objPath});`});
+                else
+                    lines.push({indent:indent, text: `${objPath}`});
+            }
         }
         else
-            lines.push({indent:0, text:';'});
+            lines.push({indent:indent, text:';'});
         return lines;
     }
         // if (item.stateMutability=='payable') {
@@ -197,7 +212,7 @@ module.exports = function(name, abiPath, abi){
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs)}[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
-        returnOutputs(item.inputs, true).forEach((e,i)=>addLine(e.indent+3, (i==0?"return ":"") + e.text))
+        returnOutputs(item.inputs, true).forEach((e,i)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==item.length-1?";":"")));
         addLine(2, '});');
         addLine(1, '}');
     }
