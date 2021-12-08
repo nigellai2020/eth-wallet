@@ -6,7 +6,7 @@ module.exports = function(name, abiPath, abi){
         else
             result.push(code);
     }
-    function dataType(item){
+    function inputDataType(item){
         if (item.type == 'address' || item.type == 'string')
             return 'string'
         else if (/^address.*\[\d*\]$/.test(item.type) || /string.*\[\d*\]$/.test(item.type))
@@ -24,13 +24,7 @@ module.exports = function(name, abiPath, abi){
         else if (/^u?int\d*$/.test(item.type))
             return 'number|BigNumber'
         else if (item.type == 'tuple') {
-            let result = '{';
-            for (let i = 0; i < item.components.length; i ++){
-                if (i > 0)
-                    result += ',';
-                result += `${paramName(item.components[i].name,i)}:${dataType(item.components[i])}`
-            }
-            return result+'}';
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}';
         }
         else
             return 'any'
@@ -41,7 +35,8 @@ module.exports = function(name, abiPath, abi){
         else
             return 'param' + (idx + 1)
     }
-    function outputDataType(type){
+    function outputDataType(item){
+        let type = item.type;
         if (type == 'address' || type == 'string')
             return 'string'
         else if (/^address.*\[\d*\]$/.test(type) || /^string.*\[\d*\]$/.test(type))
@@ -58,6 +53,8 @@ module.exports = function(name, abiPath, abi){
             return 'BigNumber[]'
         else if (/^u?int\d*$/.test(type))
             return 'BigNumber'
+        else if (type == 'tuple')
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}';
         else
             return 'any'
     }
@@ -69,13 +66,13 @@ module.exports = function(name, abiPath, abi){
             for (let i = 0; i < items.length; i ++){
                 if (i > 0)
                     result +=','
-                result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i].type);
+                result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i]);
             }
             result += '}'
             return result;
         }
         else if (items.length == 1){
-            return outputDataType(items[0].type)
+            return outputDataType(items[0])
         }
         else
             return 'any';
@@ -92,7 +89,7 @@ module.exports = function(name, abiPath, abi){
         if (item.inputs.length == 0)
             return ''
         else if (item.inputs.length == 1){
-            return `${paramName(item.inputs[0].name,0)}:${dataType(item.inputs[0])}`
+            return `${paramName(item.inputs[0].name,0)}:${inputDataType(item.inputs[0])}`
         }
         else{
             let result = 'params:{';
@@ -100,7 +97,7 @@ module.exports = function(name, abiPath, abi){
                 for (let i = 0; i < item.inputs.length; i ++){
                     if (i > 0)
                         result += ',';
-                    result += `${paramName(item.inputs[i].name,i)}:${dataType(item.inputs[i])}`
+                    result += `${paramName(item.inputs[i].name,i)}:${inputDataType(item.inputs[i])}`
                 }
             }
             return result+'}';
@@ -149,7 +146,7 @@ module.exports = function(name, abiPath, abi){
             lines.push({indent:0, text:'{'});
             for (let i = 0; i < items.length; i ++){
                 let line;
-                if (outputDataType(items[i].type) == 'BigNumber')
+                if (outputDataType(items[i]) == 'BigNumber')
                     line = (items[i].name || (`param${i + 1}`)) + ": new BigNumber(result" + (items[i].name ? `.${items[i].name}` : `[${i}]`) + ")";
                 else
                     line = (items[i].name || (`param${i + 1}`)) + ": result" + (items[i].name ? `.${items[i].name}` : `[${i}]`);
@@ -160,7 +157,7 @@ module.exports = function(name, abiPath, abi){
             lines.push({indent:0, text:'};'});
         }
         else if (items.length == 1){
-            if (outputDataType(items[0].type) == 'BigNumber')
+            if (outputDataType(items[0]) == 'BigNumber')
                 lines.push({indent:0, text: isEvent ? 'new BigNumber(result[0]);': 'new BigNumber(result);'});
             else
                 lines.push({indent:0, text: isEvent ? 'result[0];' : 'result;'});
