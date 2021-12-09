@@ -172,7 +172,7 @@ module.exports = function(name, abiPath, abi){
             else {
                 let objPath = "result" + (parent ? `.${parent}` : ``) + (isEvent ? "[0]" : "");
                 if (outputDataType(items[0]) == 'BigNumber')
-                    lines.push({indent:indent, text: `new BigNumber(${objPath});`});
+                    lines.push({indent:indent, text: `new BigNumber(${objPath})`});
                 else
                     lines.push({indent:indent, text: `${objPath}`});
             }
@@ -202,7 +202,7 @@ module.exports = function(name, abiPath, abi){
         let result = await this.methods('${item.name}'${item.stateMutability=='payable'?',_value':''});`)
         }
         if (item.stateMutability == 'view') {
-            returnOutputs(item.outputs).forEach((e,i)=>addLine(e.indent+2, (i==0?"return ":"") + e.text));
+            returnOutputs(item.outputs).forEach((e,i,a)=>addLine(e.indent+2, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
         }
         else
             addLine(2, 'return result;')
@@ -212,7 +212,7 @@ module.exports = function(name, abiPath, abi){
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs)}[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
-        returnOutputs(item.inputs, true).forEach((e,i)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==item.length-1?";":"")));
+        returnOutputs(item.inputs, true).forEach((e,i,a)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
         addLine(2, '});');
         addLine(1, '}');
     }
