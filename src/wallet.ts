@@ -299,14 +299,12 @@ module Wallet{
 			}
 			this._provider = provider;			
 			this._web3 = new Web3(provider);
-			if (this._web3.eth && this._web3.eth.getAccounts){
+			if (this.isMetaMask){
 				this._web3.eth.getAccounts((err, accounts)=>{
 					if (accounts){
 						(<any>this._web3).selectedAddress = accounts[0];
 					}					
 				});								
-			}
-			if (this._web3.eth && this._web3.eth.net && this._web3.eth.net.getId){
 				this._web3.eth.net.getId((err, chainId)=>{
 					this.chainId = chainId;
 				})
@@ -349,6 +347,7 @@ module Wallet{
 				return this._account.address
 			}
 			else if ((<any>this._web3).selectedAddress){
+				console.dir('##### here')
 				return (<any>this._web3).selectedAddress
 			}
 			else if (this._web3.eth.defaultAccount){

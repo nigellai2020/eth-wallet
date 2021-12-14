@@ -732,14 +732,12 @@ var require_wallet = __commonJS({
           }
           this._provider = provider;
           this._web3 = new Web32(provider);
-          if (this._web3.eth && this._web3.eth.getAccounts) {
+          if (this.isMetaMask) {
             this._web3.eth.getAccounts((err, accounts) => {
               if (accounts) {
                 this._web3.selectedAddress = accounts[0];
               }
             });
-          }
-          if (this._web3.eth && this._web3.eth.net && this._web3.eth.net.getId) {
             this._web3.eth.net.getId((err, chainId) => {
               this.chainId = chainId;
             });
@@ -777,6 +775,7 @@ var require_wallet = __commonJS({
           } else if (this._kms && this._account) {
             return this._account.address;
           } else if (this._web3.selectedAddress) {
+            console.dir("##### here");
             return this._web3.selectedAddress;
           } else if (this._web3.eth.defaultAccount) {
             return this._web3.eth.defaultAccount;
@@ -1430,4 +1429,6 @@ var import_contract = __toModule(require_contract());
 var import_bignumber2 = __toModule(require("bignumber.js"));
 var import_erc20 = __toModule(require_erc202());
 init_utils();
+if (typeof window !== "undefined" && window["BigNumber"])
+  window["bignumber.js"] = window["BigNumber"];
 })(window["@ijstech/eth-wallet"]);
