@@ -1,6 +1,3 @@
-if (typeof window !== 'undefined' && window['BigNumber'])
-    window["bignumber.js"] = window['BigNumber'];
-    
 export {Wallet, Transaction, Event, TransactionReceipt} from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";

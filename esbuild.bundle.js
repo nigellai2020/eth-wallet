@@ -25,7 +25,9 @@ async function build(){
         plugins: [],
       }).catch(() => process.exit(1));      
     let content = await readFile('dist/index.js');
-    content = `window["${packageName}"] = window["${packageName}"] || {};
+    content = `if (typeof window !== 'undefined' && window['BigNumber'])
+    window["bignumber.js"] = window['BigNumber'];
+window["${packageName}"] = window["${packageName}"] || {};
 ((exports) => {
 ` + content + `})(window["${packageName}"]);`;
     Fs.writeFileSync('dist/index.js', content);
