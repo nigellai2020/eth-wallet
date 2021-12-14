@@ -5,14 +5,14 @@ import * as ethutil from 'ethereumjs-util';
 import { Transaction, TxData } from 'ethereumjs-tx';
 // const keccak256 = require('./sha3').keccak256;
 
-module KMS {
-    const EcdsaSigAsnParse = asn1.define('EcdsaSig', function(this: any) {
+module KMS {    
+    const EcdsaSigAsnParse = asn1&&asn1.define?asn1.define('EcdsaSig', function(this: any) {
         this.seq().obj(
             this.key('r').int(),
             this.key('s').int(),
         );
-    });    
-    const EcdsaPubKey = asn1.define('EcdsaPubKey', function(this: any) {
+    }):undefined;    
+    const EcdsaPubKey = asn1&&asn1.define?asn1.define('EcdsaPubKey', function(this: any) {
         this.seq().obj(
             this.key('algo').seq().obj(
                 this.key('a').objid(),
@@ -20,7 +20,7 @@ module KMS {
             ),
             this.key('pubKey').bitstr()
         );
-    });
+    }):undefined;
     function recoverPubKeyFromSig(msg: Buffer, r : BN, s : BN, v: number) {
         let rBuffer = r.toBuffer();
         let sBuffer = s.toBuffer();

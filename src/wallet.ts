@@ -1,12 +1,18 @@
 import * as W3 from 'web3';
 import {BlockTransactionObject} from 'web3-eth';
 import {rlp} from 'ethereumjs-util';
-const Web3 = require('web3'); // tslint:disable-line
+const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {Utils} from 'web3-utils';
 import {KMS} from './kms';
 
+function Web3Lib(){
+	if (typeof window !== "undefined" && window["Web3"])
+        return window["Web3"];
+	else
+        return require("web3");
+}
 module Wallet{    
     export interface Event{
 		name: string;
@@ -134,6 +140,138 @@ module Wallet{
 	interface IDictionary {
 		[index: string]: any;
    	}
+	export interface ITokenOption{
+	    address: string, // The address that the token is at.
+	    symbol: string, // A ticker symbol or shorthand, up to 5 chars.
+	    decimals: number, // The number of decimals in the token
+	    image?: string, // A string url of the token logo
+	}
+	export interface INetworkOption {
+		chainId: string; // A 0x-prefixed hexadecimal string
+		chainName: string;
+		nativeCurrency: {
+			name: string;
+			symbol: string; // 2-6 characters long
+			decimals: 18;
+		};
+		rpcUrls: string[];
+		blockExplorerUrls?: string[];
+		iconUrls?: string[]; // Currently ignored.
+	}
+	export class MetaMask {
+		private wallet: Wallet;
+		constructor(wallet: Wallet){
+			this.wallet = wallet;
+			let self = this;
+			let ethereum = window['ethereum'];
+			if (this.installed){
+				ethereum.on('accountsChanged', (accounts) => {
+					let account;
+					if (accounts && accounts.length > 0)
+						account = accounts[0]
+					(<any>self.wallet.web3).selectedAddress = account;
+					if (self.wallet.onAccountChanged)
+						self.wallet.onAccountChanged(account);
+				});
+				ethereum.on('chainChanged', (chainId) => {
+					self.wallet.chainId = parseInt(chainId);
+					if (self.wallet.onChainChanged)
+						self.wallet.onChainChanged(chainId);
+				});
+				ethereum.on('connect', (connectInfo) => {
+					if (self.wallet.onConnect)
+						self.wallet.onConnect(connectInfo);
+				});
+				ethereum.on('disconnect', (error) => {
+					if (self.wallet.onDisconnect)
+						self.wallet.onDisconnect(error);
+				});	
+			};
+		}
+		async connect(){
+			let self = this;
+			try {								
+				if (this.installed){
+					let ethereum = window['ethereum'];
+					await ethereum.request({ method: 'eth_requestAccounts' });
+				}
+			} catch (error) {
+				console.error(error);
+			}
+		}
+		get installed(): boolean{
+			let ethereum = window['ethereum'];
+			if (typeof(ethereum) != 'undefined' && ethereum.isMetaMask)
+				return true;
+		}
+		get provider(){
+			let ethereum = window['ethereum'];
+			return ethereum;
+		}
+		addToken(option: ITokenOption, type?: string): Promise<boolean>{
+			return new Promise(async function(resolve, reject){
+				try{
+					let ethereum = window['network'];
+					let result = await ethereum.request({
+					    method: 'wallet_watchAsset',
+					    params: {
+					      type: type || 'ERC20', 
+					      options: option,
+					    },
+					  });
+					resolve(result);
+				}
+				catch(err){
+					reject(err)
+				}
+			})
+		}
+		switchNetwork(chainId: number): Promise<boolean>{
+			return new Promise(async function(resolve, reject){
+				try{
+					let ethereum = window['ethereum'];
+					let result = await ethereum.request({
+					    method: 'wallet_switchEthereumChain',
+					    params: {
+					    	chainId: '0x4'
+					    }
+					  });
+					resolve(!result);
+				}	
+				catch(err){
+					reject(err)
+				}
+			})
+		}
+		addNetwork(options: INetworkOption): Promise<boolean>{
+			return new Promise(async function(resolve, reject){
+				try{
+					options = JSON.parse(JSON.stringify(options));
+					options.chainId = '0x' + parseInt(options.chainId).toString(16)
+					let ethereum = window['ethereum'];
+					try{
+						await ethereum.request({
+						    method: 'wallet_switchEthereumChain',
+						    params: [{ chainId: options.chainId}],
+						});
+						resolve(true);
+					}
+					catch(err){
+						let result = await ethereum.request({
+						    method: 'wallet_addEthereumChain',
+						    params: [
+						    	options
+						    ],
+						  });
+						resolve(!result);	
+					}
+				}
+				catch(err){
+					reject(err)
+				}
+			})
+		}
+	}
     export class Wallet{
 		private _web3: W3.default;		
         private _account: IAccount;
@@ -146,11 +284,33 @@ module Wallet{
 		private _eventHandler = {};
 		private _contracts = {};
 		private _blockGasLimit: number;
-		public chainId: number;        
+		private _metaMask: MetaMask;
+		public isMetaMask: boolean = false;
+		public chainId: number;       
+		public onAccountChanged: (account: string)=>void; 
+		public onChainChanged: (chainId: string)=>void;
+		public onConnect: (connectInfo: any)=>void;
+		public onDisconnect: (error: any)=>void;
 
-		constructor(provider?: any, account?: IAccount|IAccount[]){			
-			this._provider = provider;
+		constructor(provider?: any, account?: IAccount|IAccount[]){
+			if (!provider && typeof(window) !== 'undefined' && window['ethereum'] && window['ethereum'].isMetaMask){
+				this.isMetaMask = true;
+				provider = window['ethereum'];
+			}
+			this._provider = provider;			
 			this._web3 = new Web3(provider);
+			if (this._web3.eth && this._web3.eth.getAccounts){
+				this._web3.eth.getAccounts((err, accounts)=>{
+					if (accounts){
+						(<any>this._web3).selectedAddress = accounts[0];
+					}					
+				});								
+			}
+			if (this._web3.eth && this._web3.eth.net && this._web3.eth.net.getId){
+				this._web3.eth.net.getId((err, chainId)=>{
+					this.chainId = chainId;
+				})
+			}
 			if (Array.isArray(account)){
 				this._accounts = account;
 				this._account = account[0];
@@ -160,6 +320,8 @@ module Wallet{
 
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+			if (this.isMetaMask)
+				this._metaMask = new MetaMask(this);
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
@@ -177,7 +339,7 @@ module Wallet{
 				resolve(this._web3.eth.getAccounts())
 			});
 		}
-		get address(): string{
+		get address(): string{			
         	if (this._account && this._account.privateKey){
 				if (!this._account.address)
 					this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
@@ -186,7 +348,10 @@ module Wallet{
 			else if (this._kms && this._account){
 				return this._account.address
 			}
-			else if (this._web3.eth.defaultAccount){			
+			else if ((<any>this._web3).selectedAddress){
+				return (<any>this._web3).selectedAddress
+			}
+			else if (this._web3.eth.defaultAccount){
 				return this._web3.eth.defaultAccount;
 			}
 			if (!this._account){        
@@ -240,6 +405,11 @@ module Wallet{
 				this.chainId = await this._web3.eth.getChainId();
 			return this.chainId;
 		}
+		get metaMask(){
+			if (!this._metaMask)
+				this._metaMask = new MetaMask(this);
+			return this._metaMask;
+		};
 		get provider(): any{
 			return this._provider;
 		}

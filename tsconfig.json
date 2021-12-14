@@ -4,9 +4,10 @@
         "allowJs": true,
         "module": "commonjs",        
         "esModuleInterop": true,
-        "outDir": "lib",                
+        "outDir": "lib",                      
         "removeComments": true,         
-        "declaration": true
+        "declaration": true,
+        "declarationDir": "types"
     },
     "include": [
         "src/**/*"

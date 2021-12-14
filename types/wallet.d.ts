@@ -121,6 +121,34 @@ declare module Wallet {
         sign?(): Promise<string>;
         signTransaction?(): Promise<any>;
     }
+    interface ITokenOption {
+        address: string;
+        symbol: string;
+        decimals: number;
+        image?: string;
+    }
+    interface INetworkOption {
+        chainId: string;
+        chainName: string;
+        nativeCurrency: {
+            name: string;
+            symbol: string;
+            decimals: 18;
+        };
+        rpcUrls: string[];
+        blockExplorerUrls?: string[];
+        iconUrls?: string[];
+    }
+    class MetaMask {
+        private wallet;
+        constructor(wallet: Wallet);
+        connect(): Promise<void>;
+        get installed(): boolean;
+        get provider(): any;
+        addToken(option: ITokenOption, type?: string): Promise<boolean>;
+        switchNetwork(chainId: number): Promise<boolean>;
+        addNetwork(options: INetworkOption): Promise<boolean>;
+    }
     class Wallet {
         private _web3;
         private _account;
@@ -133,7 +161,13 @@ declare module Wallet {
         private _eventHandler;
         private _contracts;
         private _blockGasLimit;
+        private _metaMask;
+        isMetaMask: boolean;
         chainId: number;
+        onAccountChanged: (account: string) => void;
+        onChainChanged: (chainId: string) => void;
+        onConnect: (connectInfo: any) => void;
+        onDisconnect: (error: any) => void;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         get accounts(): Promise<string[]>;
         get address(): string;
@@ -143,6 +177,7 @@ declare module Wallet {
         get defaultAccount(): string;
         set defaultAccount(address: string);
         getChainId(): Promise<number>;
+        get metaMask(): MetaMask;
         get provider(): any;
         sendSignedTransaction(tx: string): Promise<any>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
