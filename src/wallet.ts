@@ -346,8 +346,7 @@ module Wallet{
 			else if (this._kms && this._account){
 				return this._account.address
 			}
-			else if ((<any>this._web3).selectedAddress){
-				console.dir('##### here')
+			else if ((<any>this._web3).selectedAddress){				
 				return (<any>this._web3).selectedAddress
 			}
 			else if (this._web3.eth.defaultAccount){
