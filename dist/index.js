@@ -777,7 +777,6 @@ var require_wallet = __commonJS({
           } else if (this._kms && this._account) {
             return this._account.address;
           } else if (this._web3.selectedAddress) {
-            console.dir("##### here");
             return this._web3.selectedAddress;
           } else if (this._web3.eth.defaultAccount) {
             return this._web3.eth.defaultAccount;
