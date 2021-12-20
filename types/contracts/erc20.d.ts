@@ -5,9 +5,9 @@ declare module ERC20 {
     class Erc20 extends Contract {
         private _decimals;
         constructor(wallet: Wallet, address?: string, decimals?: number);
-        deploy(name: string, symbol: string, minter?: string, cap?: number): Promise<string>;
+        deploy(name: string, symbol: string, minter?: string, cap?: number | BigNumber): Promise<string>;
         allowance(owner: string, spender: string): Promise<BigNumber>;
-        approve(spender: string, amount: number): Promise<any>;
+        approve(spender: string, amount: number | BigNumber): Promise<any>;
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
         get cap(): Promise<BigNumber>;

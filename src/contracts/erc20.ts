@@ -14,13 +14,13 @@ module ERC20{
         	super(wallet, address, Abi, Bytecode);
             this._decimals = decimals;
         }
-        async deploy(name: string, symbol: string, minter?: string, cap?: number): Promise<string>{ 
+        async deploy(name: string, symbol: string, minter?: string, cap?: number|BigNumber): Promise<string>{ 
             return this._deploy(name, symbol, minter || this.wallet.address, this.wallet.utils.toWei(cap?cap.toString():'1000000000'));
         }
         async allowance(owner: string, spender: string): Promise<BigNumber>{
         	return Utils.fromDecimals(await this.methods('allowance', owner, spender), await this.decimals)        	
         }
-        approve(spender: string, amount: number): Promise<any>{
+        approve(spender: string, amount: number|BigNumber): Promise<any>{
             return new Promise(async (resolve, reject)=>{
                 try{
                     resolve(this.methods('approve', spender, await Utils.toDecimals(amount, await this.decimals)));
