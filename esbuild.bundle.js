@@ -25,11 +25,20 @@ async function build(){
         plugins: [],
       }).catch(() => process.exit(1));      
     let content = await readFile('dist/index.js');
-    content = `if (typeof window !== 'undefined' && window['BigNumber'])
-    window["bignumber.js"] = window['BigNumber'];
-window["${packageName}"] = window["${packageName}"] || {};
-((exports) => {
-` + content + `})(window["${packageName}"]);`;
+    content = `define("aws-sdk", ()=>{});
+define("asn1.js", ()=>{});
+define("bn.js", ()=>{});
+define("ethereumjs-tx", ()=>{});
+define("ethereumjs-util", ()=>{});
+define("web3", (require,exports)=>{
+    exports['web3'] = window["Web3"];
+});
+define("bignumber.js", (require,exports)=>{
+    exports['BigNumber'] = window["BigNumber"];
+});
+define("@ijstech/eth-wallet",(require, exports)=>{
+${content}
+});`
     Fs.writeFileSync('dist/index.js', content);
 };
 build();
