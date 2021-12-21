@@ -14,16 +14,16 @@ module ERC20{
         	super(wallet, address, Abi, Bytecode);
             this._decimals = decimals;
         }
-        async deploy(name: string, symbol: string, minter?: string, cap?: number|BigNumber): Promise<string>{ 
-            return this._deploy(name, symbol, minter || this.wallet.address, this.wallet.utils.toWei(cap?cap.toString():'1000000000'));
+        async deploy(params:{name: string, symbol: string, minter?: string, cap?: number|BigNumber}): Promise<string>{ 
+            return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap?params.cap.toString():'1000000000'));
         }
-        async allowance(owner: string, spender: string): Promise<BigNumber>{
-        	return Utils.fromDecimals(await this.methods('allowance', owner, spender), await this.decimals)        	
+        async allowance(params:{owner: string, spender: string}): Promise<BigNumber>{
+        	return Utils.fromDecimals(await this.methods('allowance', params.owner, params.spender), await this.decimals)        	
         }
-        approve(spender: string, amount: number|BigNumber): Promise<any>{
+        approve(params:{spender: string, amount: number|BigNumber}): Promise<any>{
             return new Promise(async (resolve, reject)=>{
                 try{
-                    resolve(this.methods('approve', spender, await Utils.toDecimals(amount, await this.decimals)));
+                    resolve(this.methods('approve', params.spender, await Utils.toDecimals(params.amount, await this.decimals)));
                 }   
                 catch(err){
                     reject(err)
@@ -65,18 +65,18 @@ module ERC20{
                 }
             })
         }        
-        mint(address: string, amount: number|BigNumber): Promise<any>{
+        mint(params:{address: string, amount: number|BigNumber}): Promise<any>{
             return new Promise(async (resolve, reject)=>{
                 try{                    
-                    resolve(await this.methods('mint', address, await Utils.toDecimals(amount, await this.decimals)));
+                    resolve(await this.methods('mint', params.address, await Utils.toDecimals(params.amount, await this.decimals)));
                 }
                 catch(err){
                     reject(err);
                 }
             })            
         }
-        async _mint(address: string, amount: number|BigNumber): Promise<Transaction>{
-            return this._methods('mint', address, await Utils.toDecimals(amount, await this.decimals))
+        async _mint(params:{address: string, amount: number|BigNumber}): Promise<Transaction>{
+            return this._methods('mint', params.address, await Utils.toDecimals(params.amount, await this.decimals))
         }
         minter(): Promise<string>{
             return this.methods('minter');
@@ -97,11 +97,11 @@ module ERC20{
                 }
             })
         }
-        async transfer(address: string, amount: number | BigNumber): Promise<TransactionReceipt>{            
-        	return this.methods('transfer', address, await Utils.toDecimals(amount, await this.decimals));
+        async transfer(params:{address: string, amount: number | BigNumber}): Promise<TransactionReceipt>{            
+        	return this.methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
         }
-        async _transfer(address: string, amount: number | BigNumber): Promise<Transaction>{            
-        	return this._methods('transfer', address, await Utils.toDecimals(amount, await this.decimals));
+        async _transfer(params:{address: string, amount: number | BigNumber}): Promise<Transaction>{            
+        	return this._methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
         }
 	};
 };

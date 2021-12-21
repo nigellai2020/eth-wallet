@@ -335,16 +335,16 @@ var require_erc202 = __commonJS({
           super(wallet, address, Abi, Bytecode);
           this._decimals = decimals;
         }
-        async deploy(name, symbol, minter, cap) {
-          return this._deploy(name, symbol, minter || this.wallet.address, this.wallet.utils.toWei(cap ? cap.toString() : "1000000000"));
+        async deploy(params) {
+          return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap ? params.cap.toString() : "1000000000"));
         }
-        async allowance(owner, spender) {
-          return fromDecimals(await this.methods("allowance", owner, spender), await this.decimals);
+        async allowance(params) {
+          return fromDecimals(await this.methods("allowance", params.owner, params.spender), await this.decimals);
         }
-        approve(spender, amount) {
+        approve(params) {
           return new Promise(async (resolve, reject) => {
             try {
-              resolve(this.methods("approve", spender, await toDecimals(amount, await this.decimals)));
+              resolve(this.methods("approve", params.spender, await toDecimals(params.amount, await this.decimals)));
             } catch (err) {
               reject(err);
             }
@@ -382,17 +382,17 @@ var require_erc202 = __commonJS({
             }
           });
         }
-        mint(address, amount) {
+        mint(params) {
           return new Promise(async (resolve, reject) => {
             try {
-              resolve(await this.methods("mint", address, await toDecimals(amount, await this.decimals)));
+              resolve(await this.methods("mint", params.address, await toDecimals(params.amount, await this.decimals)));
             } catch (err) {
               reject(err);
             }
           });
         }
-        async _mint(address, amount) {
-          return this._methods("mint", address, await toDecimals(amount, await this.decimals));
+        async _mint(params) {
+          return this._methods("mint", params.address, await toDecimals(params.amount, await this.decimals));
         }
         minter() {
           return this.methods("minter");
@@ -412,11 +412,11 @@ var require_erc202 = __commonJS({
             }
           });
         }
-        async transfer(address, amount) {
-          return this.methods("transfer", address, await toDecimals(amount, await this.decimals));
+        async transfer(params) {
+          return this.methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
         }
-        async _transfer(address, amount) {
-          return this._methods("transfer", address, await toDecimals(amount, await this.decimals));
+        async _transfer(params) {
+          return this._methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
         }
       }
       ERC202.Erc20 = Erc202;
