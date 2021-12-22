@@ -60,8 +60,8 @@ module.exports = function(name, abiPath, abi){
     }
 
 
-    function viewFunctionOutputType(items){
-        if (items.length > 1){
+    function viewFunctionOutputType(items, isEvent){
+        if (items.length > 1 || (isEvent && items.length >= 1)){
             let result = '{';
             for (let i = 0; i < items.length; i ++){
                 if (i > 0)
@@ -144,7 +144,7 @@ module.exports = function(name, abiPath, abi){
         parent = parent || "";
         indent = indent || 0;
         let lines = []
-        if (items.length > 1){
+        if (items.length > 1 || (isEvent && items.length >= 1)){
             lines.push({indent:indent, text:'{'});
             for (let i = 0; i < items.length; i ++){
                 if (items[i].type == 'tuple') {
@@ -209,7 +209,7 @@ module.exports = function(name, abiPath, abi){
         addLine(1, '}');
     }
     function addEvent(item){
-        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs)}[]{`);
+        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs, true)}[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
         returnOutputs(item.inputs, true).forEach((e,i,a)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
