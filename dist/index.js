@@ -1,7 +1,15 @@
-if (typeof window !== 'undefined' && window['BigNumber'])
-    window["bignumber.js"] = window['BigNumber'];
-window["@ijstech/eth-wallet"] = window["@ijstech/eth-wallet"] || {};
-((exports) => {
+define("aws-sdk", ()=>{});
+define("asn1.js", ()=>{});
+define("bn.js", ()=>{});
+define("ethereumjs-tx", ()=>{});
+define("ethereumjs-util", ()=>{});
+define("web3", (require,exports)=>{
+    exports['web3'] = window["Web3"];
+});
+define("bignumber.js", (require,exports)=>{
+    exports['BigNumber'] = window["BigNumber"];
+});
+define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -1430,4 +1438,5 @@ var import_contract = __toModule(require_contract());
 var import_bignumber2 = __toModule(require("bignumber.js"));
 var import_erc20 = __toModule(require_erc202());
 init_utils();
-})(window["@ijstech/eth-wallet"]);
+
+});
