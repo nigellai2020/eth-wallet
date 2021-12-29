@@ -1,5 +1,6 @@
 module.exports = function(name, abiPath, abi){
     let result = [];
+    let events = {};
     function addLine(indent, code){
         if (indent)
             result.push(`    `.repeat(indent) + code)
@@ -209,7 +210,8 @@ module.exports = function(name, abiPath, abi){
         addLine(1, '}');
     }
     function addEvent(item){
-        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${viewFunctionOutputType(item.inputs, true)}[]{`);
+        events[item.name] = viewFunctionOutputType(item.inputs, true);
+        addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${name}.${item.name}Event[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
         returnOutputs(item.inputs, true).forEach((e,i,a)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
@@ -249,6 +251,10 @@ module.exports = function(name, abiPath, abi){
     for (let i = 0; i < abi.length; i ++){
         addAbi(abi[i]);
     }
+    addLine(0, `}`);
+    addLine(0, `export module ${name}{`);
+    for (let e in events) 
+        addLine(1, `export interface ${e}Event ${events[e]}`);
     addLine(0, `}`);
     return result.join('\n');
 }
