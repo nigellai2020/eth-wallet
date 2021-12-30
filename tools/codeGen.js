@@ -252,9 +252,11 @@ module.exports = function(name, abiPath, abi){
         addAbi(abi[i]);
     }
     addLine(0, `}`);
-    addLine(0, `export module ${name}{`);
-    for (let e in events) 
-        addLine(1, `export interface ${e}Event ${events[e]}`);
-    addLine(0, `}`);
+    if (Object.keys(events).length) {
+        addLine(0, `export module ${name}{`);
+        for (let e in events) 
+            addLine(1, `export interface ${e}Event ${events[e]}`);
+        addLine(0, `}`);
+    }
     return result.join('\n');
 }
