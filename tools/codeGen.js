@@ -76,7 +76,7 @@ module.exports = function(name, abiPath, abi){
             return outputDataType(items[0])
         }
         else
-            return 'any';
+            return isEvent ? '{}' : 'any';
     }
     function outputs(item){
         if (item.stateMutability != 'view'){
@@ -179,7 +179,7 @@ module.exports = function(name, abiPath, abi){
             }
         }
         else
-            lines.push({indent:indent, text:';'});
+            lines.push({indent:indent, text:'{}'});
         return lines;
     }
         // if (item.stateMutability=='payable') {
