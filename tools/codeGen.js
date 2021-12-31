@@ -24,9 +24,10 @@ module.exports = function(name, abiPath, abi){
             return 'number[]|BigNumber[]'
         else if (/^u?int\d*$/.test(item.type))
             return 'number|BigNumber'
-        else if (item.type == 'tuple') {
+        else if (item.type == 'tuple')
             return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}';
-        }
+        else if (item.type == 'tuple[]')
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}[]';
         else
             return 'any'
     }
@@ -114,6 +115,8 @@ module.exports = function(name, abiPath, abi){
                 result += `Utils.toString(${paramName(item.inputs[i].name,i)})`
             else if (item.inputs[i].type == 'tuple')
                 result += `Utils.toString(Object.values(${paramName(item.inputs[i].name,i)}))`
+            else if (item.inputs[i].type == 'tuple[]')
+                result += `Utils.toString(${paramName(item.inputs[i].name,i)}.map(e=>Object.values(e)))`
             else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                 result += `Utils.stringToBytes32(${paramName(item.inputs[i].name,i)})`
             else
@@ -127,6 +130,8 @@ module.exports = function(name, abiPath, abi){
                     result += `Utils.toString(params.${paramName(item.inputs[i].name,i)})`
                 else if (item.inputs[i].type == 'tuple')
                     result += `Utils.toString(Object.values(params.${paramName(item.inputs[i].name,i)}))`
+                else if (item.inputs[i].type == 'tuple[]')
+                    result += `Utils.toString(params.${paramName(item.inputs[i].name,i)}.map(e=>Object.values(e)))`
                 else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                     result += `Utils.stringToBytes32(params.${paramName(item.inputs[i].name,i)})`
                 else
