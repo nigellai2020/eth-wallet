@@ -56,6 +56,8 @@ module.exports = function(name, abiPath, abi){
             return 'BigNumber'
         else if (type == 'tuple')
             return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}';
+        else if (type == 'tuple[]')
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}[]';
         else
             return 'any'
     }
@@ -79,7 +81,7 @@ module.exports = function(name, abiPath, abi){
             return isEvent ? '{}' : 'any';
     }
     function outputs(item){
-        if (item.stateMutability != 'view'){
+        if (item.stateMutability != 'view' && item.stateMutability != 'pure'){
             return 'TransactionReceipt'
         }
         else {
@@ -141,23 +143,34 @@ module.exports = function(name, abiPath, abi){
         }
     }
     
-    function returnOutputs(items, isEvent, parent, indent) {
-        parent = parent || "";
+    function returnOutputs(items, addReturn, isEvent, parent, indent) {
+        parent = parent || "result";
         indent = indent || 0;
         let lines = []
         if (items.length > 1 || (isEvent && items.length >= 1)){
-            lines.push({indent:indent, text:'{'});
+            lines.push({indent:indent, text:addReturn?"return {":"{"});
             for (let i = 0; i < items.length; i ++){
+                let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                 if (items[i].type == 'tuple') {
                     lines.push({indent:indent+1, text:items[i].name +':'});
-                    lines = lines.concat(returnOutputs(items[i].components, isEvent, items[i].name, indent+1));
+                    lines = lines.concat(returnOutputs(items[i].components, false, isEvent, objPath, indent+1));
                     if (i < items.length -1)
                         lines[lines.length-1].text+=','
-                }else {
+                }
+                else if (items[i].type == 'tuple[]') {
+                    lines.push({indent:indent+1, text:items[i].name +': ' + `${objPath}.map(e=>{`});
+                    lines = lines.concat(returnOutputs(items[i].components, true, isEvent, "e", indent+2));
+                    if (i < items.length -1)
+                        lines[lines.length-1].text+=','
+                    lines.push({indent:indent+1, text:"})"});
+                }
+                else{
                     let line;
-                    let objPath = "result" + (parent ? `.${parent}` : ``) + (items[i].name ? `.${items[i].name}` : `[${i}]`);
+                    let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                     if (outputDataType(items[i]) == 'BigNumber')
                         line = (items[i].name || `param${i + 1}`) + ": " + `new BigNumber(${objPath})`;
+                    else if (outputDataType(items[i]) == 'BigNumber[]')
+                        line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}.map(e=>new BigNumber(e))`;
                     else
                         line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}`;
                     if (i < items.length -1)
@@ -165,21 +178,25 @@ module.exports = function(name, abiPath, abi){
                     lines.push({indent:indent+1, text:line});
                 }
             }
-            lines.push({indent:indent, text:'}'});
+            lines.push({indent:indent, text:addReturn?"};":"}"});
         }
         else if (items.length == 1){
             if (items[0].type == 'tuple')
-                lines.push(returnOutputs(items[0].components, isEvent));
-            else {
-                let objPath = "result" + (parent ? `.${parent}` : ``) + (isEvent ? "[0]" : "");
+                lines = lines.concat(returnOutputs(items[0].components, addReturn, isEvent));
+            else if (items[0].type == 'tuple[]'){
+                lines.push({indent:indent, text: (addReturn?"return ":"")+parent+".map(e=>{"});
+                lines = lines.concat(returnOutputs(items[0].components, true, isEvent, "e", indent+1));
+                lines.push({indent:indent, text: "})"+(addReturn?";":"")});
+            } else {
+                let objPath = parent + (isEvent ? "[0]" : "");
                 if (outputDataType(items[0]) == 'BigNumber')
-                    lines.push({indent:indent, text: `new BigNumber(${objPath})`});
+                    lines.push({indent:indent, text: (addReturn?"return ":"")+`new BigNumber(${objPath})`+(addReturn?";":"")});
                 else
-                    lines.push({indent:indent, text: `${objPath}`});
+                    lines.push({indent:indent, text: (addReturn?"return ":"")+`${objPath}`+(addReturn?";":"")});
             }
         }
         else
-            lines.push({indent:indent, text:'{}'});
+            lines.push({indent:indent, text:(addReturn?"return ":"")+'{}'+(addReturn?";":"")});
         return lines;
     }
         // if (item.stateMutability=='payable') {
@@ -202,8 +219,8 @@ module.exports = function(name, abiPath, abi){
             addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item)}>{
         let result = await this.methods('${item.name}'${item.stateMutability=='payable'?',_value':''});`)
         }
-        if (item.stateMutability == 'view') {
-            returnOutputs(item.outputs).forEach((e,i,a)=>addLine(e.indent+2, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
+        if (item.stateMutability == 'view' || item.stateMutability == 'pure') {
+            returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
         }
         else
             addLine(2, 'return result;')
@@ -214,7 +231,7 @@ module.exports = function(name, abiPath, abi){
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${name}.${item.name}Event[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
-        returnOutputs(item.inputs, true).forEach((e,i,a)=>addLine(e.indent+3, (i==0?"return ":"") + e.text + (i==a.length-1?";":"")));
+        returnOutputs(item.inputs, true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
         addLine(2, '});');
         addLine(1, '}');
     }
