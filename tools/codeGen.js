@@ -231,12 +231,29 @@ module.exports = function(name, abiPath, abi){
             addLine(2, 'return result;')
         addLine(1, '}');
     }
+    let eventMeta = [
+        {
+            "internalType": "string",
+            "name": "_eventName",
+            "type": "string"
+        },
+        {
+            "internalType": "address",
+            "name": "_address",
+            "type": "address"
+        },
+        {
+            "internalType": "bytes32",
+            "name": "_transactionHash",
+            "type": "bytes32"
+        }
+    ];
     function addEvent(item){
         events[item.name] = viewFunctionOutputType(item.inputs, true);
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${name}.${item.name}Event[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
-        returnOutputs(item.inputs, true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
+        returnOutputs(eventMeta.concat(item.inputs), true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
         addLine(2, '});');
         addLine(1, '}');
     }

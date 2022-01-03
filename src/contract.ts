@@ -60,7 +60,7 @@ module Contract {
                         let raw = e.raw;
                         if (topic0 == raw.topics[0] && (this.address && this.address==e.address)) {
                             let event = eventAbis[topic0];
-                            result.push(Object.assign({_name:eventName, _address:this.address},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
+                            result.push(Object.assign({_eventName:eventName, _address:this.address, _transactionHash:receipt.transactionHash},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
                         }
                     });
                 }
@@ -69,7 +69,7 @@ module Contract {
                     let log = receipt.logs[i];
                     if (topic0 == log.topics[0] && (this.address && this.address==log.address)) {
                         let event = eventAbis[topic0];
-                        result.push(Object.assign({_name:eventName},this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
+                        result.push(Object.assign({_eventName:eventName, _address:this.address, _transactionHash:receipt.transactionHash},this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
                     }
                 }
 
