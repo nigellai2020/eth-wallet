@@ -249,11 +249,12 @@ module.exports = function(name, abiPath, abi){
         }
     ];
     function addEvent(item){
-        events[item.name] = viewFunctionOutputType(item.inputs, true);
+        let eventItems = eventMeta.concat(item.inputs);
+        events[item.name] = viewFunctionOutputType(eventItems, true);
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${name}.${item.name}Event[]{`);
         addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
         addLine(2, `return events.map(result => {`);
-        returnOutputs(eventMeta.concat(item.inputs), true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
+        returnOutputs(eventItems, true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
         addLine(2, '});');
         addLine(1, '}');
     }
