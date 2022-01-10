@@ -185,7 +185,7 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, include) {
 
             for (let j in output.contracts[i]) {
                 let bytecode = output.contracts[i][j].evm?.bytecode?.object;
-                if (bytecode){
+                if (bytecode && output.contracts[i][j].abi && output.contracts[i][j].abi.length){
                     if (!fs.existsSync(binOutputDir + '/' + p))
                         fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
                     fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({

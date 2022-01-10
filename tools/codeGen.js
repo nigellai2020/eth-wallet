@@ -262,14 +262,15 @@ module.exports = function(name, abiPath, abi){
     function addConstructor(abi){
         for (let i = 0; i < abi.length; i ++){
             if (abi[i].type == 'constructor'){
-                return addLine(1, `deploy(${inputs(abi[i])}): Promise<string>{
-        return this._deploy(${inputNames(abi[i])});
-    }`);
+                addLine(1, `deploy(${inputs(abi[i])}): Promise<string>{`);
+                addLine(2, `return this._deploy(${inputNames(abi[i])});`);
+                addLine(1, `}`);
+                return;
             }
         };
-        addLine(1, `deploy(): Promise<string>{
-        return this._deploy();
-    }`);
+        addLine(1, `deploy(): Promise<string>{`);
+        addLine(2, `return this._deploy();`);
+        addLine(1, `}`);
     }
     function addAbi(item){
         switch (item.type){
