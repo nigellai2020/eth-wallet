@@ -148,7 +148,7 @@ module.exports = function(name, abiPath, abi){
             return '';
         }
     }
-    
+
     function returnOutputs(items, addReturn, isEvent, parent, indent) {
         parent = parent || "result";
         indent = indent || 0;
@@ -262,12 +262,12 @@ module.exports = function(name, abiPath, abi){
     function addConstructor(abi){
         for (let i = 0; i < abi.length; i ++){
             if (abi[i].type == 'constructor'){
-                return addLine(1, `deploy(${inputs(abi[i])}): Promise<string>{        	
+                return addLine(1, `deploy(${inputs(abi[i])}): Promise<string>{
         return this._deploy(${inputNames(abi[i])});
     }`);
             }
         };
-        addLine(1, `deploy(): Promise<string>{        	
+        addLine(1, `deploy(): Promise<string>{
         return this._deploy();
     }`);
     }
@@ -285,9 +285,9 @@ module.exports = function(name, abiPath, abi){
     addLine(0, `const Bin = require("${abiPath}/${name}.json");`);
     addLine(0, ``);
     addLine(0, `export class ${name} extends Contract{`);
-    addLine(1, `constructor(wallet: Wallet, address?: string){
-        super(wallet, address, Bin.abi, Bin.bytecode);
-    }`)
+    addLine(1, `constructor(wallet: Wallet, address?: string){`);
+    addLine(2, `super(wallet, address, Bin.abi, Bin.bytecode);`);
+    addLine(1, `}`);
     addConstructor(abi);
     for (let i = 0; i < abi.length; i ++){
         addAbi(abi[i]);
@@ -295,7 +295,7 @@ module.exports = function(name, abiPath, abi){
     addLine(0, `}`);
     if (Object.keys(events).length) {
         addLine(0, `export module ${name}{`);
-        for (let e in events) 
+        for (let e in events)
             addLine(1, `export interface ${e}Event ${events[e]}`);
         addLine(0, `}`);
     }
