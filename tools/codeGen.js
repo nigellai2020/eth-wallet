@@ -1,4 +1,5 @@
 module.exports = function(name, abiPath, abi){
+    if (abi.length) {
     let result = [];
     let events = {};
     function addLine(indent, code){
@@ -299,4 +300,5 @@ module.exports = function(name, abiPath, abi){
         addLine(0, `}`);
     }
     return result.join('\n');
+    }
 }
