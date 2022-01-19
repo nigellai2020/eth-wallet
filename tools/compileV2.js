@@ -177,7 +177,7 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, include) {
     let index = '';
     if (output.contracts) {
         for (let i in output.contracts) {
-            if (include && !include.includes(i.replace(/^contracts\//,'')))
+            if (include && !include.includes(sourceDir+i.replace(/^contracts\//,'')))
                 continue;
 
             let p = path.dirname(i.replace(/^contracts\//,''));
