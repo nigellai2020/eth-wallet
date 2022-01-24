@@ -15,7 +15,8 @@
         "ethereumjs-tx": "2.1.2",
         "ethereumjs-util": "7.0.7",
         "web3": "1.6.0",
-        "web3-eth": "1.6.0"
+        "web3-eth": "1.6.0",
+        "web3-utils": "1.6.0"
     },
     "devDependencies": {
         "@types/mocha": "9.0.0",
