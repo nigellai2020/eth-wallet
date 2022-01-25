@@ -202,7 +202,7 @@ declare module Wallet {
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
         decodeEventData(data: Log, events?: any): Promise<Event>;
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;
         signMessage(msg: string): Promise<string>;

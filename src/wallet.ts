@@ -888,7 +888,7 @@ module Wallet{
 				await handler(this, log);
 			return log;
 		}
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string): Promise<Event[]>{
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>{
         	let _web3 = this._web3;        	
         	return new Promise(async (resolve, reject)=>{
         		try{
