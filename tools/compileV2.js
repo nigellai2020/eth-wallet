@@ -36,28 +36,30 @@ const request = function(url){
 
 function getCache(version) {
     let files = fs.readdirSync(SolcjsPath);
-    files = files.filter(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
-    return (files && files.length == 1) ? (path.resolve(SolcjsPath, files[0])) : null;
+    files = files.find(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
+    return files ? (path.resolve(SolcjsPath, files)) : null;
 }
 async function downloadSolc(version) {
     try {
         let data = await request("https://solc-bin.ethereum.org/bin/list.json");
-        let list = JSON.parse(data.body)
+        let list = JSON.parse(data.body);
         if (list) {
             let file = list.releases[version];
             if (file) {
-                let build = list.builds.filter(e => e.path == file);
-                if (build && build.length == 1) {
-                    let filename = build[0].path;
+                let build = list.builds.find(e => e.path == file);
+                if (build) {
+                    let filename = build.path;
                     let solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
                     solcjs = solcjs.body;
+                    if (!fs.existsSync(SolcjsPath))
+                        fs.mkdirSync(SolcjsPath, {recursive:true});
                     let solcjsPath = path.resolve(SolcjsPath, filename);
                     fs.writeFileSync(solcjsPath, solcjs);
                     return solcjsPath;
                 }
             }
         }
-    } catch (e) { console.log(e) }
+    } catch (e) { console.log(e); }
 }
 async function getSolc(version) {
   let solcjsPath = getCache(version);
@@ -173,11 +175,13 @@ function prettyPrint1(s) {
         return i == 0 ? e == "{" ? "{\n  " : e == "," ? ",\n  " : e == "}" ? "\n}" : e : e;
     }).join('');
 }
-function processOutput(sourceDir, output, binOutputDir, libOutputDir, include) {
+function processOutput(sourceDir, output, binOutputDir, libOutputDir, exclude, include) {
     let index = '';
     if (output.contracts) {
         for (let i in output.contracts) {
             if (include && !include.includes(sourceDir+i.replace(/^contracts\//,'')))
+                continue;
+            if (exclude && exclude.includes(sourceDir+i.replace(/^contracts\//,'')))
                 continue;
 
             let p = path.dirname(i.replace(/^contracts\//,''));
@@ -218,7 +222,6 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(SolcjsPath, { recursive: true });
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });
     customSettings = JSON.parse(customSettings || "[]");
@@ -229,7 +232,7 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
         _sourceDir = sourceDir;
         let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-        let index = processOutput(sourceDir, output, binOutputDir, libOutputDir);
+        let index = processOutput(sourceDir, output, binOutputDir, libOutputDir, customSources);
         if (output.errors) {
             output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
         }
@@ -242,18 +245,17 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
                 _sourceDir = customSettings[s].root;
                 input = buildInput(customSettings[s].root, customSettings[s].sources, customSettings[s].optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-                index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, customSources);
+                index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSources);
                 if (output.errors) {
                     output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e=>console.log(e.formattedMessage));
                 }
             }
         }
         fs.writeFileSync(libOutputDir + '/index.ts', index);
-
-    } catch (e) { console.log(e) }
+    } catch (e) { console.log(e); }
 }
 
-if (process.argv.length < 6) {
-    return console.log("Usage: node compile.js <version> <optimizer_runs> <src_dir> <out_dir> [<custom_settings> [<lib_map>]]\ne.g.: node tools/compile.js 0.6.11 999999 contracts  bin/contracts src/contracts \"[{\\\"sources\\\":[\\\"contracts/HugeContract.sol\\\"], \\\"optimizerRuns\\\":10000}]\"")
+if (process.argv.length < 7) {
+    return console.log("Usage: node compile.js <version> <optimizer_runs> <src_dir> <out_dir> <lib_dir> [<custom_settings> [<lib_map>]]\ne.g.: node tools/compile.js 0.6.11 999999 contracts bin/contracts src/contracts \"[{\\\"sources\\\":[\\\"contracts/HugeContract.sol\\\"], \\\"optimizerRuns\\\":10000}]\"")
 }
 main(process.argv[2], parseInt(process.argv[3]), process.argv[4], process.argv[5], process.argv[6], process.argv[7], process.argv[8]);

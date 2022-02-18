@@ -14,6 +14,9 @@ https://solc-bin.ethereum.org/bin/list.json
 https://ethereum.github.io/solc-bin/bin/list.json
 */
 
+let _libMap;
+let _sourceDir;
+
 const request = function(url){
     return new Promise(function(resolve, reject){
         https.get(url,function(res){
@@ -30,6 +33,45 @@ const request = function(url){
         });
     });
 };
+
+function getCache(version) {
+    let files = fs.readdirSync(SolcjsPath);
+    files = files.find(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
+    return files ? (path.resolve(SolcjsPath, files)) : null;
+}
+async function downloadSolc(version) {
+    try {
+        let data = await request("https://solc-bin.ethereum.org/bin/list.json");
+        let list = JSON.parse(data.body);
+        if (list) {
+            let file = list.releases[version];
+            if (file) {
+                let build = list.builds.find(e => e.path == file);
+                if (build) {
+                    let filename = build.path;
+                    let solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
+                    solcjs = solcjs.body;
+                    if (!fs.existsSync(SolcjsPath))
+                        fs.mkdirSync(SolcjsPath, {recursive:true});
+                    let solcjsPath = path.resolve(SolcjsPath, filename);
+                    fs.writeFileSync(solcjsPath, solcjs);
+                    return solcjsPath;
+                }
+            }
+        }
+    } catch (e) { console.log(e); }
+}
+async function getSolc(version) {
+  let solcjsPath = getCache(version);
+  if (!solcjsPath) {
+    solcjsPath = await downloadSolc(version);
+  }
+  if (!solcjsPath) {
+    return null;
+  }
+  let solc = solcWrapper(require(solcjsPath));
+  return solc;
+}
 
 function recursiveAdd(root, srcPath, sources) {
     let currPath = path.join(root, srcPath);
@@ -60,7 +102,7 @@ function recursiveAdd(root, srcPath, sources) {
     }
     return sources;
 }
-function buildInput(source) {
+function buildInput(root, source) {
     let input = {
         language: "Solidity",
         sources: {},
@@ -79,34 +121,14 @@ function buildInput(source) {
             }
         },
     };
-    recursiveAdd(source, "", input.sources);
+    if (source && Array.isArray(source)){
+        source.forEach(e=>recursiveAdd(root, e, input.sources));
+    } else {
+        recursiveAdd(root, "", input.sources);
+    }
     return input;
 }
-function getCache(version) {
-    let files = fs.readdirSync(SolcjsPath);
-    files = files.filter(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
-    return (files && files.length == 1) ? (path.resolve(SolcjsPath, files[0])) : null;
-}
-async function getSolc(version) {
-    try {
-        let data = await request("https://solc-bin.ethereum.org/bin/list.json");
-        let list = JSON.parse(data.body)
-        if (list) {
-            let file = list.releases[version];
-            if (file) {
-                let build = list.builds.filter(e => e.path == file);
-                if (build && build.length == 1) {
-                    let filename = build[0].path;
-                    let solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
-                    solcjs = solcjs.body;
-                    let solcjsPath = path.resolve(SolcjsPath, filename);
-                    fs.writeFileSync(solcjsPath, solcjs);
-                    return solcjsPath;
-                }
-            }
-        }
-    } catch (e) { console.log(e) }
-}
+
 function findImports(path) {
     if (fs.existsSync(path)) {
         return {
@@ -123,16 +145,16 @@ function findImports(path) {
         }
     }
 
-    for (let i in libMap) {
-        if (path.startsWith(i)) {
-            let _sourceDir = sourceDir;
-            if (_sourceDir.endsWith(".sol")) {
-                _sourceDir = _sourceDir.replace(/[a-zA-Z0-9_-]+\.sol$/, "");
+    for (let prefix in _libMap) {
+        if (path.startsWith(prefix)) {
+            let sourceDir = _sourceDir;
+            if (sourceDir.endsWith(".sol")) {
+                sourceDir = sourceDir.replace(/[a-zA-Z0-9_-]+\.sol$/, "");
             }
-            let targetList = libMap[i];
+            let targetList = _libMap[prefix];
             if (!Array.isArray(targetList)) targetList = [targetList];
             for (let j = 0; j < targetList.length; j++) {
-                let target = path.replace(i, _sourceDir + targetList[j]);
+                let target = path.replace(prefix, sourceDir + targetList[j]);
                 if (fs.existsSync(target)) {
                     return {
                         contents:
@@ -144,6 +166,48 @@ function findImports(path) {
     }
     console.log("import contract not found: " + path);
 }
+
+function prettyPrint1(s) {
+    let i = 0;
+    return s.split('').map(e => {
+        if (e == '[') i++; else if (e == ']') i--;
+        return i == 0 ? e == "{" ? "{\n  " : e == "," ? ",\n  " : e == "}" ? "\n}" : e : e;
+    }).join('');
+}
+function processOutput(sourceDir, output, binOutputDir, libOutputDir) {
+    let index = '';
+    if (output.contracts) {
+        for (let i in output.contracts) {
+            let p = path.dirname(i.replace(/^contracts\//,''));
+            p = p=='.' ? '' : (p + '/');
+
+            for (let j in output.contracts[i]) {
+                let bytecode = output.contracts[i][j].evm?.bytecode?.object;
+                if (bytecode && output.contracts[i][j].abi && output.contracts[i][j].abi.length){
+                    if (!fs.existsSync(binOutputDir + '/' + p))
+                        fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
+                        fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
+                            abi: output.contracts[i][j].abi,
+                            bytecode: bytecode
+                        }, null, 4)
+                    );
+                    if (libOutputDir){
+                        if (!fs.existsSync(libOutputDir + '/' + p))
+                            fs.mkdirSync(libOutputDir + '/' + p, { recursive: true });
+                        let relPath = path.relative(`/${libOutputDir}/${p}`,`/${binOutputDir}/${p}`);
+                        if (relPath && relPath.indexOf('.') < 0)
+                            relPath = './' + relPath;
+                        let code = codeGen(j, relPath, output.contracts[i][j].abi);
+                        fs.writeFileSync(libOutputDir + '/' + p + j +  '.ts', code);
+
+                        index += `export { ${j} } from \'./${p + j}\';\n`;
+                    }
+                }
+            }
+        }
+    }
+    return index;
+}
 async function main(version, sourceDir, binOutputDir, libOutputDir) {
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
@@ -151,67 +215,23 @@ async function main(version, sourceDir, binOutputDir, libOutputDir) {
         binOutputDir = path.join(sourceDir, 'bin');
     if (!libOutputDir)
         libOutputDir = sourceDir;
-    fs.mkdirSync(SolcjsPath, { recursive: true });
     fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });
     fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });
+    _libMap = JSON.parse(libMap || "{}");
     try {
-        let solcjsPath = getCache(version);
-        if (!solcjsPath) {
-            solcjsPath = await getSolc(version);
-        }
-        if (!solcjsPath) {
-            return null;
-        }
-        let solc = solcWrapper(require(solcjsPath));
-        let input = buildInput(sourceDir);
+        let solc = await getSolc(version);
+        _sourceDir = sourceDir;
+        let input = buildInput(sourceDir, null);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-        function prettyPrint1(s) {
-            let i = 0;
-            return s.split('').map(e => {
-                if (e == '[') i++; else if (e == ']') i--;
-                return i == 0 ? e == "{" ? "{\n  " : e == "," ? ",\n  " : e == "}" ? "\n}" : e : e;
-            }).join('');
-        }
-        if (output.contracts) {
-            let index = '';
-            for (let i in output.contracts) {
-                let p = path.dirname(i.replace(/^contracts\//,''));
-                p = p=='.' ? '' : (p + '/');
-                for (let j in output.contracts[i]) {
-                    let bytecode = output.contracts[i][j].evm?.bytecode?.object;
-                    if (bytecode && output.contracts[i][j].abi && output.contracts[i][j].abi.length){
-                        if (!fs.existsSync(binOutputDir + '/' + p))
-                            fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
-                            fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
-                                abi: output.contracts[i][j].abi,
-                                bytecode: bytecode
-                            }, null, 4)
-                        );
-                        if (libOutputDir){
-                            if (!fs.existsSync(libOutputDir + '/' + p))
-                                fs.mkdirSync(libOutputDir + '/' + p, { recursive: true });
-                            let relPath = path.relative(`/${libOutputDir}/${p}`,`/${binOutputDir}/${p}`);
-                            if (relPath && relPath.indexOf('.') < 0)
-                                relPath = './' + relPath;
-                            let code = codeGen(j, relPath, output.contracts[i][j].abi);
-                            fs.writeFileSync(libOutputDir + '/' + p + j +  '.ts', code);
-
-                            index += `export { ${j} } from \'./${p + j}\';\n`;
-                        }
-                    }
-                }
-            }
-            fs.writeFileSync(libOutputDir + '/index.ts', index);
-        }
+        let index = processOutput(sourceDir, output, binOutputDir, libOutputDir);
         if (output.errors) {
             output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
         }
-    } catch (e) { console.log(e) }
+        fs.writeFileSync(libOutputDir + '/index.ts', index);
+    } catch (e) { console.log(e); }
 }
 
-
-if (process.argv.length < 4) {
+if (process.argv.length < 6) {
     return console.log("Usage: node compile.js <version> <src_dir> <out_dir> <lib_dir> [<lib_map>]\ne.g.: node tools/compile.js 0.6.11 contracts bin/contracts src/contracts")
 }
-// node compile <version> <src_dir> <out_dir> <lib_dir>
-main(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
+main(process.argv[2], process.argv[3], process.argv[4], process.argv[5], process.argv[6]);
