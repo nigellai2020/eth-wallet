@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/eth-wallet",
     "version": "0.1.10",
-    "main": "lib/index.js",    
+    "main": "lib/index.js",
     "bin": {
         "eth-wallet-build": "tools/compile.js",
         "eth-wallet-build-2": "tools/compileV2.js"
@@ -14,9 +14,9 @@
         "bn.js": "5.2.0",
         "ethereumjs-tx": "2.1.2",
         "ethereumjs-util": "7.0.7",
-        "web3": "1.6.0",
-        "web3-eth": "1.6.0",
-        "web3-utils": "1.6.0"
+        "web3": "1.7.0",
+        "web3-eth": "1.7.0",
+        "web3-utils": "1.7.0"
     },
     "devDependencies": {
         "@types/mocha": "9.0.0",
@@ -29,7 +29,7 @@
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "test": "mocha --ui tdd --exit --require ts-node/register test/*.ts",
+        "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
         "postinstall": "mkdir -p tools/solcjs"
     }
 }

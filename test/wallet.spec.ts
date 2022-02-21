@@ -36,10 +36,19 @@ suite('##Wallet Ganache', async function() {
         assert.strictEqual((await wallet2.balance).toNumber(), 20);
 
         let token = wallet2.token('');
-        await token.deploy('oswap', 'oswap', wallet2.address);
-        await token.mint(wallet2.address, 100);
+        await token.deploy({
+            name: 'oswap', 
+            symbol: 'oswap', 
+            minter: wallet2.address});
+        await token.mint({
+            address: wallet2.address, 
+            amount: 100
+        });
         assert.strictEqual((await token.balance).toNumber(), 100);
-        let tx = await token._mint(wallet.address, 100);        
+        let tx = await token._mint({
+            address: wallet.address, 
+            amount: 100
+        });        
         let signedTx = await wallet2.signTransaction(tx);
         await wallet2.sendSignedTransaction(signedTx);        
         assert.strictEqual((await token.balanceOf(wallet.address)).toNumber(), 100);
@@ -54,7 +63,9 @@ suite('##Wallet Ganache', async function() {
         wallet.defaultAccount = accounts[0];
         assert.strictEqual(wallet.address, accounts[0]);        
         let erc20 = wallet.token('');// new Erc20(wallet);
-        erc20Address = await erc20.deploy('DUMMY Token', 'DUMMY');        
+        erc20Address = await erc20.deploy({
+            name: 'DUMMY Token', symbol: 'DUMMY'
+        });        
         assert.strictEqual(await erc20.symbol, 'DUMMY');
         assert.strictEqual(await erc20.name, 'DUMMY Token');        
         assert.strictEqual(await erc20.decimals, 18);        
@@ -62,7 +73,10 @@ suite('##Wallet Ganache', async function() {
     test('Erc20.mint', async function(){
         let erc20 = wallet.token(erc20Address);
         let fromBlock = await wallet.getBlockNumber();
-        await erc20.mint(accounts[1], 1001);
+        await erc20.mint({
+            address: accounts[1], 
+            amount: 1001
+        });
         assert.strictEqual((await erc20.totalSupply).toNumber(), 1001);
         assert.strictEqual((await erc20.balanceOf(accounts[1])).toNumber(), 1001);        
         let events = await erc20.scanEvents(fromBlock, 'latest', ['Transfer']);
@@ -72,7 +86,10 @@ suite('##Wallet Ganache', async function() {
     test('Erc20.transfer', async function(){
         let erc20 = wallet.token(erc20Address);
         wallet.defaultAccount = accounts[1];
-        await erc20.transfer(accounts[0], 101);
+        await erc20.transfer({
+            address: accounts[0], 
+            amount: 101
+        });
         assert.strictEqual((await erc20.balanceOf(accounts[0])).toNumber(), 101);
     })
     test("Erc20.events", async function(){
@@ -86,8 +103,14 @@ suite('##Wallet Ganache', async function() {
     test('Erc20.approve', async function(){
         let erc20 = wallet.token(erc20Address);
         wallet.defaultAccount = accounts[1];
-        await erc20.approve(accounts[0], 100001);
-        assert.strictEqual((await erc20.allowance(accounts[1], accounts[0])).toNumber(), 100001);
+        await erc20.approve({
+            spender: accounts[0], 
+            amount: 100001
+        });
+        assert.strictEqual((await erc20.allowance({
+            owner: accounts[1], 
+            spender: accounts[0]
+        })).toNumber(), 100001);
     })
     test('Wallet.signMessage', async function(){
         assert.strictEqual(wallet.address, accounts[1]);
@@ -194,7 +217,10 @@ suite('##Wallet', function() {
         let balance1 = await token1.balance;
         let balance2 = await token2.balance;
         let balance = balance1.plus(0.00001);
-        let tx = await token2.transfer(wallet1.address, 0.00001);
+        let tx = await token2.transfer({
+            address: wallet1.address, 
+            amount: 0.00001
+        });
         txHash = tx.transactionHash;
         assert.strictEqual(balance.eq(await token1.balance), true);
     })
@@ -238,7 +264,10 @@ suite('##Wallet AWS KMS', async function() {
         let walletBalance = await walletToken.balance;        
         let kmsBalance = await kmsToken.balance;
         let balance = walletBalance.plus(0.0001);        
-        let tx = await kmsToken.transfer(wallet.address, 0.0001);
+        let tx = await kmsToken.transfer({
+            address: wallet.address, 
+            amount: 0.0001
+        });
         assert.strictEqual(balance.eq(await walletToken.balance), true);
     })
 })
