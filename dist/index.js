@@ -84,16 +84,14 @@ var require_contract = __commonJS({
         }
         parseEvents(receipt, eventName) {
           let eventAbis = this.getAbiEvents();
-          let result = [];
           let topic0 = this.getAbiTopics([eventName])[0];
+          let result = [];
           if (receipt.events) {
             for (let name in receipt.events) {
               let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
-              events.forEach((e) => {
-                let raw = e.raw;
-                if (topic0 == raw.topics[0] && (this.address && this.address == e.address)) {
-                  let event = eventAbis[topic0];
-                  result.push(Object.assign({ _eventName: eventName, _address: this.address, _transactionHash: receipt.transactionHash }, this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
+              events.forEach((event) => {
+                if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
+                  result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
                 }
               });
             }
@@ -101,8 +99,7 @@ var require_contract = __commonJS({
             for (let i = 0; i < receipt.logs.length; i++) {
               let log = receipt.logs[i];
               if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
-                let event = eventAbis[topic0];
-                result.push(Object.assign({ _eventName: eventName, _address: this.address, _transactionHash: receipt.transactionHash }, this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
+                result.push(this.wallet.decode(eventAbis[topic0], log));
               }
             }
           }
@@ -1252,6 +1249,31 @@ var require_wallet = __commonJS({
             }
           }
         }
+        decode(abi, event, raw) {
+          if (!raw)
+            raw = event;
+          let d;
+          if (abi) {
+            d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
+            if (d.__length__) {
+              for (let k = 0; k < d.__length__; k++)
+                delete d[k];
+              delete d["__length__"];
+            }
+          }
+          let log = {
+            address: event.address,
+            blockNumber: event.blockNumber,
+            topics: raw.topics,
+            data: d ? d : raw.data,
+            rawData: d ? raw.data : void 0,
+            logIndex: event.logIndex,
+            name: abi ? abi.name : void 0,
+            transactionHash: event.transactionHash,
+            transactionIndex: event.transactionIndex
+          };
+          return log;
+        }
         async decodeEventData(data, events) {
           let _web3 = this._web3;
           let event;
@@ -1265,27 +1287,7 @@ var require_wallet = __commonJS({
               event = null;
           }
           ;
-          let d;
-          if (event) {
-            d = _web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1));
-            if (d.__length__) {
-              for (let k = 0; k < d.__length__; k++)
-                delete d[k];
-              delete d["__length__"];
-            }
-            ;
-          }
-          let log = {
-            address: data.address,
-            blockNumber: data.blockNumber,
-            topics: data.topics,
-            data: d ? d : data.data,
-            rawData: d ? data.data : void 0,
-            logIndex: data.logIndex,
-            name: event ? event.name : void 0,
-            transactionHash: data.transactionHash,
-            transactionIndex: data.transactionIndex
-          };
+          let log = this.decode(event, data);
           let handler = this._eventHandler[data.address];
           if (handler)
             await handler(this, log);

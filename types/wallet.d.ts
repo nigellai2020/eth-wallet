@@ -201,6 +201,10 @@ declare module Wallet {
         getContractAbiEvents(address: string): any;
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
+        decode(abi: any, event: Log | EventLog, raw?: {
+            data: string;
+            topics: string[];
+        }): Event;
         decodeEventData(data: Log, events?: any): Promise<Event>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         send(to: string, amount: number): Promise<TransactionReceipt>;

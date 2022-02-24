@@ -22,7 +22,7 @@ module.exports = function(name, abiPath, abi){
         else if (item.type.indexOf('bytes') == 0)
             return 'string'
         else if (/^u?int\d*\[\d*\]$/.test(item.type))
-            return 'number[]|BigNumber[]'
+            return '(number|BigNumber)[]'
         else if (/^u?int\d*$/.test(item.type))
             return 'number|BigNumber'
         else if (item.type == 'tuple')
@@ -153,8 +153,8 @@ module.exports = function(name, abiPath, abi){
         parent = parent || "result";
         indent = indent || 0;
         let lines = []
-        if (items.length > 1 || (isEvent && items.length >= 1)){
-            lines.push({indent:indent, text:addReturn?"return {":"{"});
+        if (items.length > 1 || (isEvent)){
+            lines.push({indent:indent, text:addReturn?("return {" + (isEvent?"...event,":"")):"{"});
             for (let i = 0; i < items.length; i ++){
                 let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                 if (items[i].type == 'tuple') {
@@ -232,31 +232,18 @@ module.exports = function(name, abiPath, abi){
             addLine(2, 'return result;')
         addLine(1, '}');
     }
-    let eventMeta = [
-        {
-            "internalType": "string",
-            "name": "_eventName",
-            "type": "string"
-        },
-        {
-            "internalType": "address",
-            "name": "_address",
-            "type": "address"
-        },
-        {
-            "internalType": "bytes32",
-            "name": "_transactionHash",
-            "type": "bytes32"
-        }
-    ];
     function addEvent(item){
-        let eventItems = eventMeta.concat(item.inputs);
+        let eventItems = item.inputs;
         events[item.name] = viewFunctionOutputType(eventItems, true);
         addLine(1, `parse${item.name}Event(receipt: TransactionReceipt): ${name}.${item.name}Event[]{`);
-        addLine(2, `let events = this.parseEvents(receipt, "${item.name}");`);
-        addLine(2, `return events.map(result => {`);
-        returnOutputs(eventItems, true, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
-        addLine(2, '});');
+        addLine(2, `return this.parseEvents(receipt, "${item.name}").map(e=>this.decode${item.name}Event(e));`);
+        addLine(1, '}');
+        addLine(1, `decode${item.name}Event(event: Event): ${name}.${item.name}Event{`);
+        // addLine(2, `let events = this.decodeEvent(log, "${item.name}");`);
+        // addLine(2, `return events.map(event => {`);
+        addLine(2, `let result = event.data;`);
+        returnOutputs(eventItems, true, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
+        // addLine(2, '});');
         addLine(1, '}');
     }
     function addConstructor(abi){
@@ -282,7 +269,7 @@ module.exports = function(name, abiPath, abi){
                 break;
         }
     }
-    addLine(0, `import {Wallet, Contract, TransactionReceipt, Utils, BigNumber} from "@ijstech/eth-wallet";`);
+    addLine(0, `import {Wallet, Contract, TransactionReceipt, Utils, BigNumber, Event} from "@ijstech/eth-wallet";`);
     addLine(0, `const Bin = require("${abiPath}/${name}.json");`);
     addLine(0, ``);
     addLine(0, `export class ${name} extends Contract{`);
@@ -297,7 +284,7 @@ module.exports = function(name, abiPath, abi){
     if (Object.keys(events).length) {
         addLine(0, `export module ${name}{`);
         for (let e in events)
-            addLine(1, `export interface ${e}Event ${events[e]}`);
+            addLine(1, `export interface ${e}Event extends Event ${events[e]}`);
         addLine(0, `}`);
     }
     return result.join('\n');

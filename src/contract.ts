@@ -49,18 +49,17 @@ module Contract {
             }
             return result;
         }
-        protected parseEvents(receipt: TransactionReceipt, eventName: string): any[]{
+        protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[]{
             let eventAbis = this.getAbiEvents();
-            let result = [];
             let topic0 = this.getAbiTopics([eventName])[0];
+
+            let result = [];
             if (receipt.events) {
                 for (let name in receipt.events){
                     let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
-                    events.forEach(e=>{
-                        let raw = e.raw;
-                        if (topic0 == raw.topics[0] && (this.address && this.address==e.address)) {
-                            let event = eventAbis[topic0];
-                            result.push(Object.assign({_eventName:eventName, _address:this.address, _transactionHash:receipt.transactionHash},this.web3.eth.abi.decodeLog(event.inputs, raw.data, raw.topics.slice(1))));
+                    events.forEach(event=>{
+                        if (topic0 == event.raw.topics[0] && (this.address && this.address==event.address)) {
+                            result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
                         }
                     });
                 }
@@ -68,8 +67,7 @@ module Contract {
                 for (let i = 0 ; i < receipt.logs.length ; i++) {
                     let log = receipt.logs[i];
                     if (topic0 == log.topics[0] && (this.address && this.address==log.address)) {
-                        let event = eventAbis[topic0];
-                        result.push(Object.assign({_eventName:eventName, _address:this.address, _transactionHash:receipt.transactionHash},this.web3.eth.abi.decodeLog(event.inputs, log.data, log.topics.slice(1))));
+                        result.push(this.wallet.decode(eventAbis[topic0], log));
                     }
                 }
 

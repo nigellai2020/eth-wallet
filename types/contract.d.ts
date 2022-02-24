@@ -17,7 +17,7 @@ declare module Contract {
         set address(value: string);
         get address(): string;
         protected decodeEvents(receipt: TransactionReceipt): any[];
-        protected parseEvents(receipt: TransactionReceipt, eventName: string): any[];
+        protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
         get events(): EventType[];
         protected methodsToUtf8(...args: any[]): Promise<string>;
         protected methodsToUtf8Array(...args: any[]): Promise<string[]>;
