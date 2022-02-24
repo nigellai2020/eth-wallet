@@ -208,7 +208,7 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir) {
     }
     return index;
 }
-async function main(version, sourceDir, binOutputDir, libOutputDir) {
+async function main(version, sourceDir, binOutputDir, libOutputDir, libMap) {
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
     if (!binOutputDir)
