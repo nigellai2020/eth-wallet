@@ -68,8 +68,10 @@ module.exports = function(name, abiPath, abi){
     function viewFunctionOutputType(items, isEvent){
         if (items.length > 1 || (isEvent && items.length >= 1)){
             let result = '{';
+            if (isEvent)
+                result += "_event:Event"
             for (let i = 0; i < items.length; i ++){
-                if (i > 0)
+                if (result.length > 1)
                     result +=','
                 result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i]);
             }
@@ -154,7 +156,9 @@ module.exports = function(name, abiPath, abi){
         indent = indent || 0;
         let lines = []
         if (items.length > 1 || (isEvent)){
-            lines.push({indent:indent, text:addReturn?("return {" + (isEvent?"...event,":"")):"{"});
+            lines.push({indent:indent, text:addReturn?"return {":"{"});
+            if (addReturn && isEvent)
+                lines.push({indent:indent+1, text:"_event:event,"});
             for (let i = 0; i < items.length; i ++){
                 let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                 if (items[i].type == 'tuple') {
@@ -284,7 +288,7 @@ module.exports = function(name, abiPath, abi){
     if (Object.keys(events).length) {
         addLine(0, `export module ${name}{`);
         for (let e in events)
-            addLine(1, `export interface ${e}Event extends Event ${events[e]}`);
+            addLine(1, `export interface ${e}Event ${events[e]}`);
         addLine(0, `}`);
     }
     return result.join('\n');
