@@ -68,12 +68,15 @@ module.exports = function(name, abiPath, abi){
     function viewFunctionOutputType(items, isEvent){
         if (items.length > 1 || (isEvent && items.length >= 1)){
             let result = '{';
-            if (isEvent)
-                result += "_event:Event"
             for (let i = 0; i < items.length; i ++){
-                if (result.length > 1)
+                if (i > 0)
                     result +=','
                 result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i]);
+            }
+            if (isEvent) {
+                if (items.length > 0)
+                    result +=','
+                result += "_event:Event"
             }
             result += '}'
             return result;
@@ -110,6 +113,26 @@ module.exports = function(name, abiPath, abi){
             return result+'}';
         }
     }
+    function expendTuple(parent,tuple){
+        let result = '[';
+        let components = tuple.components;
+        for (let i = 0 ; i < components.length ; i++) {
+            if (i > 0)
+                result += ',';
+            if (/^u?int\d*(\[\d*\])?$/.test(components[i].type))
+                result += `Utils.toString(${parent}.${paramName(components[i].name,i)})`
+            else if (components[i].type == 'tuple')
+                result += expendTuple(`${parent}.${paramName(components[i].name,i)}`, components[i]);
+            else if (components[i].type == 'tuple[]')
+                result += `${parent}.${paramName(components[i].name,i)}.map(e=>(${expendTuple("e", components[i])}))`;
+            else if (/^bytes32(\[\d*\])?$/.test(components[i].type))
+                result += `Utils.stringToBytes32(${parent}.${paramName(components[i].name,i)})`
+            else
+                result += `${parent}.${paramName(components[i].name,i)}`
+        }
+        result += ']';
+        return result;
+    }
     function inputNames(item){
         let result = '';
         if (item.inputs.length == 1){
@@ -117,9 +140,9 @@ module.exports = function(name, abiPath, abi){
             if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
                 result += `Utils.toString(${paramName(item.inputs[i].name,i)})`
             else if (item.inputs[i].type == 'tuple')
-                result += `Utils.toString(Object.values(${paramName(item.inputs[i].name,i)}))`
+                result += expendTuple(`${paramName(item.inputs[i].name,i)}`, item.inputs[i]);
             else if (item.inputs[i].type == 'tuple[]')
-                result += `Utils.toString(${paramName(item.inputs[i].name,i)}.map(e=>Object.values(e)))`
+                result += `${paramName(item.inputs[i].name,i)}.map(e=>(${expendTuple("e", item.inputs[i])}))`;
             else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                 result += `Utils.stringToBytes32(${paramName(item.inputs[i].name,i)})`
             else
@@ -132,10 +155,10 @@ module.exports = function(name, abiPath, abi){
                 if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
                     result += `Utils.toString(params.${paramName(item.inputs[i].name,i)})`
                 else if (item.inputs[i].type == 'tuple')
-                    result += `Utils.toString(Object.values(params.${paramName(item.inputs[i].name,i)}))`
-                else if (item.inputs[i].type == 'tuple[]')
-                    result += `Utils.toString(params.${paramName(item.inputs[i].name,i)}.map(e=>Object.values(e)))`
-                else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
+                    result += expendTuple(`params.${paramName(item.inputs[i].name,i)}`, item.inputs[i]);
+                else if (item.inputs[i].type == 'tuple[]'){
+                    result += `params.${paramName(item.inputs[i].name,i)}.map(e=>(${expendTuple("e", item.inputs[i])}))`;
+                }else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
                     result += `Utils.stringToBytes32(params.${paramName(item.inputs[i].name,i)})`
                 else
                     result += `params.${paramName(item.inputs[i].name,i)}`
@@ -157,20 +180,18 @@ module.exports = function(name, abiPath, abi){
         let lines = []
         if (items.length > 1 || (isEvent)){
             lines.push({indent:indent, text:addReturn?"return {":"{"});
-            if (addReturn && isEvent)
-                lines.push({indent:indent+1, text:"_event:event,"});
             for (let i = 0; i < items.length; i ++){
                 let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                 if (items[i].type == 'tuple') {
                     lines.push({indent:indent+1, text:items[i].name +':'});
                     lines = lines.concat(returnOutputs(items[i].components, false, isEvent, objPath, indent+1));
-                    if (i < items.length -1)
+                    if ((addReturn && isEvent) || i < items.length -1)
                         lines[lines.length-1].text+=','
                 }
                 else if (items[i].type == 'tuple[]') {
                     lines.push({indent:indent+1, text:items[i].name +': ' + `${objPath}.map(e=>{`});
                     lines = lines.concat(returnOutputs(items[i].components, true, isEvent, "e", indent+2));
-                    if (i < items.length -1)
+                    if ((addReturn && isEvent) || i < items.length -1)
                         lines[lines.length-1].text+=','
                     lines.push({indent:indent+1, text:"})"});
                 }
@@ -183,11 +204,13 @@ module.exports = function(name, abiPath, abi){
                         line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}.map(e=>new BigNumber(e))`;
                     else
                         line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}`;
-                    if (i < items.length -1)
+                    if ((addReturn && isEvent) || i < items.length -1)
                         line += ','
                     lines.push({indent:indent+1, text:line});
                 }
             }
+            if (addReturn && isEvent)
+                lines.push({indent:indent+1, text:"_event: event"});
             lines.push({indent:indent, text:addReturn?"};":"}"});
         }
         else if (items.length == 1){
