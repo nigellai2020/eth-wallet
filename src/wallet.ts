@@ -632,7 +632,7 @@ module Wallet{
                         gas = Math.round(this._blockGasLimit * 0.5);
                     } else {
 						try{
-							await method.call({from:this.address});
+							await method.call({from:this.address, value: value});
 						} catch(e) {
 							if (e.message.includes("VM execution error.")) {
 								var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);

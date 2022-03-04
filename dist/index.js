@@ -1044,7 +1044,7 @@ var require_wallet = __commonJS({
                 gas = Math.round(this._blockGasLimit * 0.5);
               } else {
                 try {
-                  await method.call({ from: this.address });
+                  await method.call({ from: this.address, value });
                 } catch (e2) {
                   if (e2.message.includes("VM execution error.")) {
                     var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
