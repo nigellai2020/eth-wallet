@@ -244,7 +244,7 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
                     solc = await getSolc(customSettings[s].version);
                 }
                 _sourceDir = customSettings[s].root || root;
-                input = buildInput(customSettings[s].root, customSettings[s].sources, customSettings[s].optimizerRuns)
+                input = buildInput(_sourceDir, customSettings[s].sources, customSettings[s].optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
                 index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSources);
                 if (output.errors) {
