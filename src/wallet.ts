@@ -12,8 +12,23 @@ function Web3Lib(){
         return window["Web3"];
 	else
         return require("web3");
-}
+};
 module Wallet{    
+	export interface IWalletUtils{
+		fromWei(value: any, unit?: string): string;
+		toUtf8(value: any): string;		
+		toWei(value: string, unit?: string): string;
+	};
+	export interface IWallet {		
+		address: string;
+		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event;
+		decodeLog(inputs: any, hexString: string, topics: any): any;
+		getAbiEvents(abi: any[]): any;
+		getAbiTopics(abi: any[], eventNames: string[]): any[];
+		methods(...args: any): Promise<any>;
+		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
+		utils: IWalletUtils;
+	};
     export interface Event{
 		name: string;
         address: string;
@@ -272,7 +287,7 @@ module Wallet{
 			})
 		}
 	}
-    export class Wallet{
+    export class Wallet implements IWallet{
 		private _web3: W3.default;		
         private _account: IAccount;
 		private _accounts: IAccount[];
@@ -376,6 +391,9 @@ module Wallet{
         		privateKey: acc.privateKey
         	};
         };
+		decodeLog(inputs: any, hexString: string, topics: any): any{
+			return this.web3.eth.abi.decodeLog(inputs, hexString, topics)
+		};
 		get defaultAccount(): string{
 			if (this._account)
 				return this._account.address
@@ -540,7 +558,7 @@ module Wallet{
 			};
 			return tx;							
         }
-		async methods(...args){
+		async methods(...args: any): Promise<any>{
         	let _web3 = this._web3;
         	if ((<any>_web3).methods){
         		return (<any>_web3).methods.apply(_web3, args);
@@ -801,7 +819,7 @@ module Wallet{
 		    }
 		    return eventMap;
 		}
-        getAbiTopics(abi: any[], eventNames: string[]){
+        getAbiTopics(abi: any[], eventNames: string[]): any[]{
 			if (!eventNames)
 				return;
 			let _web3 = this._web3;
@@ -1043,7 +1061,7 @@ module Wallet{
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
 		}
-        get utils(): Utils{
+        get utils(): IWalletUtils{
             return this._web3.utils;
         };
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>{

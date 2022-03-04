@@ -1,4 +1,4 @@
-export { Wallet, Transaction, Event, TransactionReceipt } from './wallet';
+export { IWallet, Wallet, Transaction, Event, TransactionReceipt } from './wallet';
 export { Contract } from './contract';
 export { BigNumber } from "bignumber.js";
 export { Erc20 } from './contracts/erc20';

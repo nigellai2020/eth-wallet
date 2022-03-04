@@ -1,4 +1,4 @@
-import { Wallet, Transaction, TransactionReceipt } from '../wallet';
+import { Wallet, TransactionReceipt } from '../wallet';
 import { Contract } from '../contract';
 import { BigNumber } from 'bignumber.js';
 declare module ERC20 {
@@ -27,10 +27,6 @@ declare module ERC20 {
             address: string;
             amount: number | BigNumber;
         }): Promise<any>;
-        _mint(params: {
-            address: string;
-            amount: number | BigNumber;
-        }): Promise<Transaction>;
         minter(): Promise<string>;
         get name(): Promise<string>;
         get symbol(): Promise<string>;
@@ -39,10 +35,6 @@ declare module ERC20 {
             address: string;
             amount: number | BigNumber;
         }): Promise<TransactionReceipt>;
-        _transfer(params: {
-            address: string;
-            amount: number | BigNumber;
-        }): Promise<Transaction>;
     }
 }
 export = ERC20;

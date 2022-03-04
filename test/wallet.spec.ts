@@ -45,13 +45,13 @@ suite('##Wallet Ganache', async function() {
             amount: 100
         });
         assert.strictEqual((await token.balance).toNumber(), 100);
-        let tx = await token._mint({
-            address: wallet.address, 
-            amount: 100
-        });        
-        let signedTx = await wallet2.signTransaction(tx);
-        await wallet2.sendSignedTransaction(signedTx);        
-        assert.strictEqual((await token.balanceOf(wallet.address)).toNumber(), 100);
+        // let tx = await token._mint({
+        //     address: wallet.address, 
+        //     amount: 100
+        // });        
+        // let signedTx = await wallet2.signTransaction(tx);
+        // await wallet2.sendSignedTransaction(signedTx);        
+        // assert.strictEqual((await token.balanceOf(wallet.address)).toNumber(), 100);
     });
     test('setBlockTime', async function(){        
         let block1 = await wallet.getBlock('latest');

@@ -74,10 +74,10 @@ module ERC20{
                     reject(err);
                 }
             })            
-        }
-        async _mint(params:{address: string, amount: number|BigNumber}): Promise<Transaction>{
-            return this._methods('mint', params.address, await Utils.toDecimals(params.amount, await this.decimals))
-        }
+        };
+        // async _mint(params:{address: string, amount: number|BigNumber}): Promise<Transaction>{
+        //     return this._methods('mint', params.address, await Utils.toDecimals(params.amount, await this.decimals))
+        // }
         minter(): Promise<string>{
             return this.methods('minter');
         }
@@ -100,9 +100,9 @@ module ERC20{
         async transfer(params:{address: string, amount: number | BigNumber}): Promise<TransactionReceipt>{            
         	return this.methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
         }
-        async _transfer(params:{address: string, amount: number | BigNumber}): Promise<Transaction>{            
-        	return this._methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
-        }
+        // async _transfer(params:{address: string, amount: number | BigNumber}): Promise<Transaction>{            
+        // 	return this._methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
+        // }
 	};
 };
 export = ERC20;

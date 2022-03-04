@@ -44,7 +44,6 @@ var __toModule = (module2) => {
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
     var import_bignumber3 = __toModule(require("bignumber.js"));
-    var Web32 = require("web3");
     var Contract2;
     (function(_Contract) {
       class Contract3 {
@@ -77,7 +76,7 @@ var require_contract = __commonJS({
             events2.forEach((e) => {
               let data = e.raw;
               let event = events2[data.topics[0]];
-              result.push(Object.assign({ _name: name, _address: this.address }, this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+              result.push(Object.assign({ _name: name, _address: this.address }, this.wallet.decodeLog(event.inputs, data.data, data.topics.slice(1))));
             });
           }
           return result;
@@ -149,11 +148,6 @@ var require_contract = __commonJS({
             return resolve(new import_bignumber3.BigNumber(self.wallet.utils.fromWei(result)));
           });
         }
-        _methods(...args) {
-          args.unshift(this._address);
-          args.unshift(this._abi);
-          return this.wallet._methods.apply(this.wallet, args);
-        }
         methods(...args) {
           args.unshift(this._address);
           args.unshift(this._abi);
@@ -181,9 +175,6 @@ var require_contract = __commonJS({
           args.unshift(this._abi);
           this._address = await this.wallet.methods.apply(this.wallet, args);
           return this._address;
-        }
-        get web3() {
-          return this.wallet.web3;
         }
       }
       _Contract.Contract = Contract3;
@@ -396,9 +387,6 @@ var require_erc202 = __commonJS({
             }
           });
         }
-        async _mint(params) {
-          return this._methods("mint", params.address, await toDecimals(params.amount, await this.decimals));
-        }
         minter() {
           return this.methods("minter");
         }
@@ -419,9 +407,6 @@ var require_erc202 = __commonJS({
         }
         async transfer(params) {
           return this.methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
-        }
-        async _transfer(params) {
-          return this._methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
         }
       }
       ERC202.Erc20 = Erc202;
@@ -559,6 +544,8 @@ var require_wallet = __commonJS({
     }
     var Wallet2;
     (function(_Wallet) {
+      ;
+      ;
       _Wallet.Networks = {
         1: {
           chainId: 1,
@@ -808,6 +795,9 @@ var require_wallet = __commonJS({
             address: acc.address,
             privateKey: acc.privateKey
           };
+        }
+        decodeLog(inputs, hexString, topics) {
+          return this.web3.eth.abi.decodeLog(inputs, hexString, topics);
         }
         get defaultAccount() {
           if (this._account)
@@ -1430,6 +1420,7 @@ __export(exports, {
   Contract: () => import_contract.Contract,
   Erc20: () => import_erc20.Erc20,
   Event: () => import_wallet.Event,
+  IWallet: () => import_wallet.IWallet,
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Utils: () => utils_exports,

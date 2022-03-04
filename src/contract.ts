@@ -1,21 +1,21 @@
-import {Wallet, TransactionReceipt, Event, Log, EventLog} from "./wallet";
+import {IWallet, TransactionReceipt, Event, Log, EventLog} from "./wallet";
 import {BigNumber} from "bignumber.js";
-import * as W3 from 'web3';
-const Web3 = require('web3'); // tslint:disable-line
+// import * as W3 from 'web3';
+// const Web3 = require('web3'); // tslint:disable-line
 
 module Contract {
     export interface EventType{
 		name: string
 	}
     export class Contract {
-        public wallet: Wallet;
+        public wallet: IWallet;
         public _abi: any;
         public _bytecode: any;
         public _address: string;
         private _events: any;
         public privateKey: string;
         
-        constructor(wallet: Wallet, address?: string, abi?: any, bytecode?: any) {            
+        constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any) {            
             this.wallet = wallet;                        
             if (typeof(abi) == 'string')
                 this._abi = JSON.parse(abi)
@@ -44,7 +44,7 @@ module Contract {
                 events.forEach(e=>{
                     let data = e.raw;
                     let event = events[data.topics[0]];
-                    result.push(Object.assign({_name:name, _address:this.address},this.web3.eth.abi.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+                    result.push(Object.assign({_name:name, _address:this.address},this.wallet.decodeLog(event.inputs, data.data, data.topics.slice(1))));
                 });
             }
             return result;
@@ -118,11 +118,11 @@ module Contract {
                 return resolve(new BigNumber(self.wallet.utils.fromWei(result)));
             })
         }
-        protected _methods(...args): Promise<any>{
-            args.unshift(this._address);
-            args.unshift(this._abi);
-            return this.wallet._methods.apply(this.wallet, args);
-        }
+        // protected _methods(...args): Promise<any>{
+        //     args.unshift(this._address);
+        //     args.unshift(this._abi);
+        //     return this.wallet._methods.apply(this.wallet, args);
+        // }
         protected methods(...args): Promise<any>{
             args.unshift(this._address);
             args.unshift(this._abi);
@@ -151,9 +151,9 @@ module Contract {
             this._address = await this.wallet.methods.apply(this.wallet, args);
             return this._address;
         }
-        get web3(): W3.default{
-            return this.wallet.web3;
-        }
+        // get web3(): W3.default{
+        //     return this.wallet.web3;
+        // }
     }
     export class TAuthContract extends Contract {
         rely(address: string): Promise<any>{

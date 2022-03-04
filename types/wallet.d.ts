@@ -2,8 +2,25 @@ import * as W3 from 'web3';
 import { BlockTransactionObject } from 'web3-eth';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
-import { Utils } from 'web3-utils';
 declare module Wallet {
+    interface IWalletUtils {
+        fromWei(value: any, unit?: string): string;
+        toUtf8(value: any): string;
+        toWei(value: string, unit?: string): string;
+    }
+    interface IWallet {
+        address: string;
+        decode(abi: any, event: Log | EventLog, raw?: {
+            data: string;
+            topics: string[];
+        }): Event;
+        decodeLog(inputs: any, hexString: string, topics: any): any;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames: string[]): any[];
+        methods(...args: any): Promise<any>;
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        utils: IWalletUtils;
+    }
     interface Event {
         name: string;
         address: string;
@@ -149,7 +166,7 @@ declare module Wallet {
         switchNetwork(chainId: number): Promise<boolean>;
         addNetwork(options: INetworkOption): Promise<boolean>;
     }
-    class Wallet {
+    class Wallet implements IWallet {
         private _web3;
         private _account;
         private _accounts;
@@ -174,6 +191,7 @@ declare module Wallet {
         get account(): IAccount;
         set account(value: IAccount);
         createAccount(): IAccount;
+        decodeLog(inputs: any, hexString: string, topics: any): any;
         get defaultAccount(): string;
         set defaultAccount(address: string);
         getChainId(): Promise<number>;
@@ -185,7 +203,7 @@ declare module Wallet {
             to: any;
             data: any;
         }>;
-        methods(...args: any[]): Promise<any>;
+        methods(...args: any): Promise<any>;
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
         recoverSigner(msg: string, signature: string): Promise<string>;
@@ -211,7 +229,7 @@ declare module Wallet {
         setBlockTime(time: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
-        get utils(): Utils;
+        get utils(): IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
         get web3(): W3.default;
     }
