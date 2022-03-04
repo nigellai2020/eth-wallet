@@ -77,7 +77,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
     let currPath = path.join(root, srcPath);
     // signle file
     if (fs.statSync(currPath).isFile()) {
-        sources[currPath.replace(root,'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
+        sources[currPath.replace(new RegExp(`^${root}`),'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
         return sources;
     }
     else if (fs.existsSync(path.join(currPath, '.ignoreAll')))
@@ -92,7 +92,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
             } else {
                 let _path = path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1");
                 if ((!exclude || !exclude.includes(_path)))
-                    sources[_path.replace(root,'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
+                    sources[_path.replace(new RegExp(`^${root}`),'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
             }
         }
     }
@@ -131,10 +131,10 @@ function buildInput(root, source, optimizerRuns, exclude) {
 }
 
 function findImports(path) {
-    if (fs.existsSync(path)) {
+    if (fs.existsSync(path.replace(/^contracts\//,_sourceDir))) {
         return {
             contents:
-               fs.readFileSync(path, "utf8")
+               fs.readFileSync(path.replace(/^contracts\//,_sourceDir), "utf8")
         }
     }
 
@@ -229,6 +229,7 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
     try {
         let solc = await getSolc(version);
         let customSources = customSettings && customSettings.map(e=>e.sources.map(f=>e.root+f)).reduce((a,b)=>a.concat(b),[]);
+        let root = sourceDir;
         _sourceDir = sourceDir;
         let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
@@ -242,7 +243,7 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
                 if (customSettings[s].version && customSettings[s]!=version) {
                     solc = await getSolc(customSettings[s].version);
                 }
-                _sourceDir = customSettings[s].root;
+                _sourceDir = customSettings[s].root || root;
                 input = buildInput(customSettings[s].root, customSettings[s].sources, customSettings[s].optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
                 index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSources);

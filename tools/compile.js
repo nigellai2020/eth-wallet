@@ -77,7 +77,7 @@ function recursiveAdd(root, srcPath, sources) {
     let currPath = path.join(root, srcPath);
     // signle file
     if (fs.statSync(currPath).isFile()) {
-        sources[currPath.replace(root,'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
+        sources[currPath.replace(new RegExp(`^${root}`),'contracts/')] = { content: fs.readFileSync(currPath, "utf8") };
         return sources;
     }
     else if (fs.existsSync(path.join(currPath, '.ignoreAll')))
@@ -91,7 +91,7 @@ function recursiveAdd(root, srcPath, sources) {
                 console.log(files[i] + " already exists");
             } else {
                 let _path = path.join(root, srcPath, files[i]).replace(/\\/g, "/").replace(/^([A-Za-z]):/, "/$1");
-                sources[_path.replace(root,'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
+                sources[_path.replace(new RegExp(`^${root}`),'contracts/')] = { content: fs.readFileSync(path.resolve(currPath, files[i]), "utf8") };
             }
         }
     }
@@ -130,10 +130,10 @@ function buildInput(root, source) {
 }
 
 function findImports(path) {
-    if (fs.existsSync(path)) {
+    if (fs.existsSync(path.replace(/^contracts\//,_sourceDir))) {
         return {
             contents:
-               fs.readFileSync(path, "utf8")
+               fs.readFileSync(path.replace(/^contracts\//,_sourceDir), "utf8")
         }
     }
 
