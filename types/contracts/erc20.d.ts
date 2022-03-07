@@ -1,10 +1,10 @@
-import { Wallet, TransactionReceipt } from '../wallet';
+import { IWallet, TransactionReceipt } from '../wallet';
 import { Contract } from '../contract';
 import { BigNumber } from 'bignumber.js';
 declare module ERC20 {
     class Erc20 extends Contract {
         private _decimals;
-        constructor(wallet: Wallet, address?: string, decimals?: number);
+        constructor(wallet: IWallet, address?: string, decimals?: number);
         deploy(params: {
             name: string;
             symbol: string;

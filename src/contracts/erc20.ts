@@ -1,4 +1,4 @@
-import {Wallet, Transaction, TransactionReceipt} from '../wallet';
+import {IWallet, Transaction, TransactionReceipt} from '../wallet';
 import {Contract} from '../contract';
 import {BigNumber} from 'bignumber.js';
 import * as Utils from '../utils';
@@ -10,7 +10,7 @@ module ERC20{
 	export class Erc20 extends Contract{
         private _decimals: number;
 
-		constructor(wallet: Wallet, address?: string, decimals?: number){            
+		constructor(wallet: IWallet, address?: string, decimals?: number){            
         	super(wallet, address, Abi, Bytecode);
             this._decimals = decimals;
         }
