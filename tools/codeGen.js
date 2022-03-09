@@ -296,11 +296,11 @@ module.exports = function(name, abiPath, abi){
                 break;
         }
     }
-    addLine(0, `import {Wallet, Contract, TransactionReceipt, Utils, BigNumber, Event} from "@ijstech/eth-wallet";`);
+    addLine(0, `import {IWallet, Contract, TransactionReceipt, Utils, BigNumber, Event} from "@ijstech/eth-wallet";`);
     addLine(0, `const Bin = require("${abiPath}/${name}.json");`);
     addLine(0, ``);
     addLine(0, `export class ${name} extends Contract{`);
-    addLine(1, `constructor(wallet: Wallet, address?: string){`);
+    addLine(1, `constructor(wallet: IWallet, address?: string){`);
     addLine(2, `super(wallet, address, Bin.abi, Bin.bytecode);`);
     addLine(1, `}`);
     addConstructor(abi);
