@@ -5,11 +5,13 @@ import { Erc20 } from './contracts/erc20';
 declare module Wallet {
     interface IWalletUtils {
         fromWei(value: any, unit?: string): string;
+        hexToUtf8(value: string): string;
         toUtf8(value: any): string;
         toWei(value: string, unit?: string): string;
     }
     interface IWallet {
         address: string;
+        balance: Promise<BigNumber>;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
             topics: string[];
@@ -18,6 +20,7 @@ declare module Wallet {
         getAbiEvents(abi: any[]): any;
         getAbiTopics(abi: any[], eventNames: string[]): any[];
         methods(...args: any): Promise<any>;
+        send(to: string, amount: number): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         utils: IWalletUtils;
     }
