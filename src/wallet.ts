@@ -21,16 +21,36 @@ module Wallet{
 		toWei(value: string, unit?: string): string;
 	};
 	export interface IWallet {		
+		account: IAccount;
+		accounts: Promise<string[]>;
 		address: string;
 		balance: Promise<BigNumber>;
+		balanceOf(address: string): Promise<BigNumber>;
+		createAccount(): IAccount;
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event;
+		decodeEventData(data: Log, events?: any): Promise<Event>;
 		decodeLog(inputs: any, hexString: string, topics: any): any;
+		defaultAccount: string;
 		getAbiEvents(abi: any[]): any;
 		getAbiTopics(abi: any[], eventNames: string[]): any[];
+		getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>;
+		getBlockNumber(): Promise<number>;
+		getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+		getChainId(): Promise<number>;
+		getContractAbi(address: string);
+		getContractAbiEvents(address: string);		
 		methods(...args: any): Promise<any>;
-		send(to: string, amount: number): Promise<TransactionReceipt>;
-		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
+		privateKey: string;
+		provider: any;
+		recoverSigner(msg: string, signature: string): Promise<string>;		
+		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
+		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
+		send(to: string, amount: number): Promise<TransactionReceipt>;		
+		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
+		signMessage(msg: string): Promise<string>;
+		signTransaction(tx: any, privateKey?: string): Promise<string>;
 		utils: IWalletUtils;
+		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 	};
     export interface Event{
 		name: string;
