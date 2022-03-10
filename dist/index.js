@@ -1420,6 +1420,7 @@ __export(exports, {
   Contract: () => import_contract.Contract,
   Erc20: () => import_erc20.Erc20,
   Event: () => import_wallet.Event,
+  IAccount: () => import_wallet.IAccount,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,
   Transaction: () => import_wallet.Transaction,
