@@ -228,9 +228,9 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
     _libMap = JSON.parse(libMap || "{}");
     try {
         let solc = await getSolc(version);
-        let customSources = customSettings && customSettings.map(e=>e.sources.map(f=>e.root+f)).reduce((a,b)=>a.concat(b),[]);
         let root = sourceDir;
         _sourceDir = sourceDir;
+        let customSources = customSettings && customSettings.map(e=>e.sources.map(f=>(e.root||root)+f)).reduce((a,b)=>a.concat(b),[]);
         let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
         let index = processOutput(sourceDir, output, binOutputDir, libOutputDir, customSources);
