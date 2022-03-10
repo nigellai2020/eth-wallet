@@ -1421,6 +1421,7 @@ __export(exports, {
   Erc20: () => import_erc20.Erc20,
   Event: () => import_wallet.Event,
   IWallet: () => import_wallet.IWallet,
+  IWalletUtils: () => import_wallet.IWalletUtils,
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Utils: () => utils_exports,
