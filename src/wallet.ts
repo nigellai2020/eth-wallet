@@ -63,6 +63,7 @@ module Wallet{
 		address: string;
 		balance: Promise<BigNumber>;
 		balanceOf(address: string): Promise<BigNumber>;
+		chainId: number;
 		createAccount(): IAccount;
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event;
 		decodeEventData(data: Log, events?: any): Promise<Event>;
