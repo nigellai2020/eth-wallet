@@ -1,4 +1,5 @@
-import {IWallet, Transaction, TransactionReceipt} from '../wallet';
+
+import {IWallet, Transaction, TransactionReceipt, Event} from '../wallet';
 import {Contract} from '../contract';
 import {BigNumber} from 'bignumber.js';
 import * as Utils from '../utils';
@@ -6,7 +7,6 @@ import * as Utils from '../utils';
 const Abi = require('./bin/erc20').abi;
 const Bytecode = require('./bin/erc20').bytecode;
 
-module ERC20{
 	export class Erc20 extends Contract{
         private _decimals: number;
 
@@ -16,6 +16,30 @@ module ERC20{
         }
         async deploy(params:{name: string, symbol: string, minter?: string, cap?: number|BigNumber}): Promise<string>{ 
             return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap?params.cap.toString():'1000000000'));
+        }
+        parseApprovalEvent(receipt: TransactionReceipt): Erc20.ApprovalEvent[]{
+            return this.parseEvents(receipt, "Approval").map(e=>this.decodeApprovalEvent(e));
+        }
+        decodeApprovalEvent(event: Event): Erc20.ApprovalEvent{
+            let result = event.data;
+            return {
+                owner: result.owner,
+                spender: result.spender,
+                value: new BigNumber(result.value),
+                _event: event
+            };
+        }
+        parseTransferEvent(receipt: TransactionReceipt): Erc20.TransferEvent[]{
+            return this.parseEvents(receipt, "Transfer").map(e=>this.decodeTransferEvent(e));
+        }
+        decodeTransferEvent(event: Event): Erc20.TransferEvent{
+            let result = event.data;
+            return {
+                from: result.from,
+                to: result.to,
+                value: new BigNumber(result.value),
+                _event: event
+            };
         }
         async allowance(params:{owner: string, spender: string}): Promise<BigNumber>{
         	return Utils.fromDecimals(await this.methods('allowance', params.owner, params.spender), await this.decimals)        	
@@ -103,6 +127,8 @@ module ERC20{
         // async _transfer(params:{address: string, amount: number | BigNumber}): Promise<Transaction>{            
         // 	return this._methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
         // }
-	};
-};
-export = ERC20;
+	}
+    export module Erc20{
+        export interface ApprovalEvent {owner:string,spender:string,value:BigNumber,_event:Event}
+        export interface TransferEvent {from:string,to:string,value:BigNumber,_event:Event}
+    }
