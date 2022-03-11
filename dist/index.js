@@ -43,10 +43,10 @@ var __toModule = (module2) => {
 // src/contract.ts
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
-    var import_bignumber3 = __toModule(require("bignumber.js"));
-    var Contract2;
+    var import_bignumber4 = __toModule(require("bignumber.js"));
+    var Contract3;
     (function(_Contract) {
-      class Contract3 {
+      class Contract4 {
         constructor(wallet, address, abi, bytecode) {
           this.wallet = wallet;
           if (typeof abi == "string")
@@ -136,7 +136,7 @@ var require_contract = __commonJS({
             let result = await self.methods.apply(self, args);
             let arr = [];
             for (let i = 0; i < result.length; i++) {
-              arr.push(new import_bignumber3.BigNumber(self.wallet.utils.fromWei(result[i])));
+              arr.push(new import_bignumber4.BigNumber(self.wallet.utils.fromWei(result[i])));
             }
             resolve(arr);
           });
@@ -145,7 +145,7 @@ var require_contract = __commonJS({
           let self = this;
           return new Promise(async function(resolve, reject) {
             let result = await self.methods.apply(self, args);
-            return resolve(new import_bignumber3.BigNumber(self.wallet.utils.fromWei(result)));
+            return resolve(new import_bignumber4.BigNumber(self.wallet.utils.fromWei(result)));
           });
         }
         methods(...args) {
@@ -177,8 +177,8 @@ var require_contract = __commonJS({
           return this._address;
         }
       }
-      _Contract.Contract = Contract3;
-      class TAuthContract extends Contract3 {
+      _Contract.Contract = Contract4;
+      class TAuthContract extends Contract4 {
         rely(address) {
           return this.methods("rely", address);
         }
@@ -187,8 +187,8 @@ var require_contract = __commonJS({
         }
       }
       _Contract.TAuthContract = TAuthContract;
-    })(Contract2 || (Contract2 = {}));
-    module2.exports = Contract2;
+    })(Contract3 || (Contract3 = {}));
+    module2.exports = Contract3;
   }
 });
 
@@ -317,102 +317,121 @@ var require_erc20 = __commonJS({
 });
 
 // src/contracts/erc20.ts
-var require_erc202 = __commonJS({
-  "src/contracts/erc20.ts"(exports, module2) {
-    var import_contract2 = __toModule(require_contract());
-    var import_bignumber3 = __toModule(require("bignumber.js"));
+var import_contract, import_bignumber2, Abi, Bytecode, Erc20;
+var init_erc20 = __esm({
+  "src/contracts/erc20.ts"() {
+    import_contract = __toModule(require_contract());
+    import_bignumber2 = __toModule(require("bignumber.js"));
     init_utils();
-    var Abi = require_erc20().abi;
-    var Bytecode = require_erc20().bytecode;
-    var ERC20;
-    (function(ERC202) {
-      class Erc202 extends import_contract2.Contract {
-        constructor(wallet, address, decimals) {
-          super(wallet, address, Abi, Bytecode);
-          this._decimals = decimals;
-        }
-        async deploy(params) {
-          return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap ? params.cap.toString() : "1000000000"));
-        }
-        async allowance(params) {
-          return fromDecimals(await this.methods("allowance", params.owner, params.spender), await this.decimals);
-        }
-        approve(params) {
-          return new Promise(async (resolve, reject) => {
-            try {
-              resolve(this.methods("approve", params.spender, await toDecimals(params.amount, await this.decimals)));
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        get balance() {
-          return this.balanceOf(this.wallet.address);
-        }
-        async balanceOf(address) {
-          return new Promise(async (resolve, reject) => {
-            try {
-              resolve(await fromDecimals(await this.methods("balanceOf", address), await this.decimals));
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        get cap() {
-          return new Promise(async (resolve, reject) => {
-            try {
-              resolve(await fromDecimals(await this.methods("cap"), await this.decimals));
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        get decimals() {
-          return new Promise(async (resolve, reject) => {
-            try {
-              if (!this._decimals)
-                this._decimals = new import_bignumber3.BigNumber(await this.methods("decimals")).toNumber();
-              resolve(this._decimals);
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        mint(params) {
-          return new Promise(async (resolve, reject) => {
-            try {
-              resolve(await this.methods("mint", params.address, await toDecimals(params.amount, await this.decimals)));
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        minter() {
-          return this.methods("minter");
-        }
-        get name() {
-          return this.methods("name");
-        }
-        get symbol() {
-          return this.methods("symbol");
-        }
-        get totalSupply() {
-          return new Promise(async (resolve, reject) => {
-            try {
-              resolve(await fromDecimals(await this.methods("totalSupply"), await this.decimals));
-            } catch (err) {
-              reject(err);
-            }
-          });
-        }
-        async transfer(params) {
-          return this.methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
-        }
+    Abi = require_erc20().abi;
+    Bytecode = require_erc20().bytecode;
+    Erc20 = class extends import_contract.Contract {
+      constructor(wallet, address, decimals) {
+        super(wallet, address, Abi, Bytecode);
+        this._decimals = decimals;
       }
-      ERC202.Erc20 = Erc202;
-      ;
-    })(ERC20 || (ERC20 = {}));
-    module2.exports = ERC20;
+      async deploy(params) {
+        return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap ? params.cap.toString() : "1000000000"));
+      }
+      parseApprovalEvent(receipt) {
+        return this.parseEvents(receipt, "Approval").map((e) => this.decodeApprovalEvent(e));
+      }
+      decodeApprovalEvent(event) {
+        let result = event.data;
+        return {
+          owner: result.owner,
+          spender: result.spender,
+          value: new import_bignumber2.BigNumber(result.value),
+          _event: event
+        };
+      }
+      parseTransferEvent(receipt) {
+        return this.parseEvents(receipt, "Transfer").map((e) => this.decodeTransferEvent(e));
+      }
+      decodeTransferEvent(event) {
+        let result = event.data;
+        return {
+          from: result.from,
+          to: result.to,
+          value: new import_bignumber2.BigNumber(result.value),
+          _event: event
+        };
+      }
+      async allowance(params) {
+        return fromDecimals(await this.methods("allowance", params.owner, params.spender), await this.decimals);
+      }
+      approve(params) {
+        return new Promise(async (resolve, reject) => {
+          try {
+            resolve(this.methods("approve", params.spender, await toDecimals(params.amount, await this.decimals)));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      get balance() {
+        return this.balanceOf(this.wallet.address);
+      }
+      async balanceOf(address) {
+        return new Promise(async (resolve, reject) => {
+          try {
+            resolve(await fromDecimals(await this.methods("balanceOf", address), await this.decimals));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      get cap() {
+        return new Promise(async (resolve, reject) => {
+          try {
+            resolve(await fromDecimals(await this.methods("cap"), await this.decimals));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      get decimals() {
+        return new Promise(async (resolve, reject) => {
+          try {
+            if (!this._decimals)
+              this._decimals = new import_bignumber2.BigNumber(await this.methods("decimals")).toNumber();
+            resolve(this._decimals);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      mint(params) {
+        return new Promise(async (resolve, reject) => {
+          try {
+            resolve(await this.methods("mint", params.address, await toDecimals(params.amount, await this.decimals)));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      minter() {
+        return this.methods("minter");
+      }
+      get name() {
+        return this.methods("name");
+      }
+      get symbol() {
+        return this.methods("symbol");
+      }
+      get totalSupply() {
+        return new Promise(async (resolve, reject) => {
+          try {
+            resolve(await fromDecimals(await this.methods("totalSupply"), await this.decimals));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
+      async transfer(params) {
+        return this.methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
+      }
+    };
   }
 });
 
@@ -532,8 +551,8 @@ var require_kms = __commonJS({
 var require_wallet = __commonJS({
   "src/wallet.ts"(exports, module2) {
     var W3 = __toModule(require("web3"));
-    var import_bignumber3 = __toModule(require("bignumber.js"));
-    var import_erc202 = __toModule(require_erc202());
+    var import_bignumber4 = __toModule(require("bignumber.js"));
+    init_erc20();
     var import_kms = __toModule(require_kms());
     var Web32 = Web3Lib();
     function Web3Lib() {
@@ -544,6 +563,8 @@ var require_wallet = __commonJS({
     }
     var Wallet2;
     (function(_Wallet) {
+      ;
+      ;
       ;
       ;
       _Wallet.Networks = {
@@ -599,7 +620,7 @@ var require_wallet = __commonJS({
       };
       const WalletUtils = {
         fromWei(value) {
-          return new import_bignumber3.BigNumber(W3.default.utils.fromWei(value));
+          return new import_bignumber4.BigNumber(W3.default.utils.fromWei(value));
         }
       };
       class MetaMask {
@@ -1107,9 +1128,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(self.address);
-              resolve(new import_bignumber3.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber4.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber3.BigNumber(0));
+              resolve(new import_bignumber4.BigNumber(0));
             }
           });
         }
@@ -1123,9 +1144,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(address);
-              resolve(new import_bignumber3.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber4.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber3.BigNumber(0));
+              resolve(new import_bignumber4.BigNumber(0));
             }
           });
         }
@@ -1387,7 +1408,7 @@ var require_wallet = __commonJS({
           });
         }
         token(tokenAddress, decimals) {
-          return new import_erc202.Erc20(this, tokenAddress, decimals);
+          return new Erc20(this, tokenAddress, decimals);
         }
         get utils() {
           return this._web3.utils;
@@ -1416,9 +1437,9 @@ var require_wallet = __commonJS({
 
 // src/index.ts
 __export(exports, {
-  BigNumber: () => import_bignumber2.BigNumber,
-  Contract: () => import_contract.Contract,
-  Erc20: () => import_erc20.Erc20,
+  BigNumber: () => import_bignumber3.BigNumber,
+  Contract: () => import_contract2.Contract,
+  Erc20: () => Erc20,
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
   IWallet: () => import_wallet.IWallet,
@@ -1429,9 +1450,9 @@ __export(exports, {
   Wallet: () => import_wallet.Wallet
 });
 var import_wallet = __toModule(require_wallet());
-var import_contract = __toModule(require_contract());
-var import_bignumber2 = __toModule(require("bignumber.js"));
-var import_erc20 = __toModule(require_erc202());
+var import_contract2 = __toModule(require_contract());
+var import_bignumber3 = __toModule(require("bignumber.js"));
+init_erc20();
 init_utils();
 
 });

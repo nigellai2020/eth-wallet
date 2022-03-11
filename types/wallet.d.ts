@@ -1,5 +1,4 @@
 import * as W3 from 'web3';
-import { BlockTransactionObject } from 'web3-eth';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 declare module Wallet {
@@ -8,6 +7,43 @@ declare module Wallet {
         hexToUtf8(value: string): string;
         toUtf8(value: any): string;
         toWei(value: string, unit?: string): string;
+    }
+    interface IWalletTransaction {
+        hash: string;
+        nonce: number;
+        blockHash: string | null;
+        blockNumber: number | null;
+        transactionIndex: number | null;
+        from: string;
+        to: string | null;
+        value: string;
+        gasPrice: string;
+        maxPriorityFeePerGas?: number | string | BigNumber;
+        maxFeePerGas?: number | string | BigNumber;
+        gas: number;
+        input: string;
+    }
+    interface IWalletBlockTransactionObject {
+        number: number;
+        hash: string;
+        parentHash: string;
+        nonce: string;
+        sha3Uncles: string;
+        logsBloom: string;
+        transactionRoot: string;
+        stateRoot: string;
+        receiptsRoot: string;
+        miner: string;
+        extraData: string;
+        gasLimit: number;
+        gasUsed: number;
+        timestamp: number | string;
+        baseFeePerGas?: number;
+        size: number;
+        difficulty: number;
+        totalDifficulty: number;
+        uncles: string[];
+        transactions: IWalletTransaction[];
     }
     interface IWallet {
         account: IAccount;
@@ -25,7 +61,7 @@ declare module Wallet {
         defaultAccount: string;
         getAbiEvents(abi: any[]): any;
         getAbiTopics(abi: any[], eventNames: string[]): any[];
-        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>;
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         getChainId(): Promise<number>;
@@ -230,7 +266,7 @@ declare module Wallet {
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
         recoverSigner(msg: string, signature: string): Promise<string>;
-        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<BlockTransactionObject>;
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         initKMS(value?: IKMS): Promise<void>;
