@@ -892,7 +892,7 @@ module Wallet{
 					result.push(topic);
 				}
 		    }
-		    return result;
+		    return [result];
 		};
 		getContractAbi(address: string){
 			return this._abiAddressDict[address];

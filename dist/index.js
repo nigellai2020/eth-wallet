@@ -1222,7 +1222,7 @@ var require_wallet = __commonJS({
               result.push(topic);
             }
           }
-          return result;
+          return [result];
         }
         getContractAbi(address) {
           return this._abiAddressDict[address];
