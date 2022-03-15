@@ -1222,6 +1222,8 @@ var require_wallet = __commonJS({
               result.push(topic);
             }
           }
+          if (result.length == 0 && eventNames && eventNames.length > 0)
+            return ["NULL"];
           return [result];
         }
         getContractAbi(address) {
