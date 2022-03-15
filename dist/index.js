@@ -1211,13 +1211,13 @@ var require_wallet = __commonJS({
           return eventMap;
         }
         getAbiTopics(abi, eventNames) {
-          if (!eventNames)
-            return;
+          if (!eventNames || eventNames.length == 0)
+            eventNames = null;
           let _web3 = this._web3;
           let result = [];
           let events = abi.filter((e) => e.type == "event");
           for (let i = 0; i < events.length; i++) {
-            if (eventNames.indexOf(events[i].name) >= 0) {
+            if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
               let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
               result.push(topic);
             }

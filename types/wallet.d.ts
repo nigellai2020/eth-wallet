@@ -51,6 +51,7 @@ declare module Wallet {
         address: string;
         balance: Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
+        chainId: number;
         createAccount(): IAccount;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
@@ -60,7 +61,7 @@ declare module Wallet {
         decodeLog(inputs: any, hexString: string, topics: any): any;
         defaultAccount: string;
         getAbiEvents(abi: any[]): any;
-        getAbiTopics(abi: any[], eventNames: string[]): any[];
+        getAbiTopics(abi: any[], eventNames?: string[]): any[];
         getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
@@ -273,7 +274,7 @@ declare module Wallet {
         private get kms();
         set privateKey(value: string);
         getAbiEvents(abi: any[]): any;
-        getAbiTopics(abi: any[], eventNames: string[]): any[];
+        getAbiTopics(abi: any[], eventNames?: string[]): any[];
         getContractAbi(address: string): any;
         getContractAbiEvents(address: string): any;
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;

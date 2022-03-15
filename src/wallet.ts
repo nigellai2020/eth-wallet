@@ -70,7 +70,7 @@ module Wallet{
 		decodeLog(inputs: any, hexString: string, topics: any): any;
 		defaultAccount: string;
 		getAbiEvents(abi: any[]): any;
-		getAbiTopics(abi: any[], eventNames: string[]): any[];
+		getAbiTopics(abi: any[], eventNames?: string[]): any[];
 		getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
 		getBlockNumber(): Promise<number>;
 		getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
@@ -779,7 +779,7 @@ module Wallet{
 					return result;
 				}	
         	}
-        }
+        };
 		get balance(): Promise<BigNumber>{
 			let self = this;
             let _web3 = this._web3;
@@ -797,7 +797,7 @@ module Wallet{
 					resolve(new BigNumber(0));
 				}	
 			})
-		}
+		};
 		balanceOf(address: string): Promise<BigNumber>{
 			let self = this;
             let _web3 = this._web3;
@@ -815,7 +815,7 @@ module Wallet{
 					resolve(new BigNumber(0));
 				}	
 			})
-		}
+		};
 		recoverSigner(msg: string, signature: string): Promise<string>{
 			let _web3 = this._web3;
 			return new Promise(async function(resolve, reject){
@@ -853,12 +853,12 @@ module Wallet{
 					kms: value
 				};
 			}
-		}
+		};
 		private get kms(): KMS{
 			if (this._account && !this._kms && this._account.kms)
 				this._kms = new KMS(this._account.kms);
 			return this._kms;
-		}
+		};
         set privateKey(value: string){
 			if (value){
 				this._kms = null;
@@ -868,7 +868,7 @@ module Wallet{
 				address: '',
 				privateKey: value
 			}
-        }
+        };
         getAbiEvents(abi: any[]): any {
         	let _web3 = this._web3;
 		    let events = abi.filter(e => e.type=="event");    
@@ -879,24 +879,24 @@ module Wallet{
 		        eventMap[topic] = events[i];
 		    }
 		    return eventMap;
-		}
-        getAbiTopics(abi: any[], eventNames: string[]): any[]{
-			if (!eventNames)
-				return;
+		};
+        getAbiTopics(abi: any[], eventNames?: string[]): any[]{
+			if (!eventNames || eventNames.length == 0)
+				eventNames = null;
 			let _web3 = this._web3;
 			let result = [];
-			let events = abi.filter(e => e.type=="event");
+			let events = abi.filter(e => e.type=="event");			
 			for (let i = 0 ; i < events.length ; i++) {
-				if (eventNames.indexOf(events[i].name) >= 0){
+				if (!eventNames || eventNames.indexOf(events[i].name) >= 0){
 					let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
 					result.push(topic);
 				}
 		    }
 		    return result;
-		}
+		};
 		getContractAbi(address: string){
 			return this._abiAddressDict[address];
-		}
+		};
 		getContractAbiEvents(address: string){
 			let events = this._abiEventDict[address];
 			if (events)
@@ -907,7 +907,7 @@ module Wallet{
 				this._abiEventDict[address] = events;
 				return events;
 			}
-		}
+		};
 		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string{
 			let hash = '';
 			if (typeof(abi) == 'string')
@@ -918,7 +918,7 @@ module Wallet{
 			if (address)
 				this.registerAbiContracts(hash, address, handler);
 			return hash;
-		}
+		};
 		registerAbiContracts(abiHash: string, address: string|string[], handler?: any){			
 			if (address){
 				if (!Array.isArray(address))
@@ -929,7 +929,7 @@ module Wallet{
 						this._eventHandler[address[i]] = handler;
 				}
 			}
-		}
+		};
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event{
 			if (!raw)
 				raw = event as Log;
@@ -954,7 +954,7 @@ module Wallet{
 				transactionIndex: event.transactionIndex
 			};
 			return log;
-		}
+		};
 		async decodeEventData(data: Log, events?: any): Promise<Event>{
 			let _web3 = this._web3;        	
 			let event;
@@ -972,7 +972,7 @@ module Wallet{
 			if (handler)
 				await handler(this, log);
 			return log;
-		}
+		};
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>{
         	let _web3 = this._web3;        	
         	return new Promise(async (resolve, reject)=>{
