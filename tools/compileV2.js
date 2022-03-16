@@ -246,7 +246,7 @@ async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDi
                 _sourceDir = customSettings[s].root || root;
                 input = buildInput(_sourceDir, customSettings[s].sources, customSettings[s].optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-                index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSources);
+                index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSettings[s].sources);
                 if (output.errors) {
                     output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e=>console.log(e.formattedMessage));
                 }
