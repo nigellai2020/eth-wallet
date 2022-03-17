@@ -191,9 +191,9 @@ module.exports = function(name, abiPath, abi){
                 else if (items[i].type == 'tuple[]') {
                     lines.push({indent:indent+1, text:items[i].name +': ' + `${objPath}.map(e=>{`});
                     lines = lines.concat(returnOutputs(items[i].components, true, isEvent, "e", indent+2));
+                    lines.push({indent:indent+1, text:"})"});
                     if ((addReturn && isEvent) || i < items.length -1)
                         lines[lines.length-1].text+=','
-                    lines.push({indent:indent+1, text:"})"});
                 }
                 else{
                     let line;
