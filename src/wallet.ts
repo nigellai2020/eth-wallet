@@ -57,6 +57,12 @@ module Wallet{
 		uncles: string[];
 		transactions: IWalletTransaction[];
 	};
+	export interface ITokenInfo{
+		name: string;
+		symbol: string;
+		totalSupply: BigNumber;
+		decimals: number;	
+	}
 	export interface IWallet {		
 		account: IAccount;
 		accounts: Promise<string[]>;
@@ -87,6 +93,7 @@ module Wallet{
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
 		signMessage(msg: string): Promise<string>;
 		signTransaction(tx: any, privateKey?: string): Promise<string>;
+		tokenInfo(address: string): Promise<ITokenInfo>
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 	};
@@ -1123,7 +1130,16 @@ module Wallet{
         };
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
-		}
+		};
+		async tokenInfo(tokenAddress: string): Promise<ITokenInfo>{
+			let erc20 = this.token(tokenAddress);			
+			return {
+				decimals: await erc20.decimals,
+				name: await erc20.name,
+				symbol: await erc20.symbol,
+				totalSupply: await erc20.totalSupply 
+			}
+		};
         get utils(): IWalletUtils{
             return this._web3.utils;
         };

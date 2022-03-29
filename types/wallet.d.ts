@@ -45,6 +45,12 @@ declare module Wallet {
         uncles: string[];
         transactions: IWalletTransaction[];
     }
+    interface ITokenInfo {
+        name: string;
+        symbol: string;
+        totalSupply: BigNumber;
+        decimals: number;
+    }
     interface IWallet {
         account: IAccount;
         accounts: Promise<string[]>;
@@ -78,6 +84,7 @@ declare module Wallet {
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         signMessage(msg: string): Promise<string>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
+        tokenInfo(address: string): Promise<ITokenInfo>;
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     }
@@ -289,6 +296,7 @@ declare module Wallet {
         setBlockTime(time: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
+        tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
         get web3(): W3.default;

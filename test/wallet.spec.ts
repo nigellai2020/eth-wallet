@@ -3,6 +3,7 @@ import {Wallet} from "../src";
 import {Utils} from "../src";
 import * as Ganache from "ganache-cli";
 import * as assert from 'assert';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
 
 const Config = require('./config').wallet;
 
@@ -70,6 +71,10 @@ suite('##Wallet Ganache', async function() {
         assert.strictEqual(await erc20.name, 'DUMMY Token');        
         assert.strictEqual(await erc20.decimals, 18);        
     }) 
+    test('Token Info', async function(){
+        let result = await wallet.tokenInfo(erc20Address);
+        assert.strictEqual(result.name, 'DUMMY Token');
+    });
     test('Erc20.mint', async function(){
         let erc20 = wallet.token(erc20Address);
         let fromBlock = await wallet.getBlockNumber();

@@ -1412,6 +1412,15 @@ var require_wallet = __commonJS({
         token(tokenAddress, decimals) {
           return new Erc20(this, tokenAddress, decimals);
         }
+        async tokenInfo(tokenAddress) {
+          let erc20 = this.token(tokenAddress);
+          return {
+            decimals: await erc20.decimals,
+            name: await erc20.name,
+            symbol: await erc20.symbol,
+            totalSupply: await erc20.totalSupply
+          };
+        }
         get utils() {
           return this._web3.utils;
         }
