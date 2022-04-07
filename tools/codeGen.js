@@ -9,26 +9,27 @@ module.exports = function(name, abiPath, abi){
             result.push(code);
     }
     function inputDataType(item){
-        if (item.type == 'address' || item.type == 'string')
-            return 'string'
-        else if (/^address.*\[\d*\]$/.test(item.type) || /string.*\[\d*\]$/.test(item.type))
-            return 'string[]'
-        else if (item.type == 'bool')
-            return 'boolean'
-        else if (/^bool\[\d*\]$/.test(item.type))
-            return 'boolean[]'
-        else if (/^bytes\d*\[\d*\]$/.test(item.type))
-            return 'string[]'
-        else if (item.type.indexOf('bytes') == 0)
-            return 'string'
-        else if (/^u?int\d*\[\d*\]$/.test(item.type))
-            return '(number|BigNumber)[]'
-        else if (/^u?int\d*$/.test(item.type))
+        let type = item.type;
+        if (type == 'address' || type == 'string')
+            return 'string';
+        else if (/^(address|string)(\[\d*\])+$/.test(type))
+            return type.replace("address","string").replace(/\d*/g,"");
+        else if (type == 'bool')
+            return 'boolean';
+        else if (/^bool(\[\d*\])+$/.test(type))
+            return type.replace("bool","boolean").replace(/\d*/g,"");
+        else if (/^bytes\d*(\[\d*\])+$/.test(type))
+            return type.replace(/bytes\d*/,"string").replace(/\d*/g,"");
+        else if (/^bytes\d*$/.test(type))
+            return 'string';
+        else if (/^u?int\d*(\[\d*\])+$/.test(type))
+            return type.replace(/^u?int\d*/,"(number|BigNumber)").replace(/\d*/g,"");
+        else if (/^u?int\d*$/.test(type))
             return 'number|BigNumber'
-        else if (item.type == 'tuple')
+        else if (type == 'tuple')
             return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}';
-        else if (item.type == 'tuple[]')
-            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}[]';
+        else if (/^tuple(\[\d*\])+$/.test(type))
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${inputDataType(e)}`).join(',') + '}' + type.replace("tuple","").replace(/\d*/g,"");
         else
             return 'any'
     }
@@ -42,24 +43,24 @@ module.exports = function(name, abiPath, abi){
         let type = item.type;
         if (type == 'address' || type == 'string')
             return 'string'
-        else if (/^address.*\[\d*\]$/.test(type) || /^string.*\[\d*\]$/.test(type))
-            return 'string[]'
+        else if (/^(address|string)(\[\d*\])+$/.test(type))
+            return type.replace("address","string").replace(/\d*/g,"");
         else if (type == 'bool')
-            return 'boolean'
-        else if (/^bool\[\d*\]$/.test(type))
-            return 'boolean[]'
-        else if (/^bytes\d*\[\d*\]$/.test(type))
-            return 'string[]'
-        else if (type.indexOf('bytes') == 0)
-            return 'string'
-        else if (/^u?int\d*\[\d*\]$/.test(type))
-            return 'BigNumber[]'
+            return 'boolean';
+        else if (/^bool(\[\d*\])+$/.test(type))
+            return type.replace("bool","boolean").replace(/\d*/g,"");
+        else if (/^bytes\d*(\[\d*\])+$/.test(type))
+            return type.replace(/bytes\d*/,"string").replace(/\d*/g,"");
+        else if (/^bytes\d*$/.test(type))
+            return 'string';
+        else if (/^u?int\d*(\[\d*\])+$/.test(type))
+            return type.replace(/^u?int\d*/,"BigNumber").replace(/\d*/g,"");
         else if (/^u?int\d*$/.test(type))
             return 'BigNumber'
         else if (type == 'tuple')
             return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}';
-        else if (type == 'tuple[]')
-            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}[]';
+        else if (/^tuple(\[\d*\])+$/.test(type))
+            return '{' + item.components.map((e,i)=>`${paramName(e.name,i)}:${outputDataType(e)}`).join(',') + '}' + type.replace("tuple","").replace(/\d*/g,"");
         else
             return 'any'
     }
@@ -113,57 +114,34 @@ module.exports = function(name, abiPath, abi){
             return result+'}';
         }
     }
-    function expendTuple(parent,tuple){
-        let result = '[';
-        let components = tuple.components;
-        for (let i = 0 ; i < components.length ; i++) {
+    function toType(prefix,inputs){
+        let result = "";
+        for (let i = 0 ; i < inputs.length ; i++) {
             if (i > 0)
                 result += ',';
-            if (/^u?int\d*(\[\d*\])?$/.test(components[i].type))
-                result += `Utils.toString(${parent}.${paramName(components[i].name,i)})`
-            else if (components[i].type == 'tuple')
-                result += expendTuple(`${parent}.${paramName(components[i].name,i)}`, components[i]);
-            else if (components[i].type == 'tuple[]')
-                result += `${parent}.${paramName(components[i].name,i)}.map(e=>(${expendTuple("e", components[i])}))`;
-            else if (/^bytes32(\[\d*\])?$/.test(components[i].type))
-                result += `Utils.stringToBytes32(${parent}.${paramName(components[i].name,i)})`
+            if (/^u?int\d*(\[\d*\])*$/.test(inputs[i].type))
+                result += `Utils.toString(${prefix}${paramName(inputs[i].name,i)})`
+            else if (inputs[i].type == 'tuple')
+                result += expendTuple(`${prefix}${paramName(inputs[i].name,i)}.`, inputs[i]);
+            else if (/^tuple(\[\d*\])+$/.test(inputs[i].type))
+                result += `${prefix}${paramName(inputs[i].name,i)}` +
+                inputs[i].type.match(/(\[\d*\])/g).map((e,i,a)=>i==a.length-1 ? `.map(e=>(` : `.map(a${i}=>a${i}`).join("") +
+                `${expendTuple("e.", inputs[i])}`+
+                inputs[i].type.match(/(\[\d*\])/g).map((e,i)=>i==0?"))":")").join("");
+            else if (/^bytes32(\[\d*\])*$/.test(inputs[i].type))
+                result += `Utils.stringToBytes32(${prefix}${paramName(inputs[i].name,i)})`
             else
-                result += `${parent}.${paramName(components[i].name,i)}`
+                result += `${prefix}${paramName(inputs[i].name,i)}`
         }
-        result += ']';
+        return result;
+    }
+    function expendTuple(parent,tuple){
+        let result = '[' + toType(parent, tuple.components) + ']';
         return result;
     }
     function inputNames(item){
-        let result = '';
-        if (item.inputs.length == 1){
-            let i = 0;
-            if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
-                result += `Utils.toString(${paramName(item.inputs[i].name,i)})`
-            else if (item.inputs[i].type == 'tuple')
-                result += expendTuple(`${paramName(item.inputs[i].name,i)}`, item.inputs[i]);
-            else if (item.inputs[i].type == 'tuple[]')
-                result += `${paramName(item.inputs[i].name,i)}.map(e=>(${expendTuple("e", item.inputs[i])}))`;
-            else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
-                result += `Utils.stringToBytes32(${paramName(item.inputs[i].name,i)})`
-            else
-                result += `${paramName(item.inputs[i].name,i)}`
-        }
-        else{
-            for (let i = 0; i < item.inputs.length; i ++){
-                if (i > 0)
-                    result += ',';
-                if (/^u?int\d*(\[\d*\])?$/.test(item.inputs[i].type))
-                    result += `Utils.toString(params.${paramName(item.inputs[i].name,i)})`
-                else if (item.inputs[i].type == 'tuple')
-                    result += expendTuple(`params.${paramName(item.inputs[i].name,i)}`, item.inputs[i]);
-                else if (item.inputs[i].type == 'tuple[]'){
-                    result += `params.${paramName(item.inputs[i].name,i)}.map(e=>(${expendTuple("e", item.inputs[i])}))`;
-                }else if (/^bytes32(\[\d*\])?$/.test(item.inputs[i].type))
-                    result += `Utils.stringToBytes32(params.${paramName(item.inputs[i].name,i)})`
-                else
-                    result += `params.${paramName(item.inputs[i].name,i)}`
-            }
-        }
+        let prefix = item.inputs.length > 1 ? "params." : "";
+        let result = toType(prefix, item.inputs);
         return result;
     }
     function payable(item) {
@@ -183,15 +161,19 @@ module.exports = function(name, abiPath, abi){
             for (let i = 0; i < items.length; i ++){
                 let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                 if (items[i].type == 'tuple') {
-                    lines.push({indent:indent+1, text:items[i].name +':'});
-                    lines = lines.concat(returnOutputs(items[i].components, false, isEvent, objPath, indent+1));
+                    lines = [...lines,
+                            {indent:indent+1, text:items[i].name +':'},
+                            ...returnOutputs(items[i].components, false, isEvent, objPath, indent+1)
+                            ];
                     if ((addReturn && isEvent) || i < items.length -1)
                         lines[lines.length-1].text+=','
                 }
-                else if (items[i].type == 'tuple[]') {
-                    lines.push({indent:indent+1, text:items[i].name +': ' + `${objPath}.map(e=>{`});
-                    lines = lines.concat(returnOutputs(items[i].components, true, isEvent, "e", indent+2));
-                    lines.push({indent:indent+1, text:"})"});
+                else if (/^tuple(\[\d*\])+$/.test(items[i].type)){
+                    lines = [...lines,
+                            {indent:indent+1, text:items[i].name +': ' + `${objPath}`+ items[i].type.match(/(\[\d*\])/g).map((e,i,a)=>i==a.length-1 ? `.map(e=>(` :`.map(a${i}=>a${i}`).join("")},
+                            ...returnOutputs(items[i].components, false, isEvent, "e", indent+2),
+                            {indent:indent+1, text:items[i].type.match(/(\[\d*\])/g).map((e,i)=>i==0?"))":")").join("")}
+                            ];
                     if ((addReturn && isEvent) || i < items.length -1)
                         lines[lines.length-1].text+=','
                 }
@@ -200,8 +182,8 @@ module.exports = function(name, abiPath, abi){
                     let objPath = parent + (items[i].name ? `.${items[i].name}` : `[${i}]`);
                     if (outputDataType(items[i]) == 'BigNumber')
                         line = (items[i].name || `param${i + 1}`) + ": " + `new BigNumber(${objPath})`;
-                    else if (outputDataType(items[i]) == 'BigNumber[]')
-                        line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}.map(e=>new BigNumber(e))`;
+                    else if (/^BigNumber(\[\d*\])+$/.test(outputDataType(items[i])))
+                        line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}`+ items[i].type.match(/(\[\d*\])/g).map((e,i,a)=>i==a.length-1 ? `.map(e=>` :`.map(a${i}=>a${i}`).join("") + `new BigNumber(e)` + items[i].type.match(/(\[\d*\])/g).map((e,i)=>")").join("");
                     else
                         line = (items[i].name || `param${i + 1}`) + ": " + `${objPath}`;
                     if ((addReturn && isEvent) || i < items.length -1)
@@ -214,16 +196,33 @@ module.exports = function(name, abiPath, abi){
             lines.push({indent:indent, text:addReturn?"};":"}"});
         }
         else if (items.length == 1){
-            if (items[0].type == 'tuple')
-                lines = lines.concat(returnOutputs(items[0].components, addReturn, isEvent));
-            else if (items[0].type == 'tuple[]'){
-                lines.push({indent:indent, text: (addReturn?"return ":"")+parent+".map(e=>{"});
-                lines = lines.concat(returnOutputs(items[0].components, true, isEvent, "e", indent+1));
-                lines.push({indent:indent, text: "})"+(addReturn?";":"")});
+            if (items[0].type == 'tuple'){
+                let objPath = parent + (indent ? (isEvent ? "[0]" : (items[0].name ? `.${items[0].name}` : `[0]`)) : "");
+                if (addReturn)
+                    lines.push({indent:indent, text: 'return ('});
+                else {
+                    lines.push({indent:indent, text: "{"});
+                    lines.push({indent:indent+1, text: (items[0].name ? `${items[0].name}:` : `[0]:`)});
+                }
+                lines = [...lines, 
+                        ...returnOutputs(items[0].components, false, isEvent, objPath, indent+1)
+                        ];
+                if (addReturn)
+                    lines.push({indent:indent, text: ');'});
+                else
+                    lines.push({indent:indent, text: '}'});
+            }else if (/^tuple(\[\d*\])+$/.test(items[0].type)){
+                lines = [
+                        {indent:indent, text: (addReturn?"return ":"")+parent+ (items[0].type.match(/(\[\d*\])/g).map((e,i,a)=>i==a.length-1 ? `.map(e=>(` :`.map(a${i}=>a${i}`).join(""))},
+                        ...returnOutputs(items[0].components, false, isEvent, "e", indent+1),
+                        {indent:indent, text: (items[0].type.match(/(\[\d*\])/g).map((e,i)=>i==0?"))":")").join(""))+(addReturn?";":"")}
+                        ];
             } else {
                 let objPath = parent + (isEvent ? "[0]" : "");
                 if (outputDataType(items[0]) == 'BigNumber')
                     lines.push({indent:indent, text: (addReturn?"return ":"")+`new BigNumber(${objPath})`+(addReturn?";":"")});
+                else if (/^BigNumber(\[\d*\])+$/.test(outputDataType(items[0])))
+                    lines.push({indent:indent, text: (addReturn?"return ":"")+`${objPath}`+ items[0].type.match(/(\[\d*\])/g).map((e,i,a)=>i==a.length-1 ? `.map(e=>` :`.map(a${i}=>a${i}`).join("") + `new BigNumber(e)` + items[0].type.match(/(\[\d*\])/g).map((e,i)=>")").join("")+(addReturn?";":"")});
                 else
                     lines.push({indent:indent, text: (addReturn?"return ":"")+`${objPath}`+(addReturn?";":"")});
             }

@@ -22,7 +22,11 @@ export function padLeft(string: string, chars: number, sign?: string): string{
 export function padRight(string: string, chars: number, sign?: string): string{
     return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
 }
-export function stringToBytes32(value: string|string[]): string|string[]{
+
+type stringArray = string | _stringArray;
+interface _stringArray extends Array<stringArray>{}
+
+export function stringToBytes32(value: string|stringArray): string|string[]{
     if (Array.isArray(value)){
         let result = [];
         for (let i = 0; i < value.length; i ++){
