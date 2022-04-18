@@ -210,6 +210,12 @@ __export(utils_exports, {
   toNumber: () => toNumber,
   toString: () => toString
 });
+function Web3Lib() {
+  if (typeof window !== "undefined" && window["Web3"])
+    return window["Web3"];
+  else
+    return require("web3");
+}
 function sleep(millisecond) {
   return new Promise(function(resolve) {
     setTimeout(function() {
@@ -301,7 +307,7 @@ var import_bignumber, Web3, nullAddress;
 var init_utils = __esm({
   "src/utils.ts"() {
     import_bignumber = __toModule(require("bignumber.js"));
-    Web3 = require("web3");
+    Web3 = Web3Lib();
     nullAddress = "0x0000000000000000000000000000000000000000";
   }
 });
@@ -554,8 +560,8 @@ var require_wallet = __commonJS({
     var import_bignumber4 = __toModule(require("bignumber.js"));
     init_erc20();
     var import_kms = __toModule(require_kms());
-    var Web32 = Web3Lib();
-    function Web3Lib() {
+    var Web32 = Web3Lib2();
+    function Web3Lib2() {
       if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
       else

@@ -1,6 +1,12 @@
 import {BigNumber} from "bignumber.js";
-const Web3 = require('web3'); // tslint:disable-line
+const Web3 = Web3Lib(); // tslint:disable-line
 
+function Web3Lib(){
+	if (typeof window !== "undefined" && window["Web3"])
+        return window["Web3"];
+	else
+        return require("web3");
+};
 export function sleep(millisecond: number){
     return new Promise(function(resolve){
         setTimeout(function(){
