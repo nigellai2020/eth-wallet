@@ -1140,7 +1140,7 @@ var require_wallet = __commonJS({
               });
               promiEvent.on("confirmation", (confNumber, receipt) => {
                 if (this._sendTxEventHandler.confirmation && confNumber == 1)
-                  this._sendTxEventHandler.confirmation(confNumber, receipt);
+                  this._sendTxEventHandler.confirmation(receipt);
               });
               result = await promiEvent;
               if (methodName == "deploy")

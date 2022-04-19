@@ -235,7 +235,7 @@ declare module Wallet {
     }
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
-        confirmation?: (confNumber: number, receipt: any) => void;
+        confirmation?: (receipt: any) => void;
     }
     class Wallet implements IWallet {
         private _web3;

@@ -357,7 +357,7 @@ module Wallet{
 	}
 	export interface ISendTxEventsOptions {
 		transactionHash?: (error: Error, receipt?: string) => void;
-		confirmation?: (confNumber: number, receipt: any) => void;
+		confirmation?: (receipt: any) => void;
 	}
     export class Wallet implements IWallet{
 		private _web3: W3.default;		
@@ -806,7 +806,7 @@ module Wallet{
 					});
 					promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
 						if (this._sendTxEventHandler.confirmation && confNumber == 1)
-							this._sendTxEventHandler.confirmation(confNumber, receipt);                
+							this._sendTxEventHandler.confirmation(receipt);                
 					});
 					result = await promiEvent;
 					if (methodName == 'deploy')
