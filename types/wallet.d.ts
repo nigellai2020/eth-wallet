@@ -233,6 +233,10 @@ declare module Wallet {
         switchNetwork(chainId: number): Promise<boolean>;
         addNetwork(options: INetworkOption): Promise<boolean>;
     }
+    interface ISendTxEventsOptions {
+        transactionHash?: (error: Error, receipt?: string) => void;
+        confirmation?: (receipt: any) => void;
+    }
     class Wallet implements IWallet {
         private _web3;
         private _account;
@@ -243,6 +247,7 @@ declare module Wallet {
         private _abiAddressDict;
         private _abiEventDict;
         private _eventHandler;
+        private _sendTxEventHandler;
         private _contracts;
         private _blockGasLimit;
         private _metaMask;
@@ -266,6 +271,7 @@ declare module Wallet {
         get provider(): any;
         sendSignedTransaction(tx: string): Promise<any>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
+        registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
         _methods(...args: any[]): Promise<{
             to: any;
             data: any;

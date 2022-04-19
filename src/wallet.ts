@@ -355,6 +355,10 @@ module Wallet{
 			})
 		}
 	}
+	export interface ISendTxEventsOptions {
+		transactionHash?: (error: Error, receipt?: string) => void;
+		confirmation?: (receipt: any) => void;
+	}
     export class Wallet implements IWallet{
 		private _web3: W3.default;		
         private _account: IAccount;
@@ -365,6 +369,7 @@ module Wallet{
 		private _abiAddressDict: IDictionary = {};
 		private _abiEventDict: IDictionary = {};
 		private _eventHandler = {};
+		private _sendTxEventHandler: ISendTxEventsOptions = {};
 		private _contracts = {};
 		private _blockGasLimit: number;
 		private _metaMask: MetaMask;
@@ -548,6 +553,9 @@ module Wallet{
 				}, this.address);
 				return t.raw;
 			}
+		}
+		registerSendTxEvents(eventsOptions: ISendTxEventsOptions) {
+			this._sendTxEventHandler = eventsOptions;
 		}
 		async _methods(...args){
 			let _web3 = this._web3;        	
@@ -773,14 +781,34 @@ module Wallet{
 				}
 				else{					
 					contract.options.address = address;
-					result = await method.send(
-						{
-							from: this.address,
-							to: address,
-							gas: gas,
-							value: value
-						}	
-					);
+					let nonce = await _web3.eth.getTransactionCount(this.address);
+					let tx = {
+						from: this.address, 
+						nonce,
+						gasPrice,
+						gas,
+						to: address,
+						value,
+						data: method.encodeABI(),
+					}
+					
+					let promiEvent = _web3.eth.sendTransaction(tx);
+					promiEvent.on('error', (error: Error) =>{
+						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+							return;
+						}
+						if (this._sendTxEventHandler.transactionHash)
+							this._sendTxEventHandler.transactionHash(error);
+					});
+					promiEvent.on('transactionHash', (receipt: string) => {
+						if (this._sendTxEventHandler.transactionHash)
+							this._sendTxEventHandler.transactionHash(null, receipt);
+					});
+					promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
+						if (this._sendTxEventHandler.confirmation && confNumber == 1)
+							this._sendTxEventHandler.confirmation(receipt);                
+					});
+					result = await promiEvent;
 					if (methodName == 'deploy')
 						return result.options.address;
 					return result;
