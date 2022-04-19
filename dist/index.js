@@ -745,6 +745,7 @@ var require_wallet = __commonJS({
           this._abiAddressDict = {};
           this._abiEventDict = {};
           this._eventHandler = {};
+          this._sendTxEventHandler = {};
           this._contracts = {};
           this.isMetaMask = false;
           if (!provider && typeof window !== "undefined" && window["ethereum"] && window["ethereum"].isMetaMask) {
@@ -904,6 +905,9 @@ var require_wallet = __commonJS({
             }, this.address);
             return t.raw;
           }
+        }
+        registerSendTxEvents(eventsOptions) {
+          this._sendTxEventHandler = eventsOptions;
         }
         async _methods(...args) {
           let _web3 = this._web3;
@@ -1112,12 +1116,33 @@ var require_wallet = __commonJS({
               return result;
             } else {
               contract.options.address = address;
-              result = await method.send({
+              let nonce = await _web3.eth.getTransactionCount(this.address);
+              let tx = {
                 from: this.address,
-                to: address,
+                nonce,
+                gasPrice,
                 gas,
-                value
+                to: address,
+                value,
+                data: method.encodeABI()
+              };
+              let promiEvent = _web3.eth.sendTransaction(tx);
+              promiEvent.on("error", (error) => {
+                if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+                  return;
+                }
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(error);
               });
+              promiEvent.on("transactionHash", (receipt) => {
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(null, receipt);
+              });
+              promiEvent.on("confirmation", (confNumber, receipt) => {
+                if (this._sendTxEventHandler.confirmation && confNumber == 1)
+                  this._sendTxEventHandler.confirmation(confNumber, receipt);
+              });
+              result = await promiEvent;
               if (methodName == "deploy")
                 return result.options.address;
               return result;
@@ -1459,6 +1484,7 @@ __export(exports, {
   Erc20: () => Erc20,
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
+  ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,
   Transaction: () => import_wallet.Transaction,
