@@ -250,9 +250,10 @@ module Wallet{
 			if (this.installed){
 				ethereum.on('accountsChanged', (accounts) => {
 					let account;
-					if (accounts && accounts.length > 0)
-						account = accounts[0]
-					(<any>self.wallet.web3).selectedAddress = account;
+					if (accounts && accounts.length > 0) {
+						account = accounts[0];
+						(<any>self.wallet.web3).selectedAddress = account;
+					}
 					if (self.wallet.onAccountChanged)
 						self.wallet.onAccountChanged(account);
 				});
