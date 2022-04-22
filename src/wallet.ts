@@ -811,7 +811,7 @@ module Wallet{
 					});
 					result = await promiEvent;
 					if (methodName == 'deploy')
-						return result.options.address;
+						return result.contractAddress;
 					return result;
 				}	
         	}
