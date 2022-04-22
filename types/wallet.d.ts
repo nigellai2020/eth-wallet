@@ -253,7 +253,7 @@ declare module Wallet {
         private _metaMask;
         isMetaMask: boolean;
         chainId: number;
-        onAccountChanged: (account: string) => void;
+        onAccountChanged: (account: string[]) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;

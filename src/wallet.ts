@@ -376,7 +376,7 @@ module Wallet{
 		private _metaMask: MetaMask;
 		public isMetaMask: boolean = false;
 		public chainId: number;       
-		public onAccountChanged: (account: string)=>void; 
+		public onAccountChanged: (account: string[])=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
 		public onDisconnect: (error: any)=>void;
