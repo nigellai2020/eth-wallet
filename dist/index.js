@@ -637,8 +637,10 @@ var require_wallet = __commonJS({
           if (this.installed) {
             ethereum.on("accountsChanged", (accounts) => {
               let account;
-              if (accounts && accounts.length > 0)
-                account = accounts[0](self.wallet.web3).selectedAddress = account;
+              if (accounts && accounts.length > 0) {
+                account = accounts[0];
+                self.wallet.web3.selectedAddress = account;
+              }
               if (self.wallet.onAccountChanged)
                 self.wallet.onAccountChanged(account);
             });

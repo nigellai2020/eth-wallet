@@ -250,9 +250,10 @@ module Wallet{
 			if (this.installed){
 				ethereum.on('accountsChanged', (accounts) => {
 					let account;
-					if (accounts && accounts.length > 0)
-						account = accounts[0]
-					(<any>self.wallet.web3).selectedAddress = account;
+					if (accounts && accounts.length > 0) {
+						account = accounts[0];
+						(<any>self.wallet.web3).selectedAddress = account;
+					}
 					if (self.wallet.onAccountChanged)
 						self.wallet.onAccountChanged(account);
 				});
@@ -375,7 +376,7 @@ module Wallet{
 		private _metaMask: MetaMask;
 		public isMetaMask: boolean = false;
 		public chainId: number;       
-		public onAccountChanged: (account: string)=>void; 
+		public onAccountChanged: (account: string[])=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
 		public onDisconnect: (error: any)=>void;
