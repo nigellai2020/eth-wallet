@@ -630,10 +630,16 @@ var require_wallet = __commonJS({
         }
       };
       class MetaMask {
-        constructor(wallet) {
+        constructor(wallet, events) {
           this.wallet = wallet;
           let self = this;
           let ethereum = window["ethereum"];
+          if (events) {
+            this.onAccountChanged = events.onAccountChanged;
+            this.onChainChanged = events.onChainChanged;
+            this.onConnect = events.onConnect;
+            this.onDisconnect = events.onDisconnect;
+          }
           if (this.installed) {
             ethereum.on("accountsChanged", (accounts) => {
               let account;
@@ -641,21 +647,21 @@ var require_wallet = __commonJS({
                 account = accounts[0];
                 self.wallet.web3.selectedAddress = account;
               }
-              if (self.wallet.onAccountChanged)
-                self.wallet.onAccountChanged(account);
+              if (self.onAccountChanged)
+                self.onAccountChanged(account);
             });
             ethereum.on("chainChanged", (chainId) => {
               self.wallet.chainId = parseInt(chainId);
-              if (self.wallet.onChainChanged)
-                self.wallet.onChainChanged(chainId);
+              if (self.onChainChanged)
+                self.onChainChanged(chainId);
             });
             ethereum.on("connect", (connectInfo) => {
-              if (self.wallet.onConnect)
-                self.wallet.onConnect(connectInfo);
+              if (self.onConnect)
+                self.onConnect(connectInfo);
             });
             ethereum.on("disconnect", (error) => {
-              if (self.wallet.onDisconnect)
-                self.wallet.onDisconnect(error);
+              if (self.onDisconnect)
+                self.onDisconnect(error);
             });
           }
           ;
@@ -756,6 +762,15 @@ var require_wallet = __commonJS({
           }
           this._provider = provider;
           this._web3 = new Web32(provider);
+          if (Array.isArray(account)) {
+            this._accounts = account;
+            this._account = account[0];
+          } else
+            this._account = account;
+          if (this._account && this._account.privateKey && !this._account.address)
+            this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+        }
+        initMetaMask(events) {
           if (this.isMetaMask) {
             this._web3.eth.getAccounts((err, accounts) => {
               if (accounts) {
@@ -765,16 +780,8 @@ var require_wallet = __commonJS({
             this._web3.eth.net.getId((err, chainId) => {
               this.chainId = chainId;
             });
+            this._metaMask = new MetaMask(this, events);
           }
-          if (Array.isArray(account)) {
-            this._accounts = account;
-            this._account = account[0];
-          } else
-            this._account = account;
-          if (this._account && this._account.privateKey && !this._account.address)
-            this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-          if (this.isMetaMask)
-            this._metaMask = new MetaMask(this);
         }
         get accounts() {
           return new Promise((resolve) => {
