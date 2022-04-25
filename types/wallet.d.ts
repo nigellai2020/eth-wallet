@@ -223,9 +223,19 @@ declare module Wallet {
         blockExplorerUrls?: string[];
         iconUrls?: string[];
     }
-    class MetaMask {
+    interface IMetaMaskEvents {
+        onAccountChanged?: (account: string) => void;
+        onChainChanged?: (chainId: string) => void;
+        onConnect?: (connectInfo: any) => void;
+        onDisconnect?: (error: any) => void;
+    }
+    class MetaMask implements IMetaMaskEvents {
         private wallet;
-        constructor(wallet: Wallet);
+        onAccountChanged: (account: string) => void;
+        onChainChanged: (chainId: string) => void;
+        onConnect: (connectInfo: any) => void;
+        onDisconnect: (error: any) => void;
+        constructor(wallet: Wallet, events?: IMetaMaskEvents);
         connect(): Promise<void>;
         get installed(): boolean;
         get provider(): any;
@@ -253,11 +263,8 @@ declare module Wallet {
         private _metaMask;
         isMetaMask: boolean;
         chainId: number;
-        onAccountChanged: (account: string[]) => void;
-        onChainChanged: (chainId: string) => void;
-        onConnect: (connectInfo: any) => void;
-        onDisconnect: (error: any) => void;
         constructor(provider?: any, account?: IAccount | IAccount[]);
+        initMetaMask(events: IMetaMaskEvents): void;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;

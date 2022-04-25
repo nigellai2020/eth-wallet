@@ -241,12 +241,29 @@ module Wallet{
 		blockExplorerUrls?: string[];
 		iconUrls?: string[]; // Currently ignored.
 	}
-	export class MetaMask {
+	export interface IMetaMaskEvents {
+		onAccountChanged?: (account: string)=>void; 
+		onChainChanged?: (chainId: string)=>void;
+		onConnect?: (connectInfo: any)=>void;
+		onDisconnect?: (error: any)=>void;
+	}
+	export class MetaMask implements IMetaMaskEvents {
 		private wallet: Wallet;
-		constructor(wallet: Wallet){
+		public onAccountChanged: (account: string)=>void; 
+		public onChainChanged: (chainId: string)=>void;
+		public onConnect: (connectInfo: any)=>void;
+		public onDisconnect: (error: any)=>void;
+
+		constructor(wallet: Wallet, events?: IMetaMaskEvents){
 			this.wallet = wallet;
 			let self = this;
 			let ethereum = window['ethereum'];
+			if (events) {
+				this.onAccountChanged = events.onAccountChanged;
+				this.onChainChanged = events.onChainChanged;
+				this.onConnect = events.onConnect;
+				this.onDisconnect = events.onDisconnect;
+			}
 			if (this.installed){
 				ethereum.on('accountsChanged', (accounts) => {
 					let account;
@@ -254,21 +271,21 @@ module Wallet{
 						account = accounts[0];
 						(<any>self.wallet.web3).selectedAddress = account;
 					}
-					if (self.wallet.onAccountChanged)
-						self.wallet.onAccountChanged(account);
+					if (self.onAccountChanged)
+						self.onAccountChanged(account);
 				});
 				ethereum.on('chainChanged', (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
-					if (self.wallet.onChainChanged)
-						self.wallet.onChainChanged(chainId);
+					if (self.onChainChanged)
+						self.onChainChanged(chainId);
 				});
 				ethereum.on('connect', (connectInfo) => {
-					if (self.wallet.onConnect)
-						self.wallet.onConnect(connectInfo);
+					if (self.onConnect)
+						self.onConnect(connectInfo);
 				});
 				ethereum.on('disconnect', (error) => {
-					if (self.wallet.onDisconnect)
-						self.wallet.onDisconnect(error);
+					if (self.onDisconnect)
+						self.onDisconnect(error);
 				});	
 			};
 		}
@@ -376,10 +393,6 @@ module Wallet{
 		private _metaMask: MetaMask;
 		public isMetaMask: boolean = false;
 		public chainId: number;       
-		public onAccountChanged: (account: string[])=>void; 
-		public onChainChanged: (chainId: string)=>void;
-		public onConnect: (connectInfo: any)=>void;
-		public onDisconnect: (error: any)=>void;
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			if (!provider && typeof(window) !== 'undefined' && window['ethereum'] && window['ethereum'].isMetaMask){
@@ -388,16 +401,6 @@ module Wallet{
 			}
 			this._provider = provider;			
 			this._web3 = new Web3(provider);
-			if (this.isMetaMask){
-				this._web3.eth.getAccounts((err, accounts)=>{
-					if (accounts){
-						(<any>this._web3).selectedAddress = accounts[0];
-					}					
-				});								
-				this._web3.eth.net.getId((err, chainId)=>{
-					this.chainId = chainId;
-				})
-			}
 			if (Array.isArray(account)){
 				this._accounts = account;
 				this._account = account[0];
@@ -407,8 +410,20 @@ module Wallet{
 
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-			if (this.isMetaMask)
-				this._metaMask = new MetaMask(this);
+
+		}
+		initMetaMask(events: IMetaMaskEvents){
+			if (this.isMetaMask) {
+				this._web3.eth.getAccounts((err, accounts)=>{
+					if (accounts){
+						(<any>this._web3).selectedAddress = accounts[0];
+					}					
+				});								
+				this._web3.eth.net.getId((err, chainId)=>{
+					this.chainId = chainId;
+				})
+				this._metaMask = new MetaMask(this, events);
+			}
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
@@ -811,7 +826,7 @@ module Wallet{
 					});
 					result = await promiEvent;
 					if (methodName == 'deploy')
-						return result.options.address;
+						return result.contractAddress;
 					return result;
 				}	
         	}
