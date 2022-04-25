@@ -242,14 +242,14 @@ module Wallet{
 		iconUrls?: string[]; // Currently ignored.
 	}
 	export interface IMetaMaskEvents {
-		onAccountChanged?: (account: string[])=>void; 
+		onAccountChanged?: (account: string)=>void; 
 		onChainChanged?: (chainId: string)=>void;
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
 	}
 	export class MetaMask implements IMetaMaskEvents {
 		private wallet: Wallet;
-		public onAccountChanged: (account: string[])=>void; 
+		public onAccountChanged: (account: string)=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
 		public onDisconnect: (error: any)=>void;

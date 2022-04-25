@@ -224,14 +224,14 @@ declare module Wallet {
         iconUrls?: string[];
     }
     interface IMetaMaskEvents {
-        onAccountChanged?: (account: string[]) => void;
+        onAccountChanged?: (account: string) => void;
         onChainChanged?: (chainId: string) => void;
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
     class MetaMask implements IMetaMaskEvents {
         private wallet;
-        onAccountChanged: (account: string[]) => void;
+        onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
