@@ -154,57 +154,6 @@ module Wallet{
 		gas: number,
 		data: string;
 	}
-    export const Networks = {
-		1: {
-			chainId: 1,
-			chainName: "Mainnet"
-		},
-		3: {
-			chainId: 3,
-			chainName: "Ropsten"
-		},
-		4: {
-			chainId: 4,
-			chainName: "Rinkeby"
-		},
-		42: {
-			chainId: 42,
-			chainName: "Kovan"
-		},
-		56: {
-			chainId: '56',
-			chainName: 'Binance Mainnet',
-			rpcUrls: ['https://bsc-dataseed.binance.org'],
-			blockExplorerUrls: ['https://bscscan.com'],
-			nativeCurrency: {
-				decimals: 18, 
-				name: 'BNB',
-				symbol: 'BNB'
-			}
-		},
-		97: {
-			chainId: '97',
-			chainName: 'Binance Testnet',
-			rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
-			blockExplorerUrls: ['https://testnet.bscscan.com'],
-			nativeCurrency: {
-				decimals: 18, 
-				name: 'BNB',
-				symbol: 'BNB'
-			}
-		},
-		1287: {
-			chainId: '1287',
-			chainName: 'Moonbeam Testnet',
-			rpcUrls: ['https://rpc.testnet.moonbeam.network'],
-			blockExplorerUrls: ['https://moonbase-blockscout.testnet.moonbeam.network'],
-			nativeCurrency: {
-				decimals: 18, 
-				name: 'MOON',
-				symbol: 'MOON'
-			}
-		}
-	}
     export interface IKMS{
 
     }
@@ -229,13 +178,13 @@ module Wallet{
 	    decimals: number, // The number of decimals in the token
 	    image?: string, // A string url of the token logo
 	}
-	export interface INetworkOption {
-		chainId: string; // A 0x-prefixed hexadecimal string
+	export interface INetwork {
+		chainId: number; 
 		chainName: string;
 		nativeCurrency: {
 			name: string;
 			symbol: string; // 2-6 characters long
-			decimals: 18;
+			decimals: number;
 		};
 		rpcUrls: string[];
 		blockExplorerUrls?: string[];
@@ -246,6 +195,162 @@ module Wallet{
 		onChainChanged?: (chainId: string)=>void;
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
+	}
+	export const Networks: {[chainId: number]: INetwork} = {
+		1: {
+			chainId: 1,
+			chainName: "Ethereum Mainnet",
+			rpcUrls: ['https://mainnet.infura.io/v3/'],
+			blockExplorerUrls: ['https://etherscan.io/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'ETH',
+				symbol: 'ETH'
+			}
+		},
+		3: {
+			chainId: 3,
+			chainName: "Ropsten Test Network",
+			rpcUrls: ['https://ropsten.infura.io/v3/'],
+			blockExplorerUrls: ['https://ropsten.etherscan.io'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'ETH',
+				symbol: 'ETH'
+			}
+		},
+		4: {
+			chainId: 4,
+			chainName: "Rinkeby Test Network",
+			rpcUrls: ['https://rinkeby.infura.io/v3/'],
+			blockExplorerUrls: ['https://rinkeby.etherscan.io'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'ETH',
+				symbol: 'ETH'
+			}
+		},
+		42: {
+			chainId: 42,
+			chainName: "Kovan Test Network",
+			rpcUrls: ['https://kovan.infura.io/v3/'],
+			blockExplorerUrls: ['https://kovan.etherscan.io/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'ETH',
+				symbol: 'ETH'
+			}
+		},
+		56: {
+			chainId: 56,
+			chainName: 'Binance Mainnet',
+			rpcUrls: ['https://bsc-dataseed.binance.org'],
+			blockExplorerUrls: ['https://bscscan.com'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'BNB',
+				symbol: 'BNB'
+			}
+		},
+		97: {
+			chainId: 97,
+			chainName: 'Binance Testnet',
+			rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
+			blockExplorerUrls: ['https://testnet.bscscan.com'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'BNB',
+				symbol: 'BNB'
+			}
+		},
+		137: {
+			chainId: 137,
+			chainName: "Polygon",
+			rpcUrls: ['https://polygon-rpc.com'],
+			blockExplorerUrls: ['https://polygonscan.com/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'MATIC',
+				symbol: 'MATIC'
+			}			
+		},
+		1287: {
+			chainId: 1287,
+			chainName: 'Moonbeam Testnet',
+			rpcUrls: ['https://rpc.testnet.moonbeam.network'],
+			blockExplorerUrls: ['https://moonbase-blockscout.testnet.moonbeam.network'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'MOON',
+				symbol: 'MOON'
+			}
+		},
+		31337: {
+			chainId: 31337,
+			chainName: "Amino Testnet",
+			rpcUrls: ['https://leucine0.node.alphacarbon.network'],
+			blockExplorerUrls: ['https://leucine0.blockscout.alphacarbon.network'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'TACT',
+				symbol: 'TACT'
+			}			
+		},
+		80001: {
+			chainId: 80001,
+			chainName: "Mumbai",
+			rpcUrls: ['https://matic-mumbai.chainstacklabs.com'],
+			blockExplorerUrls: ['https://mumbai.polygonscan.com/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'MATIC',
+				symbol: 'MATIC'
+			}				
+		},
+		43113: {
+			chainId: 43113,
+			chainName: "Avalanche FUJI C-Chain",
+			rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
+			blockExplorerUrls: ['https://testnet.snowtrace.io/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'AVAX',
+				symbol: 'AVAX'
+			}				
+		},
+		43114: {		
+			chainId: 43114,
+			chainName: "Avalanche Mainnet C-Chain",
+			rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+			blockExplorerUrls: ['https://snowtrace.io/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'AVAX',
+				symbol: 'AVAX'
+			}
+		},
+		4002: {			
+			chainId: 4002,
+			chainName: "Fantom Testnet",
+			rpcUrls: ['https://rpc.testnet.fantom.network/'],
+			blockExplorerUrls: ['https://testnet.ftmscan.com/', 'https://explorer.testnet.fantom.network/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'FTM',
+				symbol: 'FTM'
+			}
+		},
+		250: {		
+			chainId: 250,
+			chainName: "Fantom Opera",
+			rpcUrls: ['https://rpc.ftm.tools/'],
+			blockExplorerUrls: ['https://ftmscan.com/', 'https://explorer.fantom.network/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'FTM',
+				symbol: 'FTM'
+			}
+		}
 	}
 	export class MetaMask implements IMetaMaskEvents {
 		private wallet: Wallet;
@@ -331,29 +436,61 @@ module Wallet{
 			return new Promise(async function(resolve, reject){
 				try{
 					let ethereum = window['ethereum'];
-					let result = await ethereum.request({
-					    method: 'wallet_switchEthereumChain',
-					    params: {
-					    	chainId: '0x4'
-					    }
-					  });
-					resolve(!result);
+					let chainIdHex = '0x' + chainId.toString(16);
+					try {
+						let result = await ethereum.request({
+							method: 'wallet_switchEthereumChain',
+							params: [{
+								chainId: chainIdHex
+							}]
+						});
+						resolve(!result);
+					} catch (error) {
+						if (error.code === 4902) {
+							try {
+								let network = Networks[chainId];
+								if (!network) resolve(false);
+								let {chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls} = network;
+								if (!Array.isArray(rpcUrls))
+									rpcUrls = [rpcUrls];
+								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
+									blockExplorerUrls = [blockExplorerUrls];
+								if (iconUrls && !Array.isArray(iconUrls))
+									iconUrls = [iconUrls];
+								let result = await ethereum.request({
+									method: 'wallet_addEthereumChain',
+									params: [{
+										chainId: chainIdHex,
+										chainName: chainName,
+										nativeCurrency: nativeCurrency,
+										rpcUrls: rpcUrls,
+										blockExplorerUrls: blockExplorerUrls,
+										iconUrls: iconUrls
+									}]
+								});
+								resolve(!result);
+							} catch (error) {
+								reject(error);
+							}
+						} else
+						reject(error);
+					}
 				}	
 				catch(err){
 					reject(err)
 				}
 			})
 		}
-		addNetwork(options: INetworkOption): Promise<boolean>{
+		addNetwork(options: INetwork): Promise<boolean>{
 			return new Promise(async function(resolve, reject){
 				try{
 					options = JSON.parse(JSON.stringify(options));
-					options.chainId = '0x' + parseInt(options.chainId).toString(16)
+					let chainIdHex = '0x' + options.chainId.toString(16)
 					let ethereum = window['ethereum'];
 					try{
 						await ethereum.request({
 						    method: 'wallet_switchEthereumChain',
-						    params: [{ chainId: options.chainId}],
+						    params: [{ chainId: chainIdHex}],
 						});
 						resolve(true);
 					}
