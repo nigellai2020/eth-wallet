@@ -145,57 +145,6 @@ declare module Wallet {
         gas: number;
         data: string;
     }
-    const Networks: {
-        1: {
-            chainId: number;
-            chainName: string;
-        };
-        3: {
-            chainId: number;
-            chainName: string;
-        };
-        4: {
-            chainId: number;
-            chainName: string;
-        };
-        42: {
-            chainId: number;
-            chainName: string;
-        };
-        56: {
-            chainId: string;
-            chainName: string;
-            rpcUrls: string[];
-            blockExplorerUrls: string[];
-            nativeCurrency: {
-                decimals: number;
-                name: string;
-                symbol: string;
-            };
-        };
-        97: {
-            chainId: string;
-            chainName: string;
-            rpcUrls: string[];
-            blockExplorerUrls: string[];
-            nativeCurrency: {
-                decimals: number;
-                name: string;
-                symbol: string;
-            };
-        };
-        1287: {
-            chainId: string;
-            chainName: string;
-            rpcUrls: string[];
-            blockExplorerUrls: string[];
-            nativeCurrency: {
-                decimals: number;
-                name: string;
-                symbol: string;
-            };
-        };
-    };
     interface IKMS {
     }
     interface IAccount {
@@ -211,13 +160,13 @@ declare module Wallet {
         decimals: number;
         image?: string;
     }
-    interface INetworkOption {
-        chainId: string;
+    interface INetwork {
+        chainId: number;
         chainName: string;
         nativeCurrency: {
             name: string;
             symbol: string;
-            decimals: 18;
+            decimals: number;
         };
         rpcUrls: string[];
         blockExplorerUrls?: string[];
@@ -229,6 +178,9 @@ declare module Wallet {
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
+    const Networks: {
+        [chainId: number]: INetwork;
+    };
     class MetaMask implements IMetaMaskEvents {
         private wallet;
         onAccountChanged: (account: string) => void;
@@ -241,7 +193,7 @@ declare module Wallet {
         get provider(): any;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number): Promise<boolean>;
-        addNetwork(options: INetworkOption): Promise<boolean>;
+        addNetwork(options: INetwork): Promise<boolean>;
     }
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
