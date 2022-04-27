@@ -885,7 +885,7 @@ var require_wallet = __commonJS({
         }
       }
       _Wallet.MetaMask = MetaMask;
-      class Wallet3 {
+      const _Wallet2 = class {
         constructor(provider, account) {
           this._abiHashDict = {};
           this._abiAddressDict = {};
@@ -907,6 +907,9 @@ var require_wallet = __commonJS({
             this._account = account;
           if (this._account && this._account.privateKey && !this._account.address)
             this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+        }
+        static getInstance() {
+          return _Wallet2.instance;
         }
         initMetaMask(events) {
           if (this.isMetaMask) {
@@ -1617,7 +1620,9 @@ var require_wallet = __commonJS({
         get web3() {
           return this._web3;
         }
-      }
+      };
+      let Wallet3 = _Wallet2;
+      Wallet3.instance = new _Wallet2();
       _Wallet.Wallet = Wallet3;
     })(Wallet2 || (Wallet2 = {}));
     module2.exports = Wallet2;

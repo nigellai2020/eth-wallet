@@ -216,6 +216,8 @@ declare module Wallet {
         isMetaMask: boolean;
         chainId: number;
         constructor(provider?: any, account?: IAccount | IAccount[]);
+        private static readonly instance;
+        static getInstance(): Wallet;
         initMetaMask(events: IMetaMaskEvents): void;
         get accounts(): Promise<string[]>;
         get address(): string;

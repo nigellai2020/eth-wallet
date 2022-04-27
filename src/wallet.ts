@@ -549,6 +549,10 @@ module Wallet{
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
 
 		}
+		private static readonly instance: Wallet = new Wallet();
+		static getInstance(): Wallet {
+		  return Wallet.instance;
+		}
 		initMetaMask(events: IMetaMaskEvents){
 			if (this.isMetaMask) {
 				this._web3.eth.getAccounts((err, accounts)=>{
