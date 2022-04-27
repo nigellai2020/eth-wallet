@@ -183,12 +183,14 @@ declare module Wallet {
     };
     class MetaMask implements IMetaMaskEvents {
         private wallet;
+        private _isConnected;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
         constructor(wallet: Wallet, events?: IMetaMaskEvents);
         connect(): Promise<void>;
+        get isConnected(): boolean;
         get installed(): boolean;
         get provider(): any;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
