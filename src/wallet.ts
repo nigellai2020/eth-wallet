@@ -354,6 +354,7 @@ module Wallet{
 	}
 	export class MetaMask implements IMetaMaskEvents {
 		private wallet: Wallet;
+		private _isConnected: boolean = false;
 		public onAccountChanged: (account: string)=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
@@ -372,10 +373,15 @@ module Wallet{
 			if (this.installed){
 				ethereum.on('accountsChanged', (accounts) => {
 					let account;
-					if (accounts && accounts.length > 0) {
+					let hasAccounts = accounts && accounts.length > 0;
+					if (hasAccounts) {
 						account = accounts[0];
 						(<any>self.wallet.web3).selectedAddress = account;
+						self.wallet.account = {
+							address: account
+						};
 					}
+					this._isConnected = hasAccounts;
 					if (self.onAccountChanged)
 						self.onAccountChanged(account);
 				});
@@ -399,11 +405,27 @@ module Wallet{
 			try {								
 				if (this.installed){
 					let ethereum = window['ethereum'];
-					await ethereum.request({ method: 'eth_requestAccounts' });
+					await ethereum.request({ method: 'eth_requestAccounts' }).then((accounts) => {
+						let account;
+						let hasAccounts = accounts && accounts.length > 0;
+						if (hasAccounts) {
+							account = accounts[0];
+							(<any>self.wallet.web3).selectedAddress = account;
+							self.wallet.account = {
+								address: account
+							};
+						}
+						this._isConnected = hasAccounts;
+						if (self.onAccountChanged)
+							self.onAccountChanged(account);
+					});
 				}
 			} catch (error) {
 				console.error(error);
 			}
+		}
+		get isConnected(){
+			return this._isConnected;
 		}
 		get installed(): boolean{
 			let ethereum = window['ethereum'];
@@ -549,11 +571,18 @@ module Wallet{
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
 
 		}
+		private static readonly instance: Wallet = new Wallet();
+		static getInstance(): Wallet {
+		  return Wallet.instance;
+		}
 		initMetaMask(events: IMetaMaskEvents){
 			if (this.isMetaMask) {
 				this._web3.eth.getAccounts((err, accounts)=>{
 					if (accounts){
 						(<any>this._web3).selectedAddress = accounts[0];
+						this._account = {
+							address: accounts[0]
+						};
 					}					
 				});								
 				this._web3.eth.net.getId((err, chainId)=>{

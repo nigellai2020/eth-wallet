@@ -736,6 +736,7 @@ var require_wallet = __commonJS({
       };
       class MetaMask {
         constructor(wallet, events) {
+          this._isConnected = false;
           this.wallet = wallet;
           let self = this;
           let ethereum = window["ethereum"];
@@ -748,10 +749,15 @@ var require_wallet = __commonJS({
           if (this.installed) {
             ethereum.on("accountsChanged", (accounts) => {
               let account;
-              if (accounts && accounts.length > 0) {
+              let hasAccounts = accounts && accounts.length > 0;
+              if (hasAccounts) {
                 account = accounts[0];
                 self.wallet.web3.selectedAddress = account;
+                self.wallet.account = {
+                  address: account
+                };
               }
+              this._isConnected = hasAccounts;
               if (self.onAccountChanged)
                 self.onAccountChanged(account);
             });
@@ -776,11 +782,27 @@ var require_wallet = __commonJS({
           try {
             if (this.installed) {
               let ethereum = window["ethereum"];
-              await ethereum.request({ method: "eth_requestAccounts" });
+              await ethereum.request({ method: "eth_requestAccounts" }).then((accounts) => {
+                let account;
+                let hasAccounts = accounts && accounts.length > 0;
+                if (hasAccounts) {
+                  account = accounts[0];
+                  self.wallet.web3.selectedAddress = account;
+                  self.wallet.account = {
+                    address: account
+                  };
+                }
+                this._isConnected = hasAccounts;
+                if (self.onAccountChanged)
+                  self.onAccountChanged(account);
+              });
             }
           } catch (error) {
             console.error(error);
           }
+        }
+        get isConnected() {
+          return this._isConnected;
         }
         get installed() {
           let ethereum = window["ethereum"];
@@ -885,7 +907,7 @@ var require_wallet = __commonJS({
         }
       }
       _Wallet.MetaMask = MetaMask;
-      class Wallet3 {
+      const _Wallet2 = class {
         constructor(provider, account) {
           this._abiHashDict = {};
           this._abiAddressDict = {};
@@ -908,11 +930,17 @@ var require_wallet = __commonJS({
           if (this._account && this._account.privateKey && !this._account.address)
             this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
         }
+        static getInstance() {
+          return _Wallet2.instance;
+        }
         initMetaMask(events) {
           if (this.isMetaMask) {
             this._web3.eth.getAccounts((err, accounts) => {
               if (accounts) {
                 this._web3.selectedAddress = accounts[0];
+                this._account = {
+                  address: accounts[0]
+                };
               }
             });
             this._web3.eth.net.getId((err, chainId) => {
@@ -1617,7 +1645,9 @@ var require_wallet = __commonJS({
         get web3() {
           return this._web3;
         }
-      }
+      };
+      let Wallet3 = _Wallet2;
+      Wallet3.instance = new _Wallet2();
       _Wallet.Wallet = Wallet3;
     })(Wallet2 || (Wallet2 = {}));
     module2.exports = Wallet2;
