@@ -190,7 +190,7 @@ module Wallet{
 		blockExplorerUrls?: string[];
 		iconUrls?: string[]; // Currently ignored.
 	}
-	export interface IMetaMaskEvents {
+	export interface IClientSideProviderEvents {
 		onAccountChanged?: (account: string)=>void; 
 		onChainChanged?: (chainId: string)=>void;
 		onConnect?: (connectInfo: any)=>void;
@@ -352,26 +352,92 @@ module Wallet{
 			}
 		}
 	}
-	export class MetaMask implements IMetaMaskEvents {
+	export enum WalletPlugin {
+		MetaMask,
+		Coin98,
+		TrustWallet,
+		BinanceChainWallet,
+		ONTOWallet
+	}
+	export type WalletPluginMapType = {[key in WalletPlugin]: {
+		provider: any;
+		installed: () => boolean;
+	}};
+	export const WalletPluginMap: WalletPluginMapType = {
+		[WalletPlugin.MetaMask]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];
+				return !!ethereum && !!ethereum.isMetaMask;
+			}		
+		},
+		[WalletPlugin.Coin98]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];
+				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
+			}
+		},
+		[WalletPlugin.TrustWallet]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];		
+				return !!ethereum && !!ethereum.isTrust;
+			}
+		},
+		[WalletPlugin.BinanceChainWallet]: {
+			provider: window['BinanceChain'],
+			installed: () => {
+				return !!window['BinanceChain'];
+			}
+		},
+		[WalletPlugin.ONTOWallet]: {
+			provider: window['onto'],
+			installed: () => {
+				return !!window['onto'];
+			}
+		}
+	}	
+	export class ClientSideProvider {
 		private wallet: Wallet;
+		private walletPlugin: WalletPlugin;
 		private _isConnected: boolean = false;
 		public onAccountChanged: (account: string)=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
 		public onDisconnect: (error: any)=>void;
 
-		constructor(wallet: Wallet, events?: IMetaMaskEvents){
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.wallet = wallet;
-			let self = this;
-			let ethereum = window['ethereum'];
+			this.wallet.web3.eth.getAccounts((err, accounts)=>{
+				if (accounts){
+					(<any>this.wallet.web3).selectedAddress = accounts[0];
+					this.wallet.account = {
+						address: accounts[0]
+					};
+				}					
+			});								
+			this.wallet.web3.eth.net.getId((err, chainId)=>{
+				this.wallet.chainId = chainId;
+			})
+			this.walletPlugin = walletPlugin;
 			if (events) {
 				this.onAccountChanged = events.onAccountChanged;
 				this.onChainChanged = events.onChainChanged;
 				this.onConnect = events.onConnect;
 				this.onDisconnect = events.onDisconnect;
 			}
+		}
+		get installed(): boolean {
+			return WalletPluginMap[this.walletPlugin].installed();
+		}
+		get provider(): any {
+			return WalletPluginMap[this.walletPlugin].provider;
+		}
+		async init(){
+			let self = this;
 			if (this.installed){
-				ethereum.on('accountsChanged', (accounts) => {
+				this.provider.on('accountsChanged', (accounts) => {
 					let account;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -385,16 +451,16 @@ module Wallet{
 					if (self.onAccountChanged)
 						self.onAccountChanged(account);
 				});
-				ethereum.on('chainChanged', (chainId) => {
+				this.provider.on('chainChanged', (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
 					if (self.onChainChanged)
 						self.onChainChanged(chainId);
 				});
-				ethereum.on('connect', (connectInfo) => {
+				this.provider.on('connect', (connectInfo) => {
 					if (self.onConnect)
 						self.onConnect(connectInfo);
 				});
-				ethereum.on('disconnect', (error) => {
+				this.provider.on('disconnect', (error) => {
 					if (self.onDisconnect)
 						self.onDisconnect(error);
 				});	
@@ -404,8 +470,7 @@ module Wallet{
 			let self = this;
 			try {								
 				if (this.installed){
-					let ethereum = window['ethereum'];
-					await ethereum.request({ method: 'eth_requestAccounts' }).then((accounts) => {
+					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
 						let account;
 						let hasAccounts = accounts && accounts.length > 0;
 						if (hasAccounts) {
@@ -427,20 +492,10 @@ module Wallet{
 		get isConnected(){
 			return this._isConnected;
 		}
-		get installed(): boolean{
-			let ethereum = window['ethereum'];
-			if (typeof(ethereum) != 'undefined' && ethereum.isMetaMask)
-				return true;
-		}
-		get provider(){
-			let ethereum = window['ethereum'];
-			return ethereum;
-		}
 		addToken(option: ITokenOption, type?: string): Promise<boolean>{
 			return new Promise(async function(resolve, reject){
 				try{
-					let ethereum = window['network'];
-					let result = await ethereum.request({
+					let result = await this.provider.request({
 					    method: 'wallet_watchAsset',
 					    params: {
 					      type: type || 'ERC20', 
@@ -457,10 +512,9 @@ module Wallet{
 		switchNetwork(chainId: number): Promise<boolean>{
 			return new Promise(async function(resolve, reject){
 				try{
-					let ethereum = window['ethereum'];
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
-						let result = await ethereum.request({
+						let result = await this.provider.request({
 							method: 'wallet_switchEthereumChain',
 							params: [{
 								chainId: chainIdHex
@@ -479,7 +533,7 @@ module Wallet{
 									blockExplorerUrls = [blockExplorerUrls];
 								if (iconUrls && !Array.isArray(iconUrls))
 									iconUrls = [iconUrls];
-								let result = await ethereum.request({
+								let result = await this.provider.request({
 									method: 'wallet_addEthereumChain',
 									params: [{
 										chainId: chainIdHex,
@@ -508,16 +562,15 @@ module Wallet{
 				try{
 					options = JSON.parse(JSON.stringify(options));
 					let chainIdHex = '0x' + options.chainId.toString(16)
-					let ethereum = window['ethereum'];
 					try{
-						await ethereum.request({
+						await this.provider.request({
 						    method: 'wallet_switchEthereumChain',
 						    params: [{ chainId: chainIdHex}],
 						});
 						resolve(true);
 					}
 					catch(err){
-						let result = await ethereum.request({
+						let result = await this.provider.request({
 						    method: 'wallet_addEthereumChain',
 						    params: [
 						    	options
@@ -549,15 +602,10 @@ module Wallet{
 		private _sendTxEventHandler: ISendTxEventsOptions = {};
 		private _contracts = {};
 		private _blockGasLimit: number;
-		private _metaMask: MetaMask;
-		public isMetaMask: boolean = false;
-		public chainId: number;       
+		public chainId: number;   
+		public clientSideProvider: ClientSideProvider;    
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
-			if (!provider && typeof(window) !== 'undefined' && window['ethereum'] && window['ethereum'].isMetaMask){
-				this.isMetaMask = true;
-				provider = window['ethereum'];
-			}
 			this._provider = provider;			
 			this._web3 = new Web3(provider);
 			if (Array.isArray(account)){
@@ -569,26 +617,17 @@ module Wallet{
 
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-
 		}
 		private static readonly instance: Wallet = new Wallet();
 		static getInstance(): Wallet {
 		  return Wallet.instance;
 		}
-		initMetaMask(events: IMetaMaskEvents){
-			if (this.isMetaMask) {
-				this._web3.eth.getAccounts((err, accounts)=>{
-					if (accounts){
-						(<any>this._web3).selectedAddress = accounts[0];
-						this._account = {
-							address: accounts[0]
-						};
-					}					
-				});								
-				this._web3.eth.net.getId((err, chainId)=>{
-					this.chainId = chainId;
-				})
-				this._metaMask = new MetaMask(this, events);
+		static isInstalled(walletPlugin: WalletPlugin) {
+			return WalletPluginMap[walletPlugin].installed();
+		}
+		initBrowserProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents){
+			if (Wallet.isInstalled(walletPlugin)) {
+				this.clientSideProvider = new ClientSideProvider(this, walletPlugin, events);
 			}
 		}
 		get accounts(): Promise<string[]>{
@@ -676,11 +715,6 @@ module Wallet{
 				this.chainId = await this._web3.eth.getChainId();
 			return this.chainId;
 		}
-		get metaMask(){
-			if (!this._metaMask)
-				this._metaMask = new MetaMask(this);
-			return this._metaMask;
-		};
 		get provider(): any{
 			return this._provider;
 		}

@@ -172,7 +172,7 @@ declare module Wallet {
         blockExplorerUrls?: string[];
         iconUrls?: string[];
     }
-    interface IMetaMaskEvents {
+    interface IClientSideProviderEvents {
         onAccountChanged?: (account: string) => void;
         onChainChanged?: (chainId: string) => void;
         onConnect?: (connectInfo: any) => void;
@@ -181,18 +181,34 @@ declare module Wallet {
     const Networks: {
         [chainId: number]: INetwork;
     };
-    class MetaMask implements IMetaMaskEvents {
+    enum WalletPlugin {
+        MetaMask = 0,
+        Coin98 = 1,
+        TrustWallet = 2,
+        BinanceChainWallet = 3,
+        ONTOWallet = 4
+    }
+    type WalletPluginMapType = {
+        [key in WalletPlugin]: {
+            provider: any;
+            installed: () => boolean;
+        };
+    };
+    const WalletPluginMap: WalletPluginMapType;
+    class ClientSideProvider {
         private wallet;
+        private walletPlugin;
         private _isConnected;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
-        constructor(wallet: Wallet, events?: IMetaMaskEvents);
-        connect(): Promise<void>;
-        get isConnected(): boolean;
+        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents);
         get installed(): boolean;
         get provider(): any;
+        init(): Promise<void>;
+        connect(): Promise<void>;
+        get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
@@ -214,13 +230,13 @@ declare module Wallet {
         private _sendTxEventHandler;
         private _contracts;
         private _blockGasLimit;
-        private _metaMask;
-        isMetaMask: boolean;
         chainId: number;
+        clientSideProvider: ClientSideProvider;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): Wallet;
-        initMetaMask(events: IMetaMaskEvents): void;
+        static isInstalled(walletPlugin: WalletPlugin): boolean;
+        initBrowserProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): void;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;
@@ -230,7 +246,6 @@ declare module Wallet {
         get defaultAccount(): string;
         set defaultAccount(address: string);
         getChainId(): Promise<number>;
-        get metaMask(): MetaMask;
         get provider(): any;
         sendSignedTransaction(tx: string): Promise<any>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
