@@ -192,6 +192,7 @@ declare module Wallet {
         [key in WalletPlugin]: {
             provider: any;
             installed: () => boolean;
+            downloadLink?: string;
         };
     };
     const WalletPluginMap: WalletPluginMapType;
@@ -206,7 +207,7 @@ declare module Wallet {
         constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents);
         get installed(): boolean;
         get provider(): any;
-        init(): Promise<void>;
+        initEvents(): void;
         connect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -216,7 +217,7 @@ declare module Wallet {
     class BinanceChainWalletProvider extends ClientSideProvider {
         switchNetwork(chainId: number): Promise<boolean>;
     }
-    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider;
+    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents): ClientSideProvider;
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -241,8 +242,8 @@ declare module Wallet {
         static getInstance(): Wallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
-        switchNetwork(chainId: number): Promise<boolean>;
-        initClientSideProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider;
+        switchNetwork(chainId: number): Promise<any>;
+        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents): Promise<ClientSideProvider>;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;

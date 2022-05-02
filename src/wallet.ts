@@ -362,6 +362,7 @@ module Wallet{
 	export type WalletPluginMapType = {[key in WalletPlugin]: {
 		provider: any;
 		installed: () => boolean;
+		downloadLink?: string;
 	}};
 	export const WalletPluginMap: WalletPluginMapType = {
 		[WalletPlugin.MetaMask]: {
@@ -369,33 +370,38 @@ module Wallet{
 			installed: () => {
 				let ethereum = window['ethereum'];
 				return !!ethereum && !!ethereum.isMetaMask;
-			}		
+			},
+			downloadLink: 'https://metamask.io/download.html'	
 		},
 		[WalletPlugin.Coin98]: {
 			provider:  window['ethereum'],
 			installed: () => {
 				let ethereum = window['ethereum'];
 				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
-			}
+			},
+			downloadLink: 'https://docs.coin98.com/products/coin98-wallet'
 		},
 		[WalletPlugin.TrustWallet]: {
 			provider:  window['ethereum'],
 			installed: () => {
 				let ethereum = window['ethereum'];		
 				return !!ethereum && !!ethereum.isTrust;
-			}
+			},
+			downloadLink: 'https://link.trustwallet.com/open_url?url=' + window.location.href
 		},
 		[WalletPlugin.BinanceChainWallet]: {
 			provider: window['BinanceChain'],
 			installed: () => {
 				return !!window['BinanceChain'];
-			}
+			},
+			downloadLink: 'https://www.binance.org/en'
 		},
 		[WalletPlugin.ONTOWallet]: {
 			provider: window['onto'],
 			installed: () => {
 				return !!window['onto'];
-			}
+			},
+			downloadLink: 'https://onto.app/en/download/?mode=app'
 		}
 	}	
 	export class ClientSideProvider {
@@ -428,6 +434,7 @@ module Wallet{
 				this.onConnect = events.onConnect;
 				this.onDisconnect = events.onDisconnect;
 			}
+			this.initEvents();
 		}
 		get installed(): boolean {
 			return WalletPluginMap[this.walletPlugin].installed();
@@ -435,7 +442,7 @@ module Wallet{
 		get provider(): any {
 			return WalletPluginMap[this.walletPlugin].provider;
 		}
-		async init(){
+		initEvents(){
 			let self = this;
 			if (this.installed){
 				this.provider.on('accountsChanged', (accounts) => {
@@ -511,11 +518,12 @@ module Wallet{
 			})
 		}
 		switchNetwork(chainId: number): Promise<boolean>{
+			let self = this;
 			return new Promise(async function(resolve, reject){
 				try{
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
-						let result = await this.provider.request({
+						let result = await self.provider.request({
 							method: 'wallet_switchEthereumChain',
 							params: [{
 								chainId: chainIdHex
@@ -534,7 +542,7 @@ module Wallet{
 									blockExplorerUrls = [blockExplorerUrls];
 								if (iconUrls && !Array.isArray(iconUrls))
 									iconUrls = [iconUrls];
-								let result = await this.provider.request({
+								let result = await self.provider.request({
 									method: 'wallet_addEthereumChain',
 									params: [{
 										chainId: chainIdHex,
@@ -588,11 +596,12 @@ module Wallet{
 	}
 	export class BinanceChainWalletProvider extends ClientSideProvider {
 		switchNetwork(chainId: number): Promise<boolean>{
+			let self = this;
 			return new Promise(async function(resolve, reject){
 				try{
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
-						let result = await this.provider.request({
+						let result = await self.provider.request({
 							method: 'wallet_switchEthereumChain',
 							params: [{
 								chainId: chainIdHex
@@ -611,7 +620,7 @@ module Wallet{
 									blockExplorerUrls = [blockExplorerUrls];
 								if (iconUrls && !Array.isArray(iconUrls))
 									iconUrls = [iconUrls];
-								let result = await this.provider.request({
+								let result = await self.provider.request({
 									method: 'wallet_addEthereumChain',
 									params: [{
 										chainId: chainIdHex,
@@ -636,7 +645,7 @@ module Wallet{
 			})
 		}
 	}
-	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events: IClientSideProviderEvents){
+	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 		if (Wallet.isInstalled(walletPlugin)) {
 			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
 				return new BinanceChainWalletProvider(wallet, walletPlugin, events);		
@@ -688,14 +697,20 @@ module Wallet{
 			return WalletPluginMap[walletPlugin].installed();
 		}
 		get isConnected() {
-			return this.clientSideProvider.isConnected;
+			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
 		}
 		async switchNetwork(chainId: number) {
-			let result = await this.clientSideProvider.switchNetwork(chainId);
+			let result;
+			if (this.clientSideProvider) {
+				result = await this.clientSideProvider.switchNetwork(chainId);
+			}
 			return result;
 		}
-		initClientSideProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider{
-			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);		
+		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);	
+			if (this.clientSideProvider) {
+				await this.clientSideProvider.connect();
+			}
 			return this.clientSideProvider;
 		}
 		get accounts(): Promise<string[]>{

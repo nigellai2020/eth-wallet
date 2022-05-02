@@ -734,47 +734,52 @@ var require_wallet = __commonJS({
           }
         }
       };
-      let WalletPlugin;
-      (function(WalletPlugin2) {
-        WalletPlugin2[WalletPlugin2["MetaMask"] = 0] = "MetaMask";
-        WalletPlugin2[WalletPlugin2["Coin98"] = 1] = "Coin98";
-        WalletPlugin2[WalletPlugin2["TrustWallet"] = 2] = "TrustWallet";
-        WalletPlugin2[WalletPlugin2["BinanceChainWallet"] = 3] = "BinanceChainWallet";
-        WalletPlugin2[WalletPlugin2["ONTOWallet"] = 4] = "ONTOWallet";
-      })(WalletPlugin = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
+      let WalletPlugin2;
+      (function(WalletPlugin3) {
+        WalletPlugin3[WalletPlugin3["MetaMask"] = 0] = "MetaMask";
+        WalletPlugin3[WalletPlugin3["Coin98"] = 1] = "Coin98";
+        WalletPlugin3[WalletPlugin3["TrustWallet"] = 2] = "TrustWallet";
+        WalletPlugin3[WalletPlugin3["BinanceChainWallet"] = 3] = "BinanceChainWallet";
+        WalletPlugin3[WalletPlugin3["ONTOWallet"] = 4] = "ONTOWallet";
+      })(WalletPlugin2 = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
       _Wallet.WalletPluginMap = {
         [0]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
             return !!ethereum && !!ethereum.isMetaMask;
-          }
+          },
+          downloadLink: "https://metamask.io/download.html"
         },
         [1]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
             return !!ethereum && (!!ethereum.isCoin98 || !!window["isCoin98"]);
-          }
+          },
+          downloadLink: "https://docs.coin98.com/products/coin98-wallet"
         },
         [2]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
             return !!ethereum && !!ethereum.isTrust;
-          }
+          },
+          downloadLink: "https://link.trustwallet.com/open_url?url=" + window.location.href
         },
         [3]: {
           provider: window["BinanceChain"],
           installed: () => {
             return !!window["BinanceChain"];
-          }
+          },
+          downloadLink: "https://www.binance.org/en"
         },
         [4]: {
           provider: window["onto"],
           installed: () => {
             return !!window["onto"];
-          }
+          },
+          downloadLink: "https://onto.app/en/download/?mode=app"
         }
       };
       class ClientSideProvider {
@@ -800,6 +805,7 @@ var require_wallet = __commonJS({
             this.onConnect = events.onConnect;
             this.onDisconnect = events.onDisconnect;
           }
+          this.initEvents();
         }
         get installed() {
           return _Wallet.WalletPluginMap[this.walletPlugin].installed();
@@ -807,7 +813,7 @@ var require_wallet = __commonJS({
         get provider() {
           return _Wallet.WalletPluginMap[this.walletPlugin].provider;
         }
-        async init() {
+        initEvents() {
           let self = this;
           if (this.installed) {
             this.provider.on("accountsChanged", (accounts) => {
@@ -883,11 +889,12 @@ var require_wallet = __commonJS({
           });
         }
         switchNetwork(chainId) {
+          let self = this;
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
               try {
-                let result = await this.provider.request({
+                let result = await self.provider.request({
                   method: "wallet_switchEthereumChain",
                   params: [{
                     chainId: chainIdHex
@@ -907,7 +914,7 @@ var require_wallet = __commonJS({
                       blockExplorerUrls = [blockExplorerUrls];
                     if (iconUrls && !Array.isArray(iconUrls))
                       iconUrls = [iconUrls];
-                    let result = await this.provider.request({
+                    let result = await self.provider.request({
                       method: "wallet_addEthereumChain",
                       params: [{
                         chainId: chainIdHex,
@@ -959,11 +966,12 @@ var require_wallet = __commonJS({
       _Wallet.ClientSideProvider = ClientSideProvider;
       class BinanceChainWalletProvider extends ClientSideProvider {
         switchNetwork(chainId) {
+          let self = this;
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
               try {
-                let result = await this.provider.request({
+                let result = await self.provider.request({
                   method: "wallet_switchEthereumChain",
                   params: [{
                     chainId: chainIdHex
@@ -983,7 +991,7 @@ var require_wallet = __commonJS({
                       blockExplorerUrls = [blockExplorerUrls];
                     if (iconUrls && !Array.isArray(iconUrls))
                       iconUrls = [iconUrls];
-                    let result = await this.provider.request({
+                    let result = await self.provider.request({
                       method: "wallet_addEthereumChain",
                       params: [{
                         chainId: chainIdHex,
@@ -1044,14 +1052,20 @@ var require_wallet = __commonJS({
           return _Wallet.WalletPluginMap[walletPlugin].installed();
         }
         get isConnected() {
-          return this.clientSideProvider.isConnected;
+          return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
         }
         async switchNetwork(chainId) {
-          let result = await this.clientSideProvider.switchNetwork(chainId);
+          let result;
+          if (this.clientSideProvider) {
+            result = await this.clientSideProvider.switchNetwork(chainId);
+          }
           return result;
         }
-        initClientSideProvider(walletPlugin, events) {
+        async connect(walletPlugin, events) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
+          if (this.clientSideProvider) {
+            await this.clientSideProvider.connect();
+          }
           return this.clientSideProvider;
         }
         get accounts() {
@@ -1775,7 +1789,8 @@ __export(exports, {
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Utils: () => utils_exports,
-  Wallet: () => import_wallet.Wallet
+  Wallet: () => import_wallet.Wallet,
+  WalletPlugin: () => import_wallet.WalletPlugin
 });
 var import_wallet = __toModule(require_wallet());
 var import_contract2 = __toModule(require_contract());
