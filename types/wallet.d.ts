@@ -197,8 +197,8 @@ declare module Wallet {
     const WalletPluginMap: WalletPluginMapType;
     class ClientSideProvider {
         private wallet;
-        private walletPlugin;
         private _isConnected;
+        readonly walletPlugin: WalletPlugin;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
@@ -213,6 +213,10 @@ declare module Wallet {
         switchNetwork(chainId: number): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
     }
+    class BinanceChainWalletProvider extends ClientSideProvider {
+        switchNetwork(chainId: number): Promise<boolean>;
+    }
+    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider;
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -236,7 +240,9 @@ declare module Wallet {
         private static readonly instance;
         static getInstance(): Wallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
-        initBrowserProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): void;
+        get isConnected(): boolean;
+        switchNetwork(chainId: number): Promise<boolean>;
+        initClientSideProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;
@@ -247,6 +253,8 @@ declare module Wallet {
         set defaultAccount(address: string);
         getChainId(): Promise<number>;
         get provider(): any;
+        set provider(value: any);
+        getGasPrice(): Promise<string>;
         sendSignedTransaction(tx: string): Promise<any>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;

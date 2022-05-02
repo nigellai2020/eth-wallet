@@ -781,6 +781,8 @@ var require_wallet = __commonJS({
         constructor(wallet, walletPlugin, events) {
           this._isConnected = false;
           this.wallet = wallet;
+          this.walletPlugin = walletPlugin;
+          this.wallet.web3.setProvider(this.provider);
           this.wallet.web3.eth.getAccounts((err, accounts) => {
             if (accounts) {
               this.wallet.web3.selectedAddress = accounts[0];
@@ -792,7 +794,6 @@ var require_wallet = __commonJS({
           this.wallet.web3.eth.net.getId((err, chainId) => {
             this.wallet.chainId = chainId;
           });
-          this.walletPlugin = walletPlugin;
           if (events) {
             this.onAccountChanged = events.onAccountChanged;
             this.onChainChanged = events.onChainChanged;
@@ -956,6 +957,68 @@ var require_wallet = __commonJS({
         }
       }
       _Wallet.ClientSideProvider = ClientSideProvider;
+      class BinanceChainWalletProvider extends ClientSideProvider {
+        switchNetwork(chainId) {
+          return new Promise(async function(resolve, reject) {
+            try {
+              let chainIdHex = "0x" + chainId.toString(16);
+              try {
+                let result = await this.provider.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{
+                    chainId: chainIdHex
+                  }]
+                });
+                resolve(!result);
+              } catch (error) {
+                if (error.code === 4902) {
+                  try {
+                    let network = _Wallet.Networks[chainId];
+                    if (!network)
+                      resolve(false);
+                    let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
+                    if (!Array.isArray(rpcUrls))
+                      rpcUrls = [rpcUrls];
+                    if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
+                      blockExplorerUrls = [blockExplorerUrls];
+                    if (iconUrls && !Array.isArray(iconUrls))
+                      iconUrls = [iconUrls];
+                    let result = await this.provider.request({
+                      method: "wallet_addEthereumChain",
+                      params: [{
+                        chainId: chainIdHex,
+                        chainName,
+                        nativeCurrency,
+                        rpcUrls,
+                        blockExplorerUrls,
+                        iconUrls
+                      }]
+                    });
+                    resolve(!result);
+                  } catch (error2) {
+                    reject(error2);
+                  }
+                } else
+                  reject(error);
+              }
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
+      }
+      _Wallet.BinanceChainWalletProvider = BinanceChainWalletProvider;
+      function createClientSideProvider(wallet, walletPlugin, events) {
+        if (Wallet3.isInstalled(walletPlugin)) {
+          if (walletPlugin == 3) {
+            return new BinanceChainWalletProvider(wallet, walletPlugin, events);
+          } else {
+            return new ClientSideProvider(wallet, walletPlugin, events);
+          }
+        }
+        return null;
+      }
+      _Wallet.createClientSideProvider = createClientSideProvider;
       const _Wallet2 = class {
         constructor(provider, account) {
           this._abiHashDict = {};
@@ -980,10 +1043,16 @@ var require_wallet = __commonJS({
         static isInstalled(walletPlugin) {
           return _Wallet.WalletPluginMap[walletPlugin].installed();
         }
-        initBrowserProvider(walletPlugin, events) {
-          if (_Wallet2.isInstalled(walletPlugin)) {
-            this.clientSideProvider = new ClientSideProvider(this, walletPlugin, events);
-          }
+        get isConnected() {
+          return this.clientSideProvider.isConnected;
+        }
+        async switchNetwork(chainId) {
+          let result = await this.clientSideProvider.switchNetwork(chainId);
+          return result;
+        }
+        initClientSideProvider(walletPlugin, events) {
+          this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
+          return this.clientSideProvider;
         }
         get accounts() {
           return new Promise((resolve) => {
@@ -1065,6 +1134,14 @@ var require_wallet = __commonJS({
         }
         get provider() {
           return this._provider;
+        }
+        set provider(value) {
+          this._web3.setProvider(value);
+          this._provider = value;
+        }
+        async getGasPrice() {
+          let gasPrice = await this._web3.eth.getGasPrice();
+          return gasPrice;
         }
         sendSignedTransaction(tx) {
           let _web3 = this._web3;

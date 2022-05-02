@@ -400,8 +400,8 @@ module Wallet{
 	}	
 	export class ClientSideProvider {
 		private wallet: Wallet;
-		private walletPlugin: WalletPlugin;
 		private _isConnected: boolean = false;
+		public readonly walletPlugin: WalletPlugin;
 		public onAccountChanged: (account: string)=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
@@ -409,6 +409,8 @@ module Wallet{
 
 		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.wallet = wallet;
+			this.walletPlugin = walletPlugin;
+			this.wallet.web3.setProvider(this.provider);
 			this.wallet.web3.eth.getAccounts((err, accounts)=>{
 				if (accounts){
 					(<any>this.wallet.web3).selectedAddress = accounts[0];
@@ -420,7 +422,6 @@ module Wallet{
 			this.wallet.web3.eth.net.getId((err, chainId)=>{
 				this.wallet.chainId = chainId;
 			})
-			this.walletPlugin = walletPlugin;
 			if (events) {
 				this.onAccountChanged = events.onAccountChanged;
 				this.onChainChanged = events.onChainChanged;
@@ -585,6 +586,67 @@ module Wallet{
 			})
 		}
 	}
+	export class BinanceChainWalletProvider extends ClientSideProvider {
+		switchNetwork(chainId: number): Promise<boolean>{
+			return new Promise(async function(resolve, reject){
+				try{
+					let chainIdHex = '0x' + chainId.toString(16);
+					try {
+						let result = await this.provider.request({
+							method: 'wallet_switchEthereumChain',
+							params: [{
+								chainId: chainIdHex
+							}]
+						});
+						resolve(!result);
+					} catch (error) {
+						if (error.code === 4902) {
+							try {
+								let network = Networks[chainId];
+								if (!network) resolve(false);
+								let {chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls} = network;
+								if (!Array.isArray(rpcUrls))
+									rpcUrls = [rpcUrls];
+								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
+									blockExplorerUrls = [blockExplorerUrls];
+								if (iconUrls && !Array.isArray(iconUrls))
+									iconUrls = [iconUrls];
+								let result = await this.provider.request({
+									method: 'wallet_addEthereumChain',
+									params: [{
+										chainId: chainIdHex,
+										chainName: chainName,
+										nativeCurrency: nativeCurrency,
+										rpcUrls: rpcUrls,
+										blockExplorerUrls: blockExplorerUrls,
+										iconUrls: iconUrls
+									}]
+								});
+								resolve(!result);
+							} catch (error) {
+								reject(error);
+							}
+						} else
+						reject(error);
+					}
+				}	
+				catch(err){
+					reject(err)
+				}
+			})
+		}
+	}
+	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events: IClientSideProviderEvents){
+		if (Wallet.isInstalled(walletPlugin)) {
+			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
+				return new BinanceChainWalletProvider(wallet, walletPlugin, events);		
+			}
+			else {
+				return new ClientSideProvider(wallet, walletPlugin, events);
+			}			
+		}	
+		return null;
+	}
 	export interface ISendTxEventsOptions {
 		transactionHash?: (error: Error, receipt?: string) => void;
 		confirmation?: (receipt: any) => void;
@@ -625,10 +687,16 @@ module Wallet{
 		static isInstalled(walletPlugin: WalletPlugin) {
 			return WalletPluginMap[walletPlugin].installed();
 		}
-		initBrowserProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents){
-			if (Wallet.isInstalled(walletPlugin)) {
-				this.clientSideProvider = new ClientSideProvider(this, walletPlugin, events);
-			}
+		get isConnected() {
+			return this.clientSideProvider.isConnected;
+		}
+		async switchNetwork(chainId: number) {
+			let result = await this.clientSideProvider.switchNetwork(chainId);
+			return result;
+		}
+		initClientSideProvider(walletPlugin: WalletPlugin, events: IClientSideProviderEvents): ClientSideProvider{
+			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);		
+			return this.clientSideProvider;
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
@@ -717,6 +785,14 @@ module Wallet{
 		}
 		get provider(): any{
 			return this._provider;
+		}
+		set provider(value: any){
+			this._web3.setProvider(value);
+			this._provider = value;
+		}
+		async getGasPrice(){
+			let gasPrice = await this._web3.eth.getGasPrice();
+			return gasPrice;
 		}
 		sendSignedTransaction(tx: string): Promise<any>{
 			let _web3 = this._web3;        	
@@ -1007,7 +1083,7 @@ module Wallet{
 						value,
 						data: method.encodeABI(),
 					}
-					
+
 					let promiEvent = _web3.eth.sendTransaction(tx);
 					promiEvent.on('error', (error: Error) =>{
 						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
