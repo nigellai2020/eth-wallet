@@ -1,4 +1,15 @@
-export {IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions} from './wallet';
+export {
+    IWallet, 
+    IWalletUtils, 
+    IAccount, 
+    Wallet, 
+    Transaction, 
+    Event, 
+    TransactionReceipt, 
+    ISendTxEventsOptions, 
+    WalletPlugin,
+    WalletPluginConfig
+} from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
 export {Erc20} from './contracts/erc20';

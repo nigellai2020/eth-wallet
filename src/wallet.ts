@@ -4,7 +4,6 @@ import {rlp} from 'ethereumjs-util';
 const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
-import {Utils} from 'web3-utils';
 import {KMS} from './kms';
 
 function Web3Lib(){
@@ -190,7 +189,7 @@ module Wallet{
 		blockExplorerUrls?: string[];
 		iconUrls?: string[]; // Currently ignored.
 	}
-	export interface IMetaMaskEvents {
+	export interface IClientSideProviderEvents {
 		onAccountChanged?: (account: string)=>void; 
 		onChainChanged?: (chainId: string)=>void;
 		onConnect?: (connectInfo: any)=>void;
@@ -352,26 +351,100 @@ module Wallet{
 			}
 		}
 	}
-	export class MetaMask implements IMetaMaskEvents {
+	export enum WalletPlugin {
+		MetaMask = 'metamask',
+		Coin98 = 'coin98',
+		TrustWallet = 'trustwallet',
+		BinanceChainWallet = 'binancechainwallet',
+		ONTOWallet = 'onto',
+	}
+	export type WalletPluginConfigType = {[key in WalletPlugin]: {
+		provider: any;
+		installed: () => boolean;
+		homepage?: string;
+	}};
+	export const WalletPluginConfig: WalletPluginConfigType = {
+		[WalletPlugin.MetaMask]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];
+				return !!ethereum && !!ethereum.isMetaMask;
+			},
+			homepage: 'https://metamask.io/download.html'	
+		},
+		[WalletPlugin.Coin98]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];
+				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
+			},
+			homepage: 'https://docs.coin98.com/products/coin98-wallet'
+		},
+		[WalletPlugin.TrustWallet]: {
+			provider:  window['ethereum'],
+			installed: () => {
+				let ethereum = window['ethereum'];		
+				return !!ethereum && !!ethereum.isTrust;
+			},
+			homepage: 'https://link.trustwallet.com/open_url?url=' + window.location.href
+		},
+		[WalletPlugin.BinanceChainWallet]: {
+			provider: window['BinanceChain'],
+			installed: () => {
+				return !!window['BinanceChain'];
+			},
+			homepage: 'https://www.binance.org/en'
+		},
+		[WalletPlugin.ONTOWallet]: {
+			provider: window['onto'],
+			installed: () => {
+				return !!window['onto'];
+			},
+			homepage: 'https://onto.app/en/download/?mode=app'
+		}
+	}	
+	export class ClientSideProvider {
 		private wallet: Wallet;
 		private _isConnected: boolean = false;
+		public readonly walletPlugin: WalletPlugin;
 		public onAccountChanged: (account: string)=>void; 
 		public onChainChanged: (chainId: string)=>void;
 		public onConnect: (connectInfo: any)=>void;
 		public onDisconnect: (error: any)=>void;
 
-		constructor(wallet: Wallet, events?: IMetaMaskEvents){
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.wallet = wallet;
-			let self = this;
-			let ethereum = window['ethereum'];
+			this.walletPlugin = walletPlugin;
+			this.wallet.web3.setProvider(this.provider);
+			this.wallet.web3.eth.getAccounts((err, accounts)=>{
+				if (accounts){
+					(<any>this.wallet.web3).selectedAddress = accounts[0];
+					this.wallet.account = {
+						address: accounts[0]
+					};
+				}					
+			});								
+			this.wallet.web3.eth.net.getId((err, chainId)=>{
+				this.wallet.chainId = chainId;
+			})
 			if (events) {
 				this.onAccountChanged = events.onAccountChanged;
 				this.onChainChanged = events.onChainChanged;
 				this.onConnect = events.onConnect;
 				this.onDisconnect = events.onDisconnect;
 			}
+			this.initEvents();
+		}
+		get installed(): boolean {
+			return WalletPluginConfig[this.walletPlugin].installed();
+		}
+		get provider(): any {
+			return WalletPluginConfig[this.walletPlugin].provider;
+		}
+		initEvents(){
+			let self = this;
 			if (this.installed){
-				ethereum.on('accountsChanged', (accounts) => {
+				this.provider.on('accountsChanged', (accounts) => {
 					let account;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -385,16 +458,16 @@ module Wallet{
 					if (self.onAccountChanged)
 						self.onAccountChanged(account);
 				});
-				ethereum.on('chainChanged', (chainId) => {
+				this.provider.on('chainChanged', (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
 					if (self.onChainChanged)
 						self.onChainChanged(chainId);
 				});
-				ethereum.on('connect', (connectInfo) => {
+				this.provider.on('connect', (connectInfo) => {
 					if (self.onConnect)
 						self.onConnect(connectInfo);
 				});
-				ethereum.on('disconnect', (error) => {
+				this.provider.on('disconnect', (error) => {
 					if (self.onDisconnect)
 						self.onDisconnect(error);
 				});	
@@ -404,8 +477,7 @@ module Wallet{
 			let self = this;
 			try {								
 				if (this.installed){
-					let ethereum = window['ethereum'];
-					await ethereum.request({ method: 'eth_requestAccounts' }).then((accounts) => {
+					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
 						let account;
 						let hasAccounts = accounts && accounts.length > 0;
 						if (hasAccounts) {
@@ -424,23 +496,23 @@ module Wallet{
 				console.error(error);
 			}
 		}
+		async disconnect(){
+			if (this.provider == null) {
+				return;
+			}
+			if (this.provider.disconnect) {
+				await this.provider.disconnect()
+			}
+			this.wallet.account = null;
+			this._isConnected = false;
+		}
 		get isConnected(){
 			return this._isConnected;
-		}
-		get installed(): boolean{
-			let ethereum = window['ethereum'];
-			if (typeof(ethereum) != 'undefined' && ethereum.isMetaMask)
-				return true;
-		}
-		get provider(){
-			let ethereum = window['ethereum'];
-			return ethereum;
 		}
 		addToken(option: ITokenOption, type?: string): Promise<boolean>{
 			return new Promise(async function(resolve, reject){
 				try{
-					let ethereum = window['network'];
-					let result = await ethereum.request({
+					let result = await this.provider.request({
 					    method: 'wallet_watchAsset',
 					    params: {
 					      type: type || 'ERC20', 
@@ -455,12 +527,12 @@ module Wallet{
 			})
 		}
 		switchNetwork(chainId: number): Promise<boolean>{
+			let self = this;
 			return new Promise(async function(resolve, reject){
 				try{
-					let ethereum = window['ethereum'];
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
-						let result = await ethereum.request({
+						let result = await self.provider.request({
 							method: 'wallet_switchEthereumChain',
 							params: [{
 								chainId: chainIdHex
@@ -479,7 +551,7 @@ module Wallet{
 									blockExplorerUrls = [blockExplorerUrls];
 								if (iconUrls && !Array.isArray(iconUrls))
 									iconUrls = [iconUrls];
-								let result = await ethereum.request({
+								let result = await self.provider.request({
 									method: 'wallet_addEthereumChain',
 									params: [{
 										chainId: chainIdHex,
@@ -508,16 +580,15 @@ module Wallet{
 				try{
 					options = JSON.parse(JSON.stringify(options));
 					let chainIdHex = '0x' + options.chainId.toString(16)
-					let ethereum = window['ethereum'];
 					try{
-						await ethereum.request({
+						await this.provider.request({
 						    method: 'wallet_switchEthereumChain',
 						    params: [{ chainId: chainIdHex}],
 						});
 						resolve(true);
 					}
 					catch(err){
-						let result = await ethereum.request({
+						let result = await this.provider.request({
 						    method: 'wallet_addEthereumChain',
 						    params: [
 						    	options
@@ -531,6 +602,68 @@ module Wallet{
 				}
 			})
 		}
+	}
+	export class BinanceChainWalletProvider extends ClientSideProvider {
+		switchNetwork(chainId: number): Promise<boolean>{
+			let self = this;
+			return new Promise(async function(resolve, reject){
+				try{
+					let chainIdHex = '0x' + chainId.toString(16);
+					try {
+						let result = await self.provider.request({
+							method: 'wallet_switchEthereumChain',
+							params: [{
+								chainId: chainIdHex
+							}]
+						});
+						resolve(!result);
+					} catch (error) {
+						if (error.code === 4902) {
+							try {
+								let network = Networks[chainId];
+								if (!network) resolve(false);
+								let {chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls} = network;
+								if (!Array.isArray(rpcUrls))
+									rpcUrls = [rpcUrls];
+								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
+									blockExplorerUrls = [blockExplorerUrls];
+								if (iconUrls && !Array.isArray(iconUrls))
+									iconUrls = [iconUrls];
+								let result = await self.provider.request({
+									method: 'wallet_addEthereumChain',
+									params: [{
+										chainId: chainIdHex,
+										chainName: chainName,
+										nativeCurrency: nativeCurrency,
+										rpcUrls: rpcUrls,
+										blockExplorerUrls: blockExplorerUrls,
+										iconUrls: iconUrls
+									}]
+								});
+								resolve(!result);
+							} catch (error) {
+								reject(error);
+							}
+						} else
+						reject(error);
+					}
+				}	
+				catch(err){
+					reject(err)
+				}
+			})
+		}
+	}
+	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+		if (Wallet.isInstalled(walletPlugin)) {
+			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
+				return new BinanceChainWalletProvider(wallet, walletPlugin, events);		
+			}
+			else {
+				return new ClientSideProvider(wallet, walletPlugin, events);
+			}			
+		}	
+		return null;
 	}
 	export interface ISendTxEventsOptions {
 		transactionHash?: (error: Error, receipt?: string) => void;
@@ -549,15 +682,10 @@ module Wallet{
 		private _sendTxEventHandler: ISendTxEventsOptions = {};
 		private _contracts = {};
 		private _blockGasLimit: number;
-		private _metaMask: MetaMask;
-		public isMetaMask: boolean = false;
-		public chainId: number;       
+		public chainId: number;   
+		public clientSideProvider: ClientSideProvider;    
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
-			if (!provider && typeof(window) !== 'undefined' && window['ethereum'] && window['ethereum'].isMetaMask){
-				this.isMetaMask = true;
-				provider = window['ethereum'];
-			}
 			this._provider = provider;			
 			this._web3 = new Web3(provider);
 			if (Array.isArray(account)){
@@ -569,27 +697,46 @@ module Wallet{
 
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-
 		}
 		private static readonly instance: Wallet = new Wallet();
 		static getInstance(): Wallet {
 		  return Wallet.instance;
 		}
-		initMetaMask(events: IMetaMaskEvents){
-			if (this.isMetaMask) {
-				this._web3.eth.getAccounts((err, accounts)=>{
-					if (accounts){
-						(<any>this._web3).selectedAddress = accounts[0];
-						this._account = {
-							address: accounts[0]
-						};
-					}					
-				});								
-				this._web3.eth.net.getId((err, chainId)=>{
-					this.chainId = chainId;
-				})
-				this._metaMask = new MetaMask(this, events);
+		static isInstalled(walletPlugin: WalletPlugin) {
+			return WalletPluginConfig[walletPlugin].installed();
+		}
+		get isConnected() {
+			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
+		}
+		async switchNetwork(chainId: number) {
+			let result;
+			if (this.clientSideProvider) {
+				result = await this.clientSideProvider.switchNetwork(chainId);
 			}
+			return result;
+		}
+		setDefaultProvider(){
+			if (!this.chainId) this.chainId = 56;	
+			if (Networks[this.chainId] && Networks[this.chainId].rpcUrls.length > 0) {
+				this.provider = Networks[this.chainId].rpcUrls[0];
+			}
+		}
+		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);	
+			if (this.clientSideProvider) {
+				if (!this.chainId) await this.getChainId();
+				await this.clientSideProvider.connect();
+			}
+			else {
+				this.setDefaultProvider();
+			}
+			return this.clientSideProvider;
+		}
+		async disconnect(){
+			if (this.clientSideProvider) {
+				await this.clientSideProvider.disconnect();
+			}
+			this.setDefaultProvider();
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
@@ -676,13 +823,16 @@ module Wallet{
 				this.chainId = await this._web3.eth.getChainId();
 			return this.chainId;
 		}
-		get metaMask(){
-			if (!this._metaMask)
-				this._metaMask = new MetaMask(this);
-			return this._metaMask;
-		};
 		get provider(): any{
 			return this._provider;
+		}
+		set provider(value: any){
+			this._web3.setProvider(value);
+			this._provider = value;
+		}
+		async getGasPrice(){
+			let gasPrice = await this._web3.eth.getGasPrice();
+			return gasPrice;
 		}
 		sendSignedTransaction(tx: string): Promise<any>{
 			let _web3 = this._web3;        	
@@ -973,7 +1123,7 @@ module Wallet{
 						value,
 						data: method.encodeABI(),
 					}
-					
+
 					let promiEvent = _web3.eth.sendTransaction(tx);
 					promiEvent.on('error', (error: Error) =>{
 						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {

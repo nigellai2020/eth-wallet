@@ -734,20 +734,89 @@ var require_wallet = __commonJS({
           }
         }
       };
-      class MetaMask {
-        constructor(wallet, events) {
+      let WalletPlugin2;
+      (function(WalletPlugin3) {
+        WalletPlugin3["MetaMask"] = "metamask";
+        WalletPlugin3["Coin98"] = "coin98";
+        WalletPlugin3["TrustWallet"] = "trustwallet";
+        WalletPlugin3["BinanceChainWallet"] = "binancechainwallet";
+        WalletPlugin3["ONTOWallet"] = "onto";
+      })(WalletPlugin2 = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
+      _Wallet.WalletPluginConfig = {
+        [WalletPlugin2.MetaMask]: {
+          provider: window["ethereum"],
+          installed: () => {
+            let ethereum = window["ethereum"];
+            return !!ethereum && !!ethereum.isMetaMask;
+          },
+          homepage: "https://metamask.io/download.html"
+        },
+        [WalletPlugin2.Coin98]: {
+          provider: window["ethereum"],
+          installed: () => {
+            let ethereum = window["ethereum"];
+            return !!ethereum && (!!ethereum.isCoin98 || !!window["isCoin98"]);
+          },
+          homepage: "https://docs.coin98.com/products/coin98-wallet"
+        },
+        [WalletPlugin2.TrustWallet]: {
+          provider: window["ethereum"],
+          installed: () => {
+            let ethereum = window["ethereum"];
+            return !!ethereum && !!ethereum.isTrust;
+          },
+          homepage: "https://link.trustwallet.com/open_url?url=" + window.location.href
+        },
+        [WalletPlugin2.BinanceChainWallet]: {
+          provider: window["BinanceChain"],
+          installed: () => {
+            return !!window["BinanceChain"];
+          },
+          homepage: "https://www.binance.org/en"
+        },
+        [WalletPlugin2.ONTOWallet]: {
+          provider: window["onto"],
+          installed: () => {
+            return !!window["onto"];
+          },
+          homepage: "https://onto.app/en/download/?mode=app"
+        }
+      };
+      class ClientSideProvider {
+        constructor(wallet, walletPlugin, events) {
           this._isConnected = false;
           this.wallet = wallet;
-          let self = this;
-          let ethereum = window["ethereum"];
+          this.walletPlugin = walletPlugin;
+          this.wallet.web3.setProvider(this.provider);
+          this.wallet.web3.eth.getAccounts((err, accounts) => {
+            if (accounts) {
+              this.wallet.web3.selectedAddress = accounts[0];
+              this.wallet.account = {
+                address: accounts[0]
+              };
+            }
+          });
+          this.wallet.web3.eth.net.getId((err, chainId) => {
+            this.wallet.chainId = chainId;
+          });
           if (events) {
             this.onAccountChanged = events.onAccountChanged;
             this.onChainChanged = events.onChainChanged;
             this.onConnect = events.onConnect;
             this.onDisconnect = events.onDisconnect;
           }
+          this.initEvents();
+        }
+        get installed() {
+          return _Wallet.WalletPluginConfig[this.walletPlugin].installed();
+        }
+        get provider() {
+          return _Wallet.WalletPluginConfig[this.walletPlugin].provider;
+        }
+        initEvents() {
+          let self = this;
           if (this.installed) {
-            ethereum.on("accountsChanged", (accounts) => {
+            this.provider.on("accountsChanged", (accounts) => {
               let account;
               let hasAccounts = accounts && accounts.length > 0;
               if (hasAccounts) {
@@ -761,16 +830,16 @@ var require_wallet = __commonJS({
               if (self.onAccountChanged)
                 self.onAccountChanged(account);
             });
-            ethereum.on("chainChanged", (chainId) => {
+            this.provider.on("chainChanged", (chainId) => {
               self.wallet.chainId = parseInt(chainId);
               if (self.onChainChanged)
                 self.onChainChanged(chainId);
             });
-            ethereum.on("connect", (connectInfo) => {
+            this.provider.on("connect", (connectInfo) => {
               if (self.onConnect)
                 self.onConnect(connectInfo);
             });
-            ethereum.on("disconnect", (error) => {
+            this.provider.on("disconnect", (error) => {
               if (self.onDisconnect)
                 self.onDisconnect(error);
             });
@@ -781,8 +850,7 @@ var require_wallet = __commonJS({
           let self = this;
           try {
             if (this.installed) {
-              let ethereum = window["ethereum"];
-              await ethereum.request({ method: "eth_requestAccounts" }).then((accounts) => {
+              await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
                 let account;
                 let hasAccounts = accounts && accounts.length > 0;
                 if (hasAccounts) {
@@ -801,23 +869,23 @@ var require_wallet = __commonJS({
             console.error(error);
           }
         }
+        async disconnect() {
+          if (this.provider == null) {
+            return;
+          }
+          if (this.provider.disconnect) {
+            await this.provider.disconnect();
+          }
+          this.wallet.account = null;
+          this._isConnected = false;
+        }
         get isConnected() {
           return this._isConnected;
-        }
-        get installed() {
-          let ethereum = window["ethereum"];
-          if (typeof ethereum != "undefined" && ethereum.isMetaMask)
-            return true;
-        }
-        get provider() {
-          let ethereum = window["ethereum"];
-          return ethereum;
         }
         addToken(option, type) {
           return new Promise(async function(resolve, reject) {
             try {
-              let ethereum = window["network"];
-              let result = await ethereum.request({
+              let result = await this.provider.request({
                 method: "wallet_watchAsset",
                 params: {
                   type: type || "ERC20",
@@ -831,12 +899,12 @@ var require_wallet = __commonJS({
           });
         }
         switchNetwork(chainId) {
+          let self = this;
           return new Promise(async function(resolve, reject) {
             try {
-              let ethereum = window["ethereum"];
               let chainIdHex = "0x" + chainId.toString(16);
               try {
-                let result = await ethereum.request({
+                let result = await self.provider.request({
                   method: "wallet_switchEthereumChain",
                   params: [{
                     chainId: chainIdHex
@@ -856,7 +924,7 @@ var require_wallet = __commonJS({
                       blockExplorerUrls = [blockExplorerUrls];
                     if (iconUrls && !Array.isArray(iconUrls))
                       iconUrls = [iconUrls];
-                    let result = await ethereum.request({
+                    let result = await self.provider.request({
                       method: "wallet_addEthereumChain",
                       params: [{
                         chainId: chainIdHex,
@@ -884,15 +952,14 @@ var require_wallet = __commonJS({
             try {
               options = JSON.parse(JSON.stringify(options));
               let chainIdHex = "0x" + options.chainId.toString(16);
-              let ethereum = window["ethereum"];
               try {
-                await ethereum.request({
+                await this.provider.request({
                   method: "wallet_switchEthereumChain",
                   params: [{ chainId: chainIdHex }]
                 });
                 resolve(true);
               } catch (err) {
-                let result = await ethereum.request({
+                let result = await this.provider.request({
                   method: "wallet_addEthereumChain",
                   params: [
                     options
@@ -906,7 +973,70 @@ var require_wallet = __commonJS({
           });
         }
       }
-      _Wallet.MetaMask = MetaMask;
+      _Wallet.ClientSideProvider = ClientSideProvider;
+      class BinanceChainWalletProvider extends ClientSideProvider {
+        switchNetwork(chainId) {
+          let self = this;
+          return new Promise(async function(resolve, reject) {
+            try {
+              let chainIdHex = "0x" + chainId.toString(16);
+              try {
+                let result = await self.provider.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{
+                    chainId: chainIdHex
+                  }]
+                });
+                resolve(!result);
+              } catch (error) {
+                if (error.code === 4902) {
+                  try {
+                    let network = _Wallet.Networks[chainId];
+                    if (!network)
+                      resolve(false);
+                    let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
+                    if (!Array.isArray(rpcUrls))
+                      rpcUrls = [rpcUrls];
+                    if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
+                      blockExplorerUrls = [blockExplorerUrls];
+                    if (iconUrls && !Array.isArray(iconUrls))
+                      iconUrls = [iconUrls];
+                    let result = await self.provider.request({
+                      method: "wallet_addEthereumChain",
+                      params: [{
+                        chainId: chainIdHex,
+                        chainName,
+                        nativeCurrency,
+                        rpcUrls,
+                        blockExplorerUrls,
+                        iconUrls
+                      }]
+                    });
+                    resolve(!result);
+                  } catch (error2) {
+                    reject(error2);
+                  }
+                } else
+                  reject(error);
+              }
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
+      }
+      _Wallet.BinanceChainWalletProvider = BinanceChainWalletProvider;
+      function createClientSideProvider(wallet, walletPlugin, events) {
+        if (Wallet3.isInstalled(walletPlugin)) {
+          if (walletPlugin == WalletPlugin2.BinanceChainWallet) {
+            return new BinanceChainWalletProvider(wallet, walletPlugin, events);
+          } else {
+            return new ClientSideProvider(wallet, walletPlugin, events);
+          }
+        }
+        return null;
+      }
+      _Wallet.createClientSideProvider = createClientSideProvider;
       const _Wallet2 = class {
         constructor(provider, account) {
           this._abiHashDict = {};
@@ -915,11 +1045,6 @@ var require_wallet = __commonJS({
           this._eventHandler = {};
           this._sendTxEventHandler = {};
           this._contracts = {};
-          this.isMetaMask = false;
-          if (!provider && typeof window !== "undefined" && window["ethereum"] && window["ethereum"].isMetaMask) {
-            this.isMetaMask = true;
-            provider = window["ethereum"];
-          }
           this._provider = provider;
           this._web3 = new Web32(provider);
           if (Array.isArray(account)) {
@@ -933,21 +1058,42 @@ var require_wallet = __commonJS({
         static getInstance() {
           return _Wallet2.instance;
         }
-        initMetaMask(events) {
-          if (this.isMetaMask) {
-            this._web3.eth.getAccounts((err, accounts) => {
-              if (accounts) {
-                this._web3.selectedAddress = accounts[0];
-                this._account = {
-                  address: accounts[0]
-                };
-              }
-            });
-            this._web3.eth.net.getId((err, chainId) => {
-              this.chainId = chainId;
-            });
-            this._metaMask = new MetaMask(this, events);
+        static isInstalled(walletPlugin) {
+          return _Wallet.WalletPluginConfig[walletPlugin].installed();
+        }
+        get isConnected() {
+          return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
+        }
+        async switchNetwork(chainId) {
+          let result;
+          if (this.clientSideProvider) {
+            result = await this.clientSideProvider.switchNetwork(chainId);
           }
+          return result;
+        }
+        setDefaultProvider() {
+          if (!this.chainId)
+            this.chainId = 56;
+          if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
+            this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
+          }
+        }
+        async connect(walletPlugin, events) {
+          this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
+          if (this.clientSideProvider) {
+            if (!this.chainId)
+              await this.getChainId();
+            await this.clientSideProvider.connect();
+          } else {
+            this.setDefaultProvider();
+          }
+          return this.clientSideProvider;
+        }
+        async disconnect() {
+          if (this.clientSideProvider) {
+            await this.clientSideProvider.disconnect();
+          }
+          this.setDefaultProvider();
         }
         get accounts() {
           return new Promise((resolve) => {
@@ -1027,13 +1173,16 @@ var require_wallet = __commonJS({
             this.chainId = await this._web3.eth.getChainId();
           return this.chainId;
         }
-        get metaMask() {
-          if (!this._metaMask)
-            this._metaMask = new MetaMask(this);
-          return this._metaMask;
-        }
         get provider() {
           return this._provider;
+        }
+        set provider(value) {
+          this._web3.setProvider(value);
+          this._provider = value;
+        }
+        async getGasPrice() {
+          let gasPrice = await this._web3.eth.getGasPrice();
+          return gasPrice;
         }
         sendSignedTransaction(tx) {
           let _web3 = this._web3;
@@ -1667,7 +1816,9 @@ __export(exports, {
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Utils: () => utils_exports,
-  Wallet: () => import_wallet.Wallet
+  Wallet: () => import_wallet.Wallet,
+  WalletPlugin: () => import_wallet.WalletPlugin,
+  WalletPluginConfig: () => import_wallet.WalletPluginConfig
 });
 var import_wallet = __toModule(require_wallet());
 var import_contract2 = __toModule(require_contract());
