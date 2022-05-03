@@ -736,14 +736,14 @@ var require_wallet = __commonJS({
       };
       let WalletPlugin2;
       (function(WalletPlugin3) {
-        WalletPlugin3[WalletPlugin3["MetaMask"] = 0] = "MetaMask";
-        WalletPlugin3[WalletPlugin3["Coin98"] = 1] = "Coin98";
-        WalletPlugin3[WalletPlugin3["TrustWallet"] = 2] = "TrustWallet";
-        WalletPlugin3[WalletPlugin3["BinanceChainWallet"] = 3] = "BinanceChainWallet";
-        WalletPlugin3[WalletPlugin3["ONTOWallet"] = 4] = "ONTOWallet";
+        WalletPlugin3["MetaMask"] = "metamask";
+        WalletPlugin3["Coin98"] = "coin98";
+        WalletPlugin3["TrustWallet"] = "trustwallet";
+        WalletPlugin3["BinanceChainWallet"] = "binancechainwallet";
+        WalletPlugin3["ONTOWallet"] = "onto";
       })(WalletPlugin2 = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
       _Wallet.WalletPluginConfig = {
-        [0]: {
+        [WalletPlugin2.MetaMask]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
@@ -751,7 +751,7 @@ var require_wallet = __commonJS({
           },
           homepage: "https://metamask.io/download.html"
         },
-        [1]: {
+        [WalletPlugin2.Coin98]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
@@ -759,7 +759,7 @@ var require_wallet = __commonJS({
           },
           homepage: "https://docs.coin98.com/products/coin98-wallet"
         },
-        [2]: {
+        [WalletPlugin2.TrustWallet]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
@@ -767,14 +767,14 @@ var require_wallet = __commonJS({
           },
           homepage: "https://link.trustwallet.com/open_url?url=" + window.location.href
         },
-        [3]: {
+        [WalletPlugin2.BinanceChainWallet]: {
           provider: window["BinanceChain"],
           installed: () => {
             return !!window["BinanceChain"];
           },
           homepage: "https://www.binance.org/en"
         },
-        [4]: {
+        [WalletPlugin2.ONTOWallet]: {
           provider: window["onto"],
           installed: () => {
             return !!window["onto"];
@@ -1018,7 +1018,7 @@ var require_wallet = __commonJS({
       _Wallet.BinanceChainWalletProvider = BinanceChainWalletProvider;
       function createClientSideProvider(wallet, walletPlugin, events) {
         if (Wallet3.isInstalled(walletPlugin)) {
-          if (walletPlugin == 3) {
+          if (walletPlugin == WalletPlugin2.BinanceChainWallet) {
             return new BinanceChainWalletProvider(wallet, walletPlugin, events);
           } else {
             return new ClientSideProvider(wallet, walletPlugin, events);
@@ -1064,7 +1064,15 @@ var require_wallet = __commonJS({
         async connect(walletPlugin, events) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
           if (this.clientSideProvider) {
+            if (!this.chainId)
+              await this.getChainId();
             await this.clientSideProvider.connect();
+          } else {
+            if (!this.chainId)
+              this.chainId = 56;
+            if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
+              this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
+            }
           }
           return this.clientSideProvider;
         }

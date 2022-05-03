@@ -353,25 +353,25 @@ module Wallet{
 		}
 	}
 	export enum WalletPlugin {
-		MetaMask,
-		Coin98,
-		TrustWallet,
-		BinanceChainWallet,
-		ONTOWallet
+		MetaMask = 'metamask',
+		Coin98 = 'coin98',
+		TrustWallet = 'trustwallet',
+		BinanceChainWallet = 'binancechainwallet',
+		ONTOWallet = 'onto',
 	}
-	export type WalletPluginMapType = {[key in WalletPlugin]: {
+	export type WalletPluginConfigType = {[key in WalletPlugin]: {
 		provider: any;
 		installed: () => boolean;
-		downloadLink?: string;
+		homepage?: string;
 	}};
-	export const WalletPluginMap: WalletPluginMapType = {
+	export const WalletPluginConfig: WalletPluginConfigType = {
 		[WalletPlugin.MetaMask]: {
 			provider:  window['ethereum'],
 			installed: () => {
 				let ethereum = window['ethereum'];
 				return !!ethereum && !!ethereum.isMetaMask;
 			},
-			downloadLink: 'https://metamask.io/download.html'	
+			homepage: 'https://metamask.io/download.html'	
 		},
 		[WalletPlugin.Coin98]: {
 			provider:  window['ethereum'],
@@ -379,7 +379,7 @@ module Wallet{
 				let ethereum = window['ethereum'];
 				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
 			},
-			downloadLink: 'https://docs.coin98.com/products/coin98-wallet'
+			homepage: 'https://docs.coin98.com/products/coin98-wallet'
 		},
 		[WalletPlugin.TrustWallet]: {
 			provider:  window['ethereum'],
@@ -387,21 +387,21 @@ module Wallet{
 				let ethereum = window['ethereum'];		
 				return !!ethereum && !!ethereum.isTrust;
 			},
-			downloadLink: 'https://link.trustwallet.com/open_url?url=' + window.location.href
+			homepage: 'https://link.trustwallet.com/open_url?url=' + window.location.href
 		},
 		[WalletPlugin.BinanceChainWallet]: {
 			provider: window['BinanceChain'],
 			installed: () => {
 				return !!window['BinanceChain'];
 			},
-			downloadLink: 'https://www.binance.org/en'
+			homepage: 'https://www.binance.org/en'
 		},
 		[WalletPlugin.ONTOWallet]: {
 			provider: window['onto'],
 			installed: () => {
 				return !!window['onto'];
 			},
-			downloadLink: 'https://onto.app/en/download/?mode=app'
+			homepage: 'https://onto.app/en/download/?mode=app'
 		}
 	}	
 	export class ClientSideProvider {
@@ -437,10 +437,10 @@ module Wallet{
 			this.initEvents();
 		}
 		get installed(): boolean {
-			return WalletPluginMap[this.walletPlugin].installed();
+			return WalletPluginConfig[this.walletPlugin].installed();
 		}
 		get provider(): any {
-			return WalletPluginMap[this.walletPlugin].provider;
+			return WalletPluginConfig[this.walletPlugin].provider;
 		}
 		initEvents(){
 			let self = this;
@@ -694,7 +694,7 @@ module Wallet{
 		  return Wallet.instance;
 		}
 		static isInstalled(walletPlugin: WalletPlugin) {
-			return WalletPluginMap[walletPlugin].installed();
+			return WalletPluginConfig[walletPlugin].installed();
 		}
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
@@ -709,7 +709,14 @@ module Wallet{
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);	
 			if (this.clientSideProvider) {
+				if (!this.chainId) await this.getChainId();
 				await this.clientSideProvider.connect();
+			}
+			else {
+				if (!this.chainId) this.chainId = 56;	
+				if (Networks[this.chainId] && Networks[this.chainId].rpcUrls.length > 0) {
+					this.provider = Networks[this.chainId].rpcUrls[0];
+				}
 			}
 			return this.clientSideProvider;
 		}

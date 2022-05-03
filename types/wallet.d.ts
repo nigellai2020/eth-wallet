@@ -182,11 +182,11 @@ declare module Wallet {
         [chainId: number]: INetwork;
     };
     enum WalletPlugin {
-        MetaMask = 0,
-        Coin98 = 1,
-        TrustWallet = 2,
-        BinanceChainWallet = 3,
-        ONTOWallet = 4
+        MetaMask = "metamask",
+        Coin98 = "coin98",
+        TrustWallet = "trustwallet",
+        BinanceChainWallet = "binancechainwallet",
+        ONTOWallet = "onto"
     }
     type WalletPluginConfigType = {
         [key in WalletPlugin]: {
