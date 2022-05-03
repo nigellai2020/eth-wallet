@@ -869,6 +869,16 @@ var require_wallet = __commonJS({
             console.error(error);
           }
         }
+        async disconnect() {
+          if (this.provider == null) {
+            return;
+          }
+          if (this.provider.disconnect) {
+            await this.provider.disconnect();
+          }
+          this.wallet.account = null;
+          this._isConnected = false;
+        }
         get isConnected() {
           return this._isConnected;
         }
@@ -1061,6 +1071,13 @@ var require_wallet = __commonJS({
           }
           return result;
         }
+        setDefaultProvider() {
+          if (!this.chainId)
+            this.chainId = 56;
+          if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
+            this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
+          }
+        }
         async connect(walletPlugin, events) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
           if (this.clientSideProvider) {
@@ -1068,13 +1085,15 @@ var require_wallet = __commonJS({
               await this.getChainId();
             await this.clientSideProvider.connect();
           } else {
-            if (!this.chainId)
-              this.chainId = 56;
-            if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
-              this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
-            }
+            this.setDefaultProvider();
           }
           return this.clientSideProvider;
+        }
+        async disconnect() {
+          if (this.clientSideProvider) {
+            await this.clientSideProvider.disconnect();
+          }
+          this.setDefaultProvider();
         }
         get accounts() {
           return new Promise((resolve) => {

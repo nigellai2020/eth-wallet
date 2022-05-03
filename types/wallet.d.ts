@@ -209,6 +209,7 @@ declare module Wallet {
         get provider(): any;
         initEvents(): void;
         connect(): Promise<void>;
+        disconnect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number): Promise<boolean>;
@@ -243,7 +244,9 @@ declare module Wallet {
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
         switchNetwork(chainId: number): Promise<any>;
+        setDefaultProvider(): void;
         connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents): Promise<ClientSideProvider>;
+        disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;

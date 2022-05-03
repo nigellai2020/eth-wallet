@@ -4,7 +4,6 @@ import {rlp} from 'ethereumjs-util';
 const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
-import {Utils} from 'web3-utils';
 import {KMS} from './kms';
 
 function Web3Lib(){
@@ -497,6 +496,16 @@ module Wallet{
 				console.error(error);
 			}
 		}
+		async disconnect(){
+			if (this.provider == null) {
+				return;
+			}
+			if (this.provider.disconnect) {
+				await this.provider.disconnect()
+			}
+			this.wallet.account = null;
+			this._isConnected = false;
+		}
 		get isConnected(){
 			return this._isConnected;
 		}
@@ -706,6 +715,12 @@ module Wallet{
 			}
 			return result;
 		}
+		setDefaultProvider(){
+			if (!this.chainId) this.chainId = 56;	
+			if (Networks[this.chainId] && Networks[this.chainId].rpcUrls.length > 0) {
+				this.provider = Networks[this.chainId].rpcUrls[0];
+			}
+		}
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);	
 			if (this.clientSideProvider) {
@@ -713,12 +728,15 @@ module Wallet{
 				await this.clientSideProvider.connect();
 			}
 			else {
-				if (!this.chainId) this.chainId = 56;	
-				if (Networks[this.chainId] && Networks[this.chainId].rpcUrls.length > 0) {
-					this.provider = Networks[this.chainId].rpcUrls[0];
-				}
+				this.setDefaultProvider();
 			}
 			return this.clientSideProvider;
+		}
+		async disconnect(){
+			if (this.clientSideProvider) {
+				await this.clientSideProvider.disconnect();
+			}
+			this.setDefaultProvider();
 		}
 		get accounts(): Promise<string[]>{
 			return new Promise((resolve)=>{
