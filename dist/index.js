@@ -742,14 +742,14 @@ var require_wallet = __commonJS({
         WalletPlugin3[WalletPlugin3["BinanceChainWallet"] = 3] = "BinanceChainWallet";
         WalletPlugin3[WalletPlugin3["ONTOWallet"] = 4] = "ONTOWallet";
       })(WalletPlugin2 = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
-      _Wallet.WalletPluginMap = {
+      _Wallet.WalletPluginConfig = {
         [0]: {
           provider: window["ethereum"],
           installed: () => {
             let ethereum = window["ethereum"];
             return !!ethereum && !!ethereum.isMetaMask;
           },
-          downloadLink: "https://metamask.io/download.html"
+          homepage: "https://metamask.io/download.html"
         },
         [1]: {
           provider: window["ethereum"],
@@ -757,7 +757,7 @@ var require_wallet = __commonJS({
             let ethereum = window["ethereum"];
             return !!ethereum && (!!ethereum.isCoin98 || !!window["isCoin98"]);
           },
-          downloadLink: "https://docs.coin98.com/products/coin98-wallet"
+          homepage: "https://docs.coin98.com/products/coin98-wallet"
         },
         [2]: {
           provider: window["ethereum"],
@@ -765,21 +765,21 @@ var require_wallet = __commonJS({
             let ethereum = window["ethereum"];
             return !!ethereum && !!ethereum.isTrust;
           },
-          downloadLink: "https://link.trustwallet.com/open_url?url=" + window.location.href
+          homepage: "https://link.trustwallet.com/open_url?url=" + window.location.href
         },
         [3]: {
           provider: window["BinanceChain"],
           installed: () => {
             return !!window["BinanceChain"];
           },
-          downloadLink: "https://www.binance.org/en"
+          homepage: "https://www.binance.org/en"
         },
         [4]: {
           provider: window["onto"],
           installed: () => {
             return !!window["onto"];
           },
-          downloadLink: "https://onto.app/en/download/?mode=app"
+          homepage: "https://onto.app/en/download/?mode=app"
         }
       };
       class ClientSideProvider {
@@ -808,10 +808,10 @@ var require_wallet = __commonJS({
           this.initEvents();
         }
         get installed() {
-          return _Wallet.WalletPluginMap[this.walletPlugin].installed();
+          return _Wallet.WalletPluginConfig[this.walletPlugin].installed();
         }
         get provider() {
-          return _Wallet.WalletPluginMap[this.walletPlugin].provider;
+          return _Wallet.WalletPluginConfig[this.walletPlugin].provider;
         }
         initEvents() {
           let self = this;
@@ -1049,7 +1049,7 @@ var require_wallet = __commonJS({
           return _Wallet2.instance;
         }
         static isInstalled(walletPlugin) {
-          return _Wallet.WalletPluginMap[walletPlugin].installed();
+          return _Wallet.WalletPluginConfig[walletPlugin].installed();
         }
         get isConnected() {
           return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
@@ -1790,7 +1790,8 @@ __export(exports, {
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Utils: () => utils_exports,
   Wallet: () => import_wallet.Wallet,
-  WalletPlugin: () => import_wallet.WalletPlugin
+  WalletPlugin: () => import_wallet.WalletPlugin,
+  WalletPluginConfig: () => import_wallet.WalletPluginConfig
 });
 var import_wallet = __toModule(require_wallet());
 var import_contract2 = __toModule(require_contract());

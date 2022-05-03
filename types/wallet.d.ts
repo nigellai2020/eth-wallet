@@ -188,14 +188,14 @@ declare module Wallet {
         BinanceChainWallet = 3,
         ONTOWallet = 4
     }
-    type WalletPluginMapType = {
+    type WalletPluginConfigType = {
         [key in WalletPlugin]: {
             provider: any;
             installed: () => boolean;
-            downloadLink?: string;
+            homepage?: string;
         };
     };
-    const WalletPluginMap: WalletPluginMapType;
+    const WalletPluginConfig: WalletPluginConfigType;
     class ClientSideProvider {
         private wallet;
         private _isConnected;
