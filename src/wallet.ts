@@ -18,6 +18,7 @@ module Wallet{
 		hexToUtf8(value: string): string;
 		toUtf8(value: any): string;		
 		toWei(value: string, unit?: string): string;
+		sha3(string): string;
 	};
 	export interface IWalletTransaction {
 		hash: string;
@@ -95,7 +96,24 @@ module Wallet{
 		tokenInfo(address: string): Promise<ITokenInfo>
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+		blockGasLimit(): Promise<number>;
+		getGasPrice(): Promise<BigNumber>;
+		transactionCount(): Promise<number>;
+		sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+		sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
+		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+		newContract(abi:any, address?:string): IContract;
+		decodeErrorMessage(msg: string): any;
 	};
+	export interface IContractMethod {
+		call: any;
+		estimateGas(...params:any[]): Promise<number>;
+		encodeABI(): string;
+	}
+	export interface IContract {
+		deploy(params: {data: string, arguments?: any[]}): IContractMethod;
+		methods: {[methodName: string]: (...params:any[]) => IContractMethod};
+	}
     export interface Event{
 		name: string;
         address: string;
@@ -139,19 +157,23 @@ module Wallet{
 	    blockNumber: number;
 	    from: string;
 	    to: string;
-	    contractAddress: string;
+	    contractAddress?: string;
 	    cumulativeGasUsed: number;
 	    gasUsed: number;
 	    logs ? : Array <Log>;
         events ? : {
             [eventName: string]: EventLog | EventLog[]
         };
-        status: string;
+        status: boolean;
 	}
 	export interface Transaction{
+		from?: string;
 		to: string;
-		gas: number,
+		nonce: number;
+		gas: number;
+		gasPrice: /*BigNumber |*/ string | number;
 		data: string;
+		value?: /*BigNumber |*/ string | number;
 	}
     export interface IKMS{
 
@@ -830,11 +852,7 @@ module Wallet{
 			this._web3.setProvider(value);
 			this._provider = value;
 		}
-		async getGasPrice(){
-			let gasPrice = await this._web3.eth.getGasPrice();
-			return gasPrice;
-		}
-		sendSignedTransaction(tx: string): Promise<any>{
+		sendSignedTransaction(tx: string): Promise<TransactionReceipt>{
 			let _web3 = this._web3;        	
 			return _web3.eth.sendSignedTransaction(tx);
 		}
@@ -862,15 +880,7 @@ module Wallet{
 			}
 			else if (this._account && this._account.kms){	
 				let chainId = await this.getChainId();
-				let txHash = await this.kms.signTransaction(chainId, {
-					from: this.address,
-					nonce: nonce,
-					// gasPrice: gasPrice,
-					gasLimit: gas,
-					gas: gas,
-					to: tx.to,
-					data: tx.data
-				});
+				let txHash = await this.kms.signTransaction(chainId, tx);
 				return txHash;
 			}
 			else{
@@ -1515,6 +1525,56 @@ module Wallet{
 				};	
 			})
         };
+
+		private _gasLimit: number;
+		blockGasLimit(): Promise<number> {
+			return new Promise(async (resolve,reject)=>{
+				try{
+					if (!this._gasLimit)
+						this._gasLimit = (await this._web3.eth.getBlock('latest')).gasLimit;
+					resolve(this._gasLimit);
+				}catch(e){
+					reject(e);
+				}
+			});
+		};
+		getGasPrice(): Promise<BigNumber> {
+			return (async ()=>(new BigNumber(await this._web3.eth.getGasPrice())))();
+		}
+		transactionCount(): Promise<number> {
+			return (async ()=>(await this._web3.eth.getTransactionCount(this.address)))();
+		}
+		async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
+			transaction.value = new BigNumber(transaction.value).toFixed();
+			transaction.gasPrice = new BigNumber(transaction.gasPrice).toFixed();
+
+			if (this._account && this._account.privateKey){
+				let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
+				return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+			}
+			else if (this._account && this._account.kms){
+				let chainId = await this.getChainId();
+				let signedTx = await this.kms.signTransaction(chainId, transaction);
+				return await this._web3.eth.sendSignedTransaction(signedTx);
+			}
+			else {
+				return this._web3.eth.sendTransaction(transaction);
+			}			
+		}
+		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
+			return this._web3.eth.getTransactionReceipt(transactionHash);
+		}
+		call(transaction: Transaction): Promise<any> {
+			transaction.value = new BigNumber(transaction.value).toFixed();
+			transaction.gasPrice = new BigNumber(transaction.gasPrice).toFixed();
+			return this._web3.eth.call(transaction);
+		}
+		newContract(abi:any, address?:string): IContract {
+			return new this._web3.eth.Contract(abi, address);
+		}
+		decodeErrorMessage(msg: string): any {
+			return this._web3.eth.abi.decodeParameter('string', "0x"+msg.substring(10));
+		}
 		public get web3(): W3.default{
 			return this._web3;
 		}		

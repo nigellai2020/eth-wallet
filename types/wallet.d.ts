@@ -7,6 +7,7 @@ declare module Wallet {
         hexToUtf8(value: string): string;
         toUtf8(value: any): string;
         toWei(value: string, unit?: string): string;
+        sha3(string: any): string;
     }
     interface IWalletTransaction {
         hash: string;
@@ -87,6 +88,28 @@ declare module Wallet {
         tokenInfo(address: string): Promise<ITokenInfo>;
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        blockGasLimit(): Promise<number>;
+        getGasPrice(): Promise<BigNumber>;
+        transactionCount(): Promise<number>;
+        sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+        sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
+        getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+        newContract(abi: any, address?: string): IContract;
+        decodeErrorMessage(msg: string): any;
+    }
+    interface IContractMethod {
+        call: any;
+        estimateGas(...params: any[]): Promise<number>;
+        encodeABI(): string;
+    }
+    interface IContract {
+        deploy(params: {
+            data: string;
+            arguments?: any[];
+        }): IContractMethod;
+        methods: {
+            [methodName: string]: (...params: any[]) => IContractMethod;
+        };
     }
     interface Event {
         name: string;
@@ -131,19 +154,23 @@ declare module Wallet {
         blockNumber: number;
         from: string;
         to: string;
-        contractAddress: string;
+        contractAddress?: string;
         cumulativeGasUsed: number;
         gasUsed: number;
         logs?: Array<Log>;
         events?: {
             [eventName: string]: EventLog | EventLog[];
         };
-        status: string;
+        status: boolean;
     }
     interface Transaction {
+        from?: string;
         to: string;
+        nonce: number;
         gas: number;
+        gasPrice: string | number;
         data: string;
+        value?: string | number;
     }
     interface IKMS {
     }
@@ -258,8 +285,7 @@ declare module Wallet {
         getChainId(): Promise<number>;
         get provider(): any;
         set provider(value: any);
-        getGasPrice(): Promise<string>;
-        sendSignedTransaction(tx: string): Promise<any>;
+        sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
         _methods(...args: any[]): Promise<{
@@ -295,6 +321,15 @@ declare module Wallet {
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        private _gasLimit;
+        blockGasLimit(): Promise<number>;
+        getGasPrice(): Promise<BigNumber>;
+        transactionCount(): Promise<number>;
+        sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+        getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+        call(transaction: Transaction): Promise<any>;
+        newContract(abi: any, address?: string): IContract;
+        decodeErrorMessage(msg: string): any;
         get web3(): W3.default;
     }
 }

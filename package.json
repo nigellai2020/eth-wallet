@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "main": "lib/index.js",
     "bin": {
         "eth-wallet-build": "tools/compile.js",

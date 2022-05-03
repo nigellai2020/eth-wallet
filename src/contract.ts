@@ -1,4 +1,4 @@
-import {IWallet, TransactionReceipt, Event, Log, EventLog} from "./wallet";
+import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog} from "./wallet";
 import {BigNumber} from "bignumber.js";
 // import * as W3 from 'web3';
 // const Web3 = require('web3'); // tslint:disable-line
@@ -14,7 +14,30 @@ module Contract {
         public _address: string;
         private _events: any;
         public privateKey: string;
-        
+
+        static contracts:{[abiHash:string]:IContract} = {};
+        private async getContract(): Promise<IContract>{
+            let contract;
+            if (this.address) {
+                contract = Contract.contracts[(await this.wallet.getChainId()) + ":" + this.address];
+                if (!contract) {
+                    contract = this.wallet.newContract(this._abi, this.address);
+                    Contract.contracts[(await this.wallet.getChainId()) + ":" + this.address] = contract;
+                }
+            }
+            else {
+                if (!contract) {
+                    let hash = this.wallet.utils.sha3(JSON.stringify(this._abi));
+                    contract = Contract.contracts[hash];
+                    if (!contract) {
+                        contract = this.wallet.newContract(this._abi);
+                        Contract.contracts[hash] = contract;
+                    }
+                }
+            }
+            return contract;            
+        }
+
         constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any) {            
             this.wallet = wallet;                        
             if (typeof(abi) == 'string')
@@ -82,52 +105,11 @@ module Contract {
             }
             return result;
         }
-        protected methodsToUtf8(...args): Promise<string>{
-            let self = this;            
-            return new Promise<string>(async function(resolve, reject){
-                let result = await self.methods.apply(self, args);
-                resolve(self.wallet.utils.toUtf8(result));
-            })
-        }
-        protected methodsToUtf8Array(...args): Promise<string[]>{
-            let self = this;            
-            return new Promise<string[]>(async function(resolve, reject){
-                let result = await self.methods.apply(self, args);
-                let arr = [];
-                for (let i = 0; i < result.length; i ++){
-                    arr.push(self.wallet.utils.toUtf8(result[i]))
-                }
-                resolve(arr);
-            })
-        }
-        protected methodsFromWeiArray(...args): Promise<BigNumber[]>{            
-            let self = this;            
-            return new Promise<BigNumber[]>(async function(resolve, reject){
-                let result = await self.methods.apply(self, args)
-                let arr = [];
-                for (let i = 0; i < result.length; i ++){
-                    arr.push(new BigNumber(self.wallet.utils.fromWei(result[i])))
-                }
-                resolve(arr);
-            })
-        }
-        protected methodsFromWei(...args): Promise<BigNumber>{            
-            let self = this;
-            return new Promise<BigNumber>(async function(resolve, reject){
-                let result = await self.methods.apply(self, args);
-                return resolve(new BigNumber(self.wallet.utils.fromWei(result)));
-            })
-        }
-        // protected _methods(...args): Promise<any>{
+        // protected methods(...args): Promise<any>{
         //     args.unshift(this._address);
         //     args.unshift(this._abi);
-        //     return this.wallet._methods.apply(this.wallet, args);
+        //     return this.wallet.methods.apply(this.wallet, args);
         // }
-        protected methods(...args): Promise<any>{
-            args.unshift(this._address);
-            args.unshift(this._abi);
-            return this.wallet.methods.apply(this.wallet, args);
-        }
         protected getAbiTopics(eventNames?: string[]){
             return this.wallet.getAbiTopics(this._abi, eventNames);
         }
@@ -151,17 +133,79 @@ module Contract {
             this._address = await this.wallet.methods.apply(this.wallet, args);
             return this._address;
         }
-        // get web3(): W3.default{
-        //     return this.wallet.web3;
-        // }
-    }
-    export class TAuthContract extends Contract {
-        rely(address: string): Promise<any>{
-            return this.methods('rely', address)
+        async call(methodName:string, params?:any[], options?:any): Promise<any>{
+            let contract = await this.getContract();
+            params = params || [];
+            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
+            return method.call({from:this.address, ...options});
         }
-        deny(address: string): Promise<any>{
-            return this.methods('deny', address)
+		async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
+            let contract = await this.getContract();
+            params = params || [];
+            let method: IContractMethod;
+            if (!this.address || methodName=="deploy")
+                method = contract.deploy({data:this._bytecode, arguments:params});
+            else
+                method = contract.methods[methodName].apply(this, params);
+
+            let tx:any = {};
+            tx.from = this.wallet.address;
+            tx.to = this.address;
+            tx.data = method.encodeABI();
+            if (options && options.value) {
+                tx.value = options.value;
+            } else {
+                tx.value = 0;
+            }
+            if (options && (options.gas || options.gasLimit)) {
+                tx.gas = options.gas || options.gasLimit;
+            } else {
+                try {
+                    tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address, value: (options&&options.value) || 0 });
+                    tx.gas = Math.min(await this.wallet.blockGasLimit(), Math.round(tx.gas * 1.5));
+
+                } catch (e) {
+                    if (e.message == "Returned error: out of gas"){ // amino
+                        console.log(e.message);
+                        tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
+                    } else {
+                        try{
+                            await method.call({from:this.address, ...options});
+                        } catch(e) {
+                            if (e.message.includes("VM execution error.")) {
+                                var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
+                                if (msg && msg.length) {
+                                    msg = msg[0];
+                                    if (msg.startsWith("0x08c379a")) {
+                                        msg = this.wallet.decodeErrorMessage(msg);//('string', "0x"+msg.substring(10));
+                                        throw new Error(msg);
+                                    }
+                                }
+                            }
+                        }
+                        throw e;
+                    }
+                }
+            }
+            if (!tx.gasPrice) {
+                tx.gasPrice = await this.wallet.getGasPrice();
+            }
+            if (options && options.nonce){
+                tx.nonce = options.nonce;
+            } else {
+                tx.nonce = await this.wallet.transactionCount();
+            }
+            return tx;
         }
+        async send(methodName:string, params?:any[], options?:any): Promise<any>{
+            let tx = await this.txObj(methodName, params, options);
+            let receipt = await this.wallet.sendTransaction(tx);
+            if (!tx.to){ // deployment
+                let address = receipt.contractAddress;
+                return address;
+            }
+            return receipt;
+        };
     }
 }
 export = Contract;

@@ -1,5 +1,4 @@
-import { IWallet, TransactionReceipt, Event } from "./wallet";
-import { BigNumber } from "bignumber.js";
+import { IWallet, IContract, Transaction, TransactionReceipt, Event } from "./wallet";
 declare module Contract {
     interface EventType {
         name: string;
@@ -11,6 +10,10 @@ declare module Contract {
         _address: string;
         private _events;
         privateKey: string;
+        static contracts: {
+            [abiHash: string]: IContract;
+        };
+        private getContract;
         constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
         at(address: string): Contract;
         set address(value: string);
@@ -18,19 +21,13 @@ declare module Contract {
         protected decodeEvents(receipt: TransactionReceipt): any[];
         protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
         get events(): EventType[];
-        protected methodsToUtf8(...args: any[]): Promise<string>;
-        protected methodsToUtf8Array(...args: any[]): Promise<string[]>;
-        protected methodsFromWeiArray(...args: any[]): Promise<BigNumber[]>;
-        protected methodsFromWei(...args: any[]): Promise<BigNumber>;
-        protected methods(...args: any[]): Promise<any>;
         protected getAbiTopics(eventNames?: string[]): any[];
         protected getAbiEvents(): any;
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
         _deploy(...args: any[]): Promise<string>;
-    }
-    class TAuthContract extends Contract {
-        rely(address: string): Promise<any>;
-        deny(address: string): Promise<any>;
+        call(methodName: string, params?: any[], options?: any): Promise<any>;
+        txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
+        send(methodName: string, params?: any[], options?: any): Promise<any>;
     }
 }
 export = Contract;

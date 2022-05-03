@@ -1,23 +1,24 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 
-'use strict';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as https from 'https';
+import * as http from 'http';
 
-const fs = require('fs');
-const path = require('path');
-const solcWrapper = require("solc/wrapper");
-const https = require('https');
+import codeGen from './codeGen';
+
 const SolcjsPath = path.resolve(__dirname, 'solcjs');
-const codeGen = require('./codeGen');
 const RootPath = process.env.PWD;
+
 /*
 https://solc-bin.ethereum.org/bin/list.json
 https://ethereum.github.io/solc-bin/bin/list.json
 */
 
-let _libMap;
-let _sourceDir;
+let _libMap: {[soource:string]:string|string[]};
+let _sourceDir: string;
 
-const request = function(url){
+function request(url: string): Promise<{statusCode:number, headers:http.IncomingHttpHeaders, body:string}> {
     return new Promise(function(resolve, reject){
         https.get(url,function(res){
             let body = '';
@@ -34,46 +35,49 @@ const request = function(url){
     });
 };
 
-function getCache(version) {
-    let files = fs.readdirSync(SolcjsPath);
-    files = files.find(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
+function getCache(version: string): string {
+    let files = fs.readdirSync(SolcjsPath).find(e => new RegExp(`soljson-v${version}\\+commit.[0-9a-f]{8}.js`).test(e));
     return files ? (path.resolve(SolcjsPath, files)) : null;
 }
-async function downloadSolc(version) {
+async function downloadSolc(version: string): Promise<string> {
     try {
         let data = await request("https://solc-bin.ethereum.org/bin/list.json");
         let list = JSON.parse(data.body);
         if (list) {
-            let file = list.releases[version];
+            let file = list.releases[version || list.latestRelease];
             if (file) {
                 let build = list.builds.find(e => e.path == file);
                 if (build) {
                     let filename = build.path;
                     let solcjs = await request("https://solc-bin.ethereum.org/bin/" + filename);
-                    solcjs = solcjs.body;
                     if (!fs.existsSync(SolcjsPath))
                         fs.mkdirSync(SolcjsPath, {recursive:true});
                     let solcjsPath = path.resolve(SolcjsPath, filename);
-                    fs.writeFileSync(solcjsPath, solcjs);
+                    fs.writeFileSync(solcjsPath, solcjs.body);
                     return solcjsPath;
                 }
             }
         }
     } catch (e) { console.log(e); }
 }
-async function getSolc(version) {
-  let solcjsPath = getCache(version);
+async function getSolc(version: string): Promise<any> {
+  let solcjsPath: string;
+  if (version)
+    solcjsPath = getCache(version);
   if (!solcjsPath) {
     solcjsPath = await downloadSolc(version);
   }
   if (!solcjsPath) {
     return null;
   }
-  let solc = solcWrapper(require(solcjsPath));
+  let solc = require("solc/wrapper")(require(solcjsPath));
   return solc;
 }
 
-function recursiveAdd(root, srcPath, sources, exclude) {
+interface Source {[contract:string]:{content:string}}
+interface Input {language:string, sources:Source, settings:{optimizer?:{enabled:boolean, runs:number}, outputSelection:{[contract:string]:{[contract:string]:string[]}}}}
+
+function recursiveAdd(root: string, srcPath: string, sources: Source, exclude: string[]): Source {
     let currPath = path.join(root, srcPath);
     // signle file
     if (fs.statSync(currPath).isFile()) {
@@ -103,17 +107,17 @@ function recursiveAdd(root, srcPath, sources, exclude) {
     }
     return sources;
 }
-function buildInput(root, source, optimizerRuns, exclude) {
+function buildInput(root: string, source: string[], optimizerRuns: number, exclude?: string[]): Input {
     let input = {
         language: "Solidity",
         sources: {},
         settings:
         {
             // remappings: [ ":g=./contracts" ],
-            optimizer: {
+            optimizer: optimizerRuns ? {
                 enabled: true,
                 runs: optimizerRuns || 999999
-            },
+            } : undefined,
             // evmVersion: "istanbul",//"constantinople",//"byzantium",
             outputSelection: {
                 "*": {
@@ -122,7 +126,7 @@ function buildInput(root, source, optimizerRuns, exclude) {
             }
         },
     };
-    if (source && Array.isArray(source)){
+    if (source && Array.isArray(source) && source.length){
         source.forEach(e=>recursiveAdd(root, e, input.sources, exclude));
     } else {
         recursiveAdd(root, "", input.sources, exclude);
@@ -130,7 +134,7 @@ function buildInput(root, source, optimizerRuns, exclude) {
     return input;
 }
 
-function findImports(path) {
+function findImports(path: string): {contents:string} {
     if (fs.existsSync(path.replace(/^contracts\//,_sourceDir))) {
         return {
             contents:
@@ -168,14 +172,30 @@ function findImports(path) {
     console.log("import contract not found: " + path);
 }
 
-function prettyPrint1(s) {
-    let i = 0;
+function prettyPrint(s: string): string {
+    let j = 0;
     return s.split('').map(e => {
-        if (e == '[') i++; else if (e == ']') i--;
-        return i == 0 ? e == "{" ? "{\n  " : e == "," ? ",\n  " : e == "}" ? "\n}" : e : e;
+        if (e == '{') j++; else if (e == '}') j--;
+        if (j == 1) {
+            if (e == '{') return '{\n';
+            else if (e == '[') return '[\n';
+            else if (e == ',') return ',\n';
+            else if (e == ']') return '\n]';
+            else return e;
+        } else if (j == 0) {
+            if (e == '}') return '\n}';
+            else return e;
+        } else {
+            return e;
+        }
     }).join('');
 }
-function processOutput(sourceDir, output, binOutputDir, libOutputDir, exclude, include) {
+
+interface Type { name: string; type: string; components?: Type[]; internalType?: string; }
+interface Item { name: string; type: string; stateMutability: string; inputs?: Type[]; outputs?: Type[];}
+interface Output {[sourceFile:string]:{[contract:string]:{evm:{bytecode:{object:string}},abi:Item[]}}}
+
+function processOutput(sourceDir: string, output:Output, outputDir: string, outputObjects: string, exclude?: string[], include?: string[]): string {
     let index = '';
     if (output.contracts) {
         for (let i in output.contracts) {
@@ -188,26 +208,27 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, exclude, i
             p = p=='.' ? '' : (p + '/');
 
             for (let j in output.contracts[i]) {
+                let abi = output.contracts[i][j].abi;
                 let bytecode = output.contracts[i][j].evm?.bytecode?.object;
-                if (bytecode && output.contracts[i][j].abi && output.contracts[i][j].abi.length){
-                    if (!fs.existsSync(binOutputDir + '/' + p))
-                        fs.mkdirSync(binOutputDir + '/' + p, { recursive: true });
-                    fs.writeFileSync(binOutputDir + '/' + p + j +  '.json', JSON.stringify({
-                            abi: output.contracts[i][j].abi,
-                            bytecode: bytecode
-                        }, null, 4)
-                    );
-                    if (libOutputDir){
-                        if (!fs.existsSync(libOutputDir + '/' + p))
-                            fs.mkdirSync(libOutputDir + '/' + p, { recursive: true });
-                        let relPath = path.relative(`/${libOutputDir}/${p}`,`/${binOutputDir}/${p}`);
-                        if (relPath && relPath.indexOf('.') < 0)
-                            relPath = './' + relPath;
-                        let code = codeGen(j, relPath, output.contracts[i][j].abi);
-                        fs.writeFileSync(libOutputDir + '/' + p + j +  '.ts', code);
+                if ((outputObjects && outputObjects.startsWith("force")) || (bytecode && abi && abi.length)) {
+                    if (!fs.existsSync(outputDir + '/' + p))
+                        fs.mkdirSync(outputDir + '/' + p, { recursive: true });
 
-                        index += `export { ${j} } from \'./${p + j}\';\n`;
+                    let file = {};
+                    if (abi && abi.length) {
+                        file["abi"] = abi;
                     }
+                    let outputBytecode = bytecode && (outputObjects && outputObjects.indexOf("bytecode") >= 0);
+                    if (outputBytecode) {
+                        file["bytecode"] = bytecode;
+                    }
+                    fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
+
+                    let relPath = './';
+                    let code = codeGen(j, relPath, abi, outputBytecode);
+                    fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
+
+                    index += `export { ${j} } from \'./${p + j}\';\n`;
                 }
             }
         }
@@ -215,48 +236,58 @@ function processOutput(sourceDir, output, binOutputDir, libOutputDir, exclude, i
     return index;
 }
 
-async function main(version, optimizerRuns, sourceDir, binOutputDir, libOutputDir, customSettings, libMap) {
+interface CompileOptions { version?: string; optimizerRuns?: number; }
+interface Override extends CompileOptions { root?:string, sources:string[]; };
+interface Config extends CompileOptions {
+    sourceDir?: string;
+    outputDir?: string;
+    output?: string;
+    outputObjects?: string;
+    overrides?: Override[];
+    libMap?: {[soource:string]:string};
+}
+
+async function main(configPath: string) {
+    let config:Config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    let {version, optimizerRuns, sourceDir, outputDir, outputObjects, overrides, libMap} = config;
+
+    sourceDir = sourceDir || "contracts/";
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
-    if (!binOutputDir)
-        binOutputDir = path.join(sourceDir, 'bin');
-    if (!libOutputDir)
-        libOutputDir = sourceDir;
-    fs.mkdirSync(path.join(RootPath, binOutputDir), { recursive: true });
-    fs.mkdirSync(path.join(RootPath, libOutputDir), { recursive: true });
-    customSettings = JSON.parse(customSettings || "[]");
-    _libMap = JSON.parse(libMap || "{}");
+    if (!outputDir)
+        outputDir = sourceDir;
+    fs.mkdirSync(path.join(RootPath, outputDir), { recursive: true });
+
+    _libMap = libMap;
+
     try {
         let solc = await getSolc(version);
         let root = sourceDir;
         _sourceDir = sourceDir;
-        let customSources = customSettings && customSettings.map(e=>e.sources.map(f=>(e.root||root)+f)).reduce((a,b)=>a.concat(b),[]);
+        let customSources = overrides && overrides.map(e=>e.sources.map(f=>(e.root||root)+f)).reduce((a,b)=>a.concat(b),[]);
         let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-        let index = processOutput(sourceDir, output, binOutputDir, libOutputDir, customSources);
+        let index = processOutput(sourceDir, output, outputDir, outputObjects, customSources);
         if (output.errors) {
             output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
         }
 
-        if (customSettings) {
-            for (let s in customSettings) {
-                if (customSettings[s].version && customSettings[s]!=version) {
-                    solc = await getSolc(customSettings[s].version);
+        if (overrides) {
+            for (let s in overrides) {
+                if (overrides[s].version && overrides[s].version!=version) {
+                    solc = await getSolc(overrides[s].version);
                 }
-                _sourceDir = customSettings[s].root || root;
-                input = buildInput(_sourceDir, customSettings[s].sources, customSettings[s].optimizerRuns)
+                _sourceDir = overrides[s].root || root;
+                input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns||optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-                index = index + processOutput(sourceDir, output, binOutputDir, libOutputDir, [], customSettings[s].sources.map(f=>_sourceDir+f));
+                index = index + processOutput(sourceDir, output, outputDir, outputObjects, [], overrides[s].sources.map(f=>_sourceDir+f));
                 if (output.errors) {
                     output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e=>console.log(e.formattedMessage));
                 }
             }
         }
-        fs.writeFileSync(libOutputDir + '/index.ts', index);
+        fs.writeFileSync(outputDir + '/index.ts', index);
     } catch (e) { console.log(e); }
 }
 
-if (process.argv.length < 7) {
-    return console.log("Usage: node compile.js <version> <optimizer_runs> <src_dir> <out_dir> <lib_dir> [<custom_settings> [<lib_map>]]\ne.g.: node tools/compile.js 0.6.11 999999 contracts bin/contracts src/contracts \"[{\\\"sources\\\":[\\\"contracts/HugeContract.sol\\\"], \\\"optimizerRuns\\\":10000}]\"")
-}
-main(process.argv[2], parseInt(process.argv[3]), process.argv[4], process.argv[5], process.argv[6], process.argv[7], process.argv[8]);
+main(process.argv[2] || "solidity.config.json");

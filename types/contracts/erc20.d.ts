@@ -14,6 +14,7 @@ export declare class Erc20 extends Contract {
     decodeApprovalEvent(event: Event): Erc20.ApprovalEvent;
     parseTransferEvent(receipt: TransactionReceipt): Erc20.TransferEvent[];
     decodeTransferEvent(event: Event): Erc20.TransferEvent;
+    private methods;
     allowance(params: {
         owner: string;
         spender: string;
