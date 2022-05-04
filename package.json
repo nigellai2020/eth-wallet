@@ -3,8 +3,7 @@
     "version": "0.1.11",
     "main": "lib/index.js",
     "bin": {
-        "eth-wallet-build": "tools/compile.js",
-        "eth-wallet-build-2": "tools/compileV2.js"
+        "sol2ts": "tools/compile.ts"
     },
     "types": "types/index.d.ts",
     "dependencies": {
