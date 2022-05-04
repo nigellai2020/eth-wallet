@@ -1,4 +1,6 @@
 import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog} from "./wallet";
+import * as Utils from "./utils";
+
 import {BigNumber} from "bignumber.js";
 // import * as W3 from 'web3';
 // const Web3 = require('web3'); // tslint:disable-line
@@ -123,16 +125,16 @@ module Contract {
         	let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         };
-        async _deploy(...args): Promise<string>{
-            if (typeof(args[args.length-1]) == 'undefined')
-                args.pop();
-            args.unshift(this._bytecode);
-            args.unshift('deploy');
-            args.unshift(null);
-            args.unshift(this._abi);
-            this._address = await this.wallet.methods.apply(this.wallet, args);
-            return this._address;
-        }
+        // async _deploy(...args): Promise<string>{
+        //     if (typeof(args[args.length-1]) == 'undefined')
+        //         args.pop();
+        //     args.unshift(this._bytecode);
+        //     args.unshift('deploy');
+        //     args.unshift(null);
+        //     args.unshift(this._abi);
+        //     this._address = await this.wallet.methods.apply(this.wallet, args);
+        //     return this._address;
+        // }
         async call(methodName:string, params?:any[], options?:any): Promise<any>{
             let contract = await this.getContract();
             params = params || [];
@@ -142,8 +144,34 @@ module Contract {
 		async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
             let contract = await this.getContract();
             params = params || [];
+
+            let methodAbi = this._abi.find(e=>methodName ? e.name==methodName : e.type=="constructor");
+            if (methodAbi)
+            for (let i = 0; i < methodAbi.inputs.length; i ++){
+                if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
+                    params[i] = params[i] || '';
+                    if (methodAbi.inputs[i].type.indexOf('[]') > 0){
+                        let a = [];
+                        for (let k = 0; k < params[i].length; k ++){
+                            let s = params[i][k] || '';
+                            if (!params[i][k])
+                                a.push("0x");
+                            else
+                                a.push(s);
+                        }
+                        params[i] = a;
+                    }
+                    else if (!params[i])
+                        params[i] = "0x";
+                }
+                else if (methodAbi.inputs[i].type == 'address'){
+                    if (!params[i])
+                        params[i] = Utils.nullAddress;
+                }
+            }
+
             let method: IContractMethod;
-            if (!this.address || methodName=="deploy")
+            if (!methodName)
                 method = contract.deploy({data:this._bytecode, arguments:params});
             else
                 method = contract.methods[methodName].apply(this, params);
@@ -161,7 +189,7 @@ module Contract {
                 tx.gas = options.gas || options.gasLimit;
             } else {
                 try {
-                    tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address, value: (options&&options.value) || 0 });
+                    tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address ? this.address : undefined, value: (options&&options.value) || 0 });
                     tx.gas = Math.min(await this.wallet.blockGasLimit(), Math.round(tx.gas * 1.5));
 
                 } catch (e) {
@@ -197,15 +225,23 @@ module Contract {
             }
             return tx;
         }
-        async send(methodName:string, params?:any[], options?:any): Promise<any>{
+        private async _send(methodName:string, params?:any[], options?:any): Promise<TransactionReceipt>{
             let tx = await this.txObj(methodName, params, options);
             let receipt = await this.wallet.sendTransaction(tx);
-            if (!tx.to){ // deployment
-                let address = receipt.contractAddress;
-                return address;
-            }
             return receipt;
-        };
+        }
+        _deploy(...params:any[]): Promise<string>{
+            return this.__deploy(params);
+        }
+        async __deploy(params?:any[], options?:any): Promise<string>{
+            let receipt = await this._send('', params, options);
+            this.address = receipt.contractAddress;
+            return this.address;
+        }
+        send(methodName:string, params?:any[], options?:any): Promise<TransactionReceipt>{
+            let receipt = this._send(methodName, params, options);
+            return receipt;
+        }
     }
 }
 export = Contract;

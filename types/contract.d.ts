@@ -24,10 +24,12 @@ declare module Contract {
         protected getAbiTopics(eventNames?: string[]): any[];
         protected getAbiEvents(): any;
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-        _deploy(...args: any[]): Promise<string>;
         call(methodName: string, params?: any[], options?: any): Promise<any>;
         txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
-        send(methodName: string, params?: any[], options?: any): Promise<any>;
+        private _send;
+        _deploy(...params: any[]): Promise<string>;
+        __deploy(params?: any[], options?: any): Promise<string>;
+        send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
     }
 }
 export = Contract;

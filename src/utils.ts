@@ -46,6 +46,40 @@ export function stringToBytes32(value: string|stringArray): string|string[]{
         return Web3.utils.padRight(Web3.utils.asciiToHex(value),64)
     }
 }
+export function stringToBytes(value: string|stringArray, nByte?: number): string|string[]{
+    if (Array.isArray(value)){
+        let result = [];
+        for (let i = 0; i < value.length; i ++){
+            result.push(stringToBytes(value[i]));
+        }
+        return result;
+    }
+    else{
+        if (nByte){
+            if (new RegExp(`^0x[0-9a-fA-F]{${2*nByte}}$`).test(value))
+                return value;
+            else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
+                if (value.length >= ((nByte*2) + 2))
+                    return value;
+                else
+                    return "0x" + value.substring(2) + "00".repeat(nByte-((value.length-2)/2));
+            } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
+                if (value.length >= (nByte*2))
+                    return value;
+                else 
+                    return "0x" + value + "00".repeat(nByte-(value.length/2));
+            } else
+                return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte*2)
+        } else {
+            if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+                return value;
+            else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+                return "0x" + value;
+            else
+                return Web3.utils.asciiToHex(value)
+        }
+    }
+}
 export function addressToBytes32(value: string, prefix?: boolean): string{
     let v = value
     v = v.replace("0x", "");
@@ -88,15 +122,14 @@ export function toString(value:any){
     if (Array.isArray(value)){
         let result = [];
         for (let i = 0; i < value.length; i ++){
-            if (typeof value[i] === "number" || BigNumber.isBigNumber(value[i]))
-                result.push(value[i].toString(10))
-            else
-                result.push(value[i]);
+            result.push(toString(value[i]));
         }
         return result;
     }
-    else if (typeof value === "number" || BigNumber.isBigNumber(value))
+    else if (typeof value === "number")
         return value.toString(10);
+    else if (BigNumber.isBigNumber(value))
+        return value.toFixed();
     else
         return value;
 }

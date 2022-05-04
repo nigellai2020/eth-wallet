@@ -142,6 +142,8 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
                           inputs[i].type.match(/(\[\d*\])/g).map((e,i)=>i==0?"))":")").join("");
             else if (/^bytes32(\[\d*\])*$/.test(inputs[i].type))
                 result += `Utils.stringToBytes32(${prefix}${paramName(inputs[i].name,i)})`;
+            else if (/^bytes(\[\d*\])*$/.test(inputs[i].type))
+                result += `Utils.stringToBytes(${prefix}${paramName(inputs[i].name,i)})`;
             else
                 result += `${prefix}${paramName(inputs[i].name,i)}`;
         }
@@ -291,14 +293,16 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         addLine(1, '}');
     }
     const addDeployer = function(abi: Item[]): void {
-        let constructor = abi.find(e=>e.type=='constructor');
-        if (constructor) {
-            addLine(1, `deploy(${inputs(constructor)}): Promise<string>{`);
-            addLine(2, `return this._deploy(${toSolidityInput(constructor)});`);
+        let item = abi.find(e=>e.type=='constructor');
+        if (item) {
+            let input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "";
+            let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
+            addLine(1, `deploy(${inputs(item)}${payable(item)}): Promise<string>{`);
+            addLine(2, `return this.__deploy(${input}${_payable});`);
             addLine(1, `}`);
         } else {
             addLine(1, `deploy(): Promise<string>{`);
-            addLine(2, `return this._deploy();`);
+            addLine(2, `return this.__deploy();`);
             addLine(1, `}`);
         }
     }

@@ -7,6 +7,7 @@ declare type stringArray = string | _stringArray;
 interface _stringArray extends Array<stringArray> {
 }
 export declare function stringToBytes32(value: string | stringArray): string | string[];
+export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
 export declare function addressToBytes32(value: string, prefix?: boolean): string;
 export declare function bytes32ToAddress(value: string): string;
 export declare function bytes32ToString(value: string): string;

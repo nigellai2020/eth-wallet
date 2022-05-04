@@ -54,9 +54,163 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// src/utils.ts
+var utils_exports = {};
+__export(utils_exports, {
+  addressToBytes32: () => addressToBytes32,
+  addressToBytes32Right: () => addressToBytes32Right,
+  bytes32ToAddress: () => bytes32ToAddress,
+  bytes32ToString: () => bytes32ToString,
+  fromDecimals: () => fromDecimals,
+  nullAddress: () => nullAddress,
+  numberToBytes32: () => numberToBytes32,
+  padLeft: () => padLeft,
+  padRight: () => padRight,
+  sleep: () => sleep,
+  stringToBytes: () => stringToBytes,
+  stringToBytes32: () => stringToBytes32,
+  toDecimals: () => toDecimals,
+  toNumber: () => toNumber,
+  toString: () => toString
+});
+function Web3Lib() {
+  if (typeof window !== "undefined" && window["Web3"])
+    return window["Web3"];
+  else
+    return require("web3");
+}
+function sleep(millisecond) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(null);
+    }, millisecond);
+  });
+}
+function numberToBytes32(value, prefix) {
+  let v = new import_bignumber.BigNumber(value).toString(16);
+  v = v.replace("0x", "");
+  v = padLeft(v, 64);
+  if (prefix)
+    v = "0x" + v;
+  return v;
+}
+function padLeft(string, chars, sign) {
+  return new Array(chars - string.length + 1).join(sign ? sign : "0") + string;
+}
+function padRight(string, chars, sign) {
+  return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
+}
+function stringToBytes32(value) {
+  if (Array.isArray(value)) {
+    let result = [];
+    for (let i = 0; i < value.length; i++) {
+      result.push(stringToBytes32(value[i]));
+    }
+    return result;
+  } else {
+    if (value.length == 66 && value.startsWith("0x"))
+      return value;
+    return Web3.utils.padRight(Web3.utils.asciiToHex(value), 64);
+  }
+}
+function stringToBytes(value, nByte) {
+  if (Array.isArray(value)) {
+    let result = [];
+    for (let i = 0; i < value.length; i++) {
+      result.push(stringToBytes(value[i]));
+    }
+    return result;
+  } else {
+    if (nByte) {
+      if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
+        return value;
+      else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
+        if (value.length >= nByte * 2 + 2)
+          return value;
+        else
+          return "0x" + value.substring(2) + "00".repeat(nByte - (value.length - 2) / 2);
+      } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
+        if (value.length >= nByte * 2)
+          return value;
+        else
+          return "0x" + value + "00".repeat(nByte - value.length / 2);
+      } else
+        return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte * 2);
+    } else {
+      if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+        return value;
+      else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+        return "0x" + value;
+      else
+        return Web3.utils.asciiToHex(value);
+    }
+  }
+}
+function addressToBytes32(value, prefix) {
+  let v = value;
+  v = v.replace("0x", "");
+  v = padLeft(v, 64);
+  if (prefix)
+    v = "0x" + v;
+  return v;
+}
+function bytes32ToAddress(value) {
+  return "0x" + value.replace("0x000000000000000000000000", "");
+}
+function bytes32ToString(value) {
+  return Web3.utils.hexToUtf8(value);
+}
+function addressToBytes32Right(value, prefix) {
+  let v = value;
+  v = v.replace("0x", "");
+  v = padRight(v, 64);
+  if (prefix)
+    v = "0x" + v;
+  return v;
+}
+function toNumber(value) {
+  if (typeof value == "number")
+    return value;
+  else if (typeof value == "string")
+    return new import_bignumber.BigNumber(value).toNumber();
+  else
+    return value.toNumber();
+}
+function toDecimals(value, decimals) {
+  decimals = decimals || 18;
+  return new import_bignumber.BigNumber(value).shiftedBy(decimals);
+}
+function fromDecimals(value, decimals) {
+  decimals = decimals || 18;
+  return new import_bignumber.BigNumber(value).shiftedBy(-decimals);
+}
+function toString(value) {
+  if (Array.isArray(value)) {
+    let result = [];
+    for (let i = 0; i < value.length; i++) {
+      result.push(toString(value[i]));
+    }
+    return result;
+  } else if (typeof value === "number")
+    return value.toString(10);
+  else if (import_bignumber.BigNumber.isBigNumber(value))
+    return value.toFixed();
+  else
+    return value;
+}
+var import_bignumber, Web3, nullAddress;
+var init_utils = __esm({
+  "src/utils.ts"() {
+    import_bignumber = __toModule(require("bignumber.js"));
+    Web3 = Web3Lib();
+    nullAddress = "0x0000000000000000000000000000000000000000";
+  }
+});
+
 // src/contract.ts
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
+    init_utils();
     var Contract3;
     (function(_Contract) {
       const _Contract2 = class {
@@ -158,16 +312,6 @@ var require_contract = __commonJS({
           let events = this.getAbiEvents();
           return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         }
-        async _deploy(...args) {
-          if (typeof args[args.length - 1] == "undefined")
-            args.pop();
-          args.unshift(this._bytecode);
-          args.unshift("deploy");
-          args.unshift(null);
-          args.unshift(this._abi);
-          this._address = await this.wallet.methods.apply(this.wallet, args);
-          return this._address;
-        }
         async call(methodName, params, options) {
           let contract = await this.getContract();
           params = params || [];
@@ -177,8 +321,30 @@ var require_contract = __commonJS({
         async txObj(methodName, params, options) {
           let contract = await this.getContract();
           params = params || [];
+          let methodAbi = this._abi.find((e) => methodName ? e.name == methodName : e.type == "constructor");
+          if (methodAbi)
+            for (let i = 0; i < methodAbi.inputs.length; i++) {
+              if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
+                params[i] = params[i] || "";
+                if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
+                  let a = [];
+                  for (let k = 0; k < params[i].length; k++) {
+                    let s = params[i][k] || "";
+                    if (!params[i][k])
+                      a.push("0x");
+                    else
+                      a.push(s);
+                  }
+                  params[i] = a;
+                } else if (!params[i])
+                  params[i] = "0x";
+              } else if (methodAbi.inputs[i].type == "address") {
+                if (!params[i])
+                  params[i] = nullAddress;
+              }
+            }
           let method;
-          if (!this.address || methodName == "deploy")
+          if (!methodName)
             method = contract.deploy({ data: this._bytecode, arguments: params });
           else
             method = contract.methods[methodName].apply(this, params);
@@ -195,7 +361,7 @@ var require_contract = __commonJS({
             tx.gas = options.gas || options.gasLimit;
           } else {
             try {
-              tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address, value: options && options.value || 0 });
+              tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address ? this.address : void 0, value: options && options.value || 0 });
               tx.gas = Math.min(await this.wallet.blockGasLimit(), Math.round(tx.gas * 1.5));
             } catch (e) {
               if (e.message == "Returned error: out of gas") {
@@ -230,13 +396,21 @@ var require_contract = __commonJS({
           }
           return tx;
         }
-        async send(methodName, params, options) {
+        async _send(methodName, params, options) {
           let tx = await this.txObj(methodName, params, options);
           let receipt = await this.wallet.sendTransaction(tx);
-          if (!tx.to) {
-            let address = receipt.contractAddress;
-            return address;
-          }
+          return receipt;
+        }
+        _deploy(...params) {
+          return this.__deploy(params);
+        }
+        async __deploy(params, options) {
+          let receipt = await this._send("", params, options);
+          this.address = receipt.contractAddress;
+          return this.address;
+        }
+        send(methodName, params, options) {
+          let receipt = this._send(methodName, params, options);
           return receipt;
         }
       };
@@ -245,126 +419,6 @@ var require_contract = __commonJS({
       _Contract.Contract = Contract4;
     })(Contract3 || (Contract3 = {}));
     module2.exports = Contract3;
-  }
-});
-
-// src/utils.ts
-var utils_exports = {};
-__export(utils_exports, {
-  addressToBytes32: () => addressToBytes32,
-  addressToBytes32Right: () => addressToBytes32Right,
-  bytes32ToAddress: () => bytes32ToAddress,
-  bytes32ToString: () => bytes32ToString,
-  fromDecimals: () => fromDecimals,
-  nullAddress: () => nullAddress,
-  numberToBytes32: () => numberToBytes32,
-  padLeft: () => padLeft,
-  padRight: () => padRight,
-  sleep: () => sleep,
-  stringToBytes32: () => stringToBytes32,
-  toDecimals: () => toDecimals,
-  toNumber: () => toNumber,
-  toString: () => toString
-});
-function Web3Lib() {
-  if (typeof window !== "undefined" && window["Web3"])
-    return window["Web3"];
-  else
-    return require("web3");
-}
-function sleep(millisecond) {
-  return new Promise(function(resolve) {
-    setTimeout(function() {
-      resolve(null);
-    }, millisecond);
-  });
-}
-function numberToBytes32(value, prefix) {
-  let v = new import_bignumber.BigNumber(value).toString(16);
-  v = v.replace("0x", "");
-  v = padLeft(v, 64);
-  if (prefix)
-    v = "0x" + v;
-  return v;
-}
-function padLeft(string, chars, sign) {
-  return new Array(chars - string.length + 1).join(sign ? sign : "0") + string;
-}
-function padRight(string, chars, sign) {
-  return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
-}
-function stringToBytes32(value) {
-  if (Array.isArray(value)) {
-    let result = [];
-    for (let i = 0; i < value.length; i++) {
-      result.push(stringToBytes32(value[i]));
-    }
-    return result;
-  } else {
-    if (value.length == 66 && value.startsWith("0x"))
-      return value;
-    return Web3.utils.padRight(Web3.utils.asciiToHex(value), 64);
-  }
-}
-function addressToBytes32(value, prefix) {
-  let v = value;
-  v = v.replace("0x", "");
-  v = padLeft(v, 64);
-  if (prefix)
-    v = "0x" + v;
-  return v;
-}
-function bytes32ToAddress(value) {
-  return "0x" + value.replace("0x000000000000000000000000", "");
-}
-function bytes32ToString(value) {
-  return Web3.utils.hexToUtf8(value);
-}
-function addressToBytes32Right(value, prefix) {
-  let v = value;
-  v = v.replace("0x", "");
-  v = padRight(v, 64);
-  if (prefix)
-    v = "0x" + v;
-  return v;
-}
-function toNumber(value) {
-  if (typeof value == "number")
-    return value;
-  else if (typeof value == "string")
-    return new import_bignumber.BigNumber(value).toNumber();
-  else
-    return value.toNumber();
-}
-function toDecimals(value, decimals) {
-  decimals = decimals || 18;
-  return new import_bignumber.BigNumber(value).shiftedBy(decimals);
-}
-function fromDecimals(value, decimals) {
-  decimals = decimals || 18;
-  return new import_bignumber.BigNumber(value).shiftedBy(-decimals);
-}
-function toString(value) {
-  if (Array.isArray(value)) {
-    let result = [];
-    for (let i = 0; i < value.length; i++) {
-      if (typeof value[i] === "number" || import_bignumber.BigNumber.isBigNumber(value[i]))
-        result.push(value[i].toString(10));
-      else
-        result.push(value[i]);
-    }
-    return result;
-  } else if (typeof value === "number" || import_bignumber.BigNumber.isBigNumber(value))
-    return value.toString(10);
-  else
-    return value;
-}
-var import_bignumber, Web3, nullAddress;
-var init_utils = __esm({
-  "src/utils.ts"() {
-    import_bignumber = __toModule(require("bignumber.js"));
-    Web3 = Web3Lib();
-    nullAddress = "0x0000000000000000000000000000000000000000";
   }
 });
 
@@ -393,7 +447,7 @@ var init_erc20 = __esm({
         this._decimals = decimals;
       }
       async deploy(params) {
-        return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap ? params.cap.toString() : "1000000000"));
+        return this.__deploy([params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap ? params.cap.toString() : "1000000000")]);
       }
       parseApprovalEvent(receipt) {
         return this.parseEvents(receipt, "Approval").map((e) => this.decodeApprovalEvent(e));
@@ -1306,246 +1360,6 @@ var require_wallet = __commonJS({
         registerSendTxEvents(eventsOptions) {
           this._sendTxEventHandler = eventsOptions;
         }
-        async _methods(...args) {
-          let _web3 = this._web3;
-          let result;
-          let value;
-          let method;
-          let methodAbi;
-          let byteCode;
-          let abi = args.shift();
-          let address = args.shift();
-          let methodName = args.shift();
-          if (methodName == "deploy")
-            byteCode = args.shift();
-          let contract;
-          let hash;
-          if (this._contracts[address])
-            contract = this._contracts[address];
-          else {
-            hash = this._web3.utils.sha3(JSON.stringify(abi));
-            if (this._contracts[hash]) {
-              contract = this._contracts[hash];
-            }
-          }
-          if (!contract) {
-            contract = new this._web3.eth.Contract(abi);
-            this._contracts[address] = contract;
-            this._contracts[hash] = contract;
-          }
-          if (methodName == "deploy") {
-            method = contract[methodName]({
-              data: byteCode,
-              arguments: args
-            });
-          } else {
-            for (let i = 0; i < abi.length; i++) {
-              if (abi[i].name == methodName) {
-                methodAbi = abi[i];
-                break;
-              }
-            }
-            if (methodAbi.payable)
-              value = args.pop();
-            for (let i = 0; i < methodAbi.inputs.length; i++) {
-              if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-                args[i] = args[i] || "";
-                if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-                  let a = [];
-                  for (let k = 0; k < args[i].length; k++) {
-                    let s = args[i][k] || "";
-                    if (s.indexOf("0x") != 0)
-                      a.push(_web3.utils.fromAscii(s));
-                    else
-                      a.push(s);
-                  }
-                  args[i] = a;
-                } else if (args[i].indexOf("0x") != 0)
-                  args[i] = _web3.utils.fromAscii(args[i]);
-              } else if (methodAbi.inputs[i].type == "address") {
-                if (!args[i])
-                  args[i] = _web3.eth.abi.encodeParameter("address", 0);
-              }
-            }
-            method = contract.methods[methodName].apply(contract, args);
-          }
-          let tx = {
-            to: address,
-            data: method.encodeABI()
-          };
-          return tx;
-        }
-        async methods(...args) {
-          let _web3 = this._web3;
-          if (_web3.methods) {
-            return _web3.methods.apply(_web3, args);
-          } else {
-            let result;
-            let value;
-            let method;
-            let methodAbi;
-            let byteCode;
-            let abi = args.shift();
-            let address = args.shift();
-            let methodName = args.shift();
-            if (methodName == "deploy")
-              byteCode = args.shift();
-            let contract;
-            let hash;
-            if (address && this._contracts[address])
-              contract = this._contracts[address];
-            else {
-              hash = this._web3.utils.sha3(JSON.stringify(abi));
-              if (this._contracts[hash]) {
-                contract = this._contracts[hash];
-              }
-            }
-            ;
-            if (!contract) {
-              contract = new this._web3.eth.Contract(abi);
-              if (address)
-                this._contracts[address] = contract;
-              this._contracts[hash] = contract;
-            }
-            ;
-            if (methodName == "deploy") {
-              method = contract[methodName]({
-                data: byteCode,
-                arguments: args
-              });
-            } else {
-              for (let i = 0; i < abi.length; i++) {
-                if (abi[i].name == methodName) {
-                  methodAbi = abi[i];
-                  break;
-                }
-              }
-              if (methodAbi.payable)
-                value = args.pop();
-              for (let i = 0; i < methodAbi.inputs.length; i++) {
-                if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-                  args[i] = args[i] || "";
-                  if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-                    let a = [];
-                    for (let k = 0; k < args[i].length; k++) {
-                      let s = args[i][k] || "";
-                      if (s.indexOf("0x") != 0)
-                        a.push(_web3.utils.fromAscii(s));
-                      else
-                        a.push(s);
-                    }
-                    args[i] = a;
-                  } else if (args[i].indexOf("0x") != 0)
-                    args[i] = _web3.utils.fromAscii(args[i]);
-                } else if (methodAbi.inputs[i].type == "address") {
-                  if (!args[i])
-                    args[i] = _web3.eth.abi.encodeParameter("address", 0);
-                }
-              }
-              method = contract.methods[methodName].apply(contract, args);
-            }
-            ;
-            contract.options.address = address;
-            if (methodAbi && (methodAbi.constant || methodAbi.stateMutability == "view")) {
-              return method.call({ from: this.address });
-            }
-            if (!this._blockGasLimit) {
-              this._blockGasLimit = (await _web3.eth.getBlock("latest")).gasLimit;
-            }
-            let gas;
-            try {
-              gas = await method.estimateGas({ from: this.address, to: address, value });
-              gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
-            } catch (e) {
-              if (e.message == "Returned error: out of gas") {
-                console.log(e.message);
-                gas = Math.round(this._blockGasLimit * 0.5);
-              } else {
-                try {
-                  await method.call({ from: this.address, value });
-                } catch (e2) {
-                  if (e2.message.includes("VM execution error.")) {
-                    var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
-                    if (msg && msg.length) {
-                      msg = msg[0];
-                      if (msg.startsWith("0x08c379a")) {
-                        msg = _web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
-                        throw new Error(msg);
-                      }
-                    }
-                  }
-                }
-                throw e;
-              }
-            }
-            let gasPrice = await _web3.eth.getGasPrice();
-            if (this._account && this._account.privateKey) {
-              let tx = {
-                gas,
-                gasPrice,
-                data: method.encodeABI(),
-                from: this.address,
-                to: address,
-                value
-              };
-              let signedTx = await _web3.eth.accounts.signTransaction(tx, this._account.privateKey);
-              result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-              if (methodName == "deploy")
-                return result.contractAddress;
-              return result;
-            } else if (this._account && this._account.kms) {
-              let nonce = await _web3.eth.getTransactionCount(this.address);
-              let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-              let tx = {
-                from: this.address,
-                nonce,
-                gasPrice: price,
-                gasLimit: gas,
-                gas,
-                to: address,
-                data: method.encodeABI()
-              };
-              let chainId = await this.getChainId();
-              let txHash = await this.kms.signTransaction(chainId, tx);
-              result = await _web3.eth.sendSignedTransaction(txHash);
-              if (methodName == "deploy")
-                return result.contractAddress;
-              return result;
-            } else {
-              contract.options.address = address;
-              let nonce = await _web3.eth.getTransactionCount(this.address);
-              let tx = {
-                from: this.address,
-                nonce,
-                gasPrice,
-                gas,
-                to: address,
-                value,
-                data: method.encodeABI()
-              };
-              let promiEvent = _web3.eth.sendTransaction(tx);
-              promiEvent.on("error", (error) => {
-                if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-                  return;
-                }
-                if (this._sendTxEventHandler.transactionHash)
-                  this._sendTxEventHandler.transactionHash(error);
-              });
-              promiEvent.on("transactionHash", (receipt) => {
-                if (this._sendTxEventHandler.transactionHash)
-                  this._sendTxEventHandler.transactionHash(null, receipt);
-              });
-              promiEvent.on("confirmation", (confNumber, receipt) => {
-                if (this._sendTxEventHandler.confirmation && confNumber == 1)
-                  this._sendTxEventHandler.confirmation(receipt);
-              });
-              result = await promiEvent;
-              if (methodName == "deploy")
-                return result.contractAddress;
-              return result;
-            }
-          }
-        }
         get balance() {
           let self = this;
           let _web3 = this._web3;
@@ -1892,7 +1706,23 @@ var require_wallet = __commonJS({
             let signedTx = await this.kms.signTransaction(chainId, transaction);
             return await this._web3.eth.sendSignedTransaction(signedTx);
           } else {
-            return this._web3.eth.sendTransaction(transaction);
+            let promiEvent = this._web3.eth.sendTransaction(transaction);
+            promiEvent.on("error", (error) => {
+              if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+                return;
+              }
+              if (this._sendTxEventHandler.transactionHash)
+                this._sendTxEventHandler.transactionHash(error);
+            });
+            promiEvent.on("transactionHash", (receipt) => {
+              if (this._sendTxEventHandler.transactionHash)
+                this._sendTxEventHandler.transactionHash(null, receipt);
+            });
+            promiEvent.on("confirmation", (confNumber, receipt) => {
+              if (this._sendTxEventHandler.confirmation && confNumber == 1)
+                this._sendTxEventHandler.confirmation(receipt);
+            });
+            return await promiEvent;
           }
         }
         getTransactionReceipt(transactionHash) {

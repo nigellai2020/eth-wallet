@@ -14,7 +14,7 @@ const Bytecode = require('./bin/erc20').bytecode;
             this._decimals = decimals;
         }
         async deploy(params:{name: string, symbol: string, minter?: string, cap?: number|BigNumber}): Promise<string>{ 
-            return this._deploy(params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap?params.cap.toString():'1000000000'));
+            return this.__deploy([params.name, params.symbol, params.minter || this.wallet.address, this.wallet.utils.toWei(params.cap?params.cap.toString():'1000000000')]);
         }
         parseApprovalEvent(receipt: TransactionReceipt): Erc20.ApprovalEvent[]{
             return this.parseEvents(receipt, "Approval").map(e=>this.decodeApprovalEvent(e));
