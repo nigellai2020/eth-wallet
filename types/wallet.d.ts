@@ -217,9 +217,9 @@ declare module Wallet {
     }
     type WalletPluginConfigType = {
         [key in WalletPlugin]: {
-            provider: any;
+            provider: () => any;
             installed: () => boolean;
-            homepage?: string;
+            homepage?: () => string;
         };
     };
     const WalletPluginConfig: WalletPluginConfigType;

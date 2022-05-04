@@ -381,48 +381,68 @@ module Wallet{
 		ONTOWallet = 'onto',
 	}
 	export type WalletPluginConfigType = {[key in WalletPlugin]: {
-		provider: any;
+		provider: () => any;
 		installed: () => boolean;
-		homepage?: string;
+		homepage?: () => string;
 	}};
 	export const WalletPluginConfig: WalletPluginConfigType = {
 		[WalletPlugin.MetaMask]: {
-			provider:  window['ethereum'],
+			provider: () => {
+				return window['ethereum']
+			},
 			installed: () => {
 				let ethereum = window['ethereum'];
 				return !!ethereum && !!ethereum.isMetaMask;
 			},
-			homepage: 'https://metamask.io/download.html'	
+			homepage: () => {
+				return 'https://metamask.io/download.html'
+			}	
 		},
 		[WalletPlugin.Coin98]: {
-			provider:  window['ethereum'],
+			provider: () => {
+				return window['ethereum']
+			},
 			installed: () => {
 				let ethereum = window['ethereum'];
 				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
 			},
-			homepage: 'https://docs.coin98.com/products/coin98-wallet'
+			homepage: () => {
+				return 'https://docs.coin98.com/products/coin98-wallet'
+			}
 		},
 		[WalletPlugin.TrustWallet]: {
-			provider:  window['ethereum'],
+			provider: () => {
+				return window['ethereum']
+			},
 			installed: () => {
 				let ethereum = window['ethereum'];		
 				return !!ethereum && !!ethereum.isTrust;
 			},
-			homepage: 'https://link.trustwallet.com/open_url?url=' + window.location.href
+			homepage: () => {
+				return 'https://link.trustwallet.com/open_url?url=' + window.location.href
+			}
 		},
 		[WalletPlugin.BinanceChainWallet]: {
-			provider: window['BinanceChain'],
+			provider: () => {
+				return window['BinanceChain']
+			},
 			installed: () => {
 				return !!window['BinanceChain'];
 			},
-			homepage: 'https://www.binance.org/en'
+			homepage: () => {
+				return 'https://www.binance.org/en'
+			}
 		},
 		[WalletPlugin.ONTOWallet]: {
-			provider: window['onto'],
+			provider: () => {
+				return window['onto']
+			},
 			installed: () => {
 				return !!window['onto'];
 			},
-			homepage: 'https://onto.app/en/download/?mode=app'
+			homepage: () => {
+				return 'https://onto.app/en/download/?mode=app'
+			}
 		}
 	}	
 	export class ClientSideProvider {
@@ -461,7 +481,7 @@ module Wallet{
 			return WalletPluginConfig[this.walletPlugin].installed();
 		}
 		get provider(): any {
-			return WalletPluginConfig[this.walletPlugin].provider;
+			return WalletPluginConfig[this.walletPlugin].provider();
 		}
 		initEvents(){
 			let self = this;
