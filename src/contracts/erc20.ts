@@ -41,14 +41,6 @@ const Bytecode = require('./bin/erc20').bytecode;
             };
         }
 
-        private methods(methodName:string, ...params:any[]) {
-            let method = Abi.find(e=>e.name==methodName);
-            if (method.stateMutability == "view" || method.stateMutability == "pure") {
-                return this.call(methodName, params);
-            } else {
-                return this.send(methodName, params);
-            }
-        }
         async allowance(params:{owner: string, spender: string}): Promise<BigNumber>{
         	return Utils.fromDecimals(await this.methods('allowance', params.owner, params.spender), await this.decimals)        	
         }

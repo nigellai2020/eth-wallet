@@ -223,14 +223,7 @@ var require_contract = __commonJS({
               _Contract2.contracts[await this.wallet.getChainId() + ":" + this.address] = contract;
             }
           } else {
-            if (!contract) {
-              let hash = this.wallet.utils.sha3(JSON.stringify(this._abi));
-              contract = _Contract2.contracts[hash];
-              if (!contract) {
-                contract = this.wallet.newContract(this._abi);
-                _Contract2.contracts[hash] = contract;
-              }
-            }
+            contract = this.wallet.newContract(this._abi);
           }
           return contract;
         }
@@ -299,13 +292,34 @@ var require_contract = __commonJS({
           }
           return result;
         }
-        getAbiTopics(eventNames) {
-          return this.wallet.getAbiTopics(this._abi, eventNames);
-        }
         getAbiEvents() {
-          if (!this._events)
-            this._events = this.wallet.getAbiEvents(this._abi);
+          if (!this._events) {
+            this._events = {};
+            let events = this._abi.filter((e) => e.type == "event");
+            for (let i = 0; i < events.length; i++) {
+              let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+              this._events[topic] = events[i];
+            }
+          }
           return this._events;
+        }
+        getAbiTopics(eventNames) {
+          if (!eventNames || eventNames.length == 0)
+            eventNames = null;
+          let result = [];
+          let events = this.getAbiEvents();
+          for (let topic in events) {
+            if (!eventNames || eventNames.includes(events[topic].name)) {
+              result.push(topic);
+            }
+          }
+          if (result.length == 0 && eventNames && eventNames.length > 0)
+            return ["NULL"];
+          return [result];
+        }
+        registerEvents(handler) {
+          if (this._address)
+            this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
         }
         scanEvents(fromBlock, toBlock, eventNames) {
           let topics = this.getAbiTopics(eventNames);
@@ -401,9 +415,6 @@ var require_contract = __commonJS({
           let receipt = await this.wallet.sendTransaction(tx);
           return receipt;
         }
-        _deploy(...params) {
-          return this.__deploy(params);
-        }
         async __deploy(params, options) {
           let receipt = await this._send("", params, options);
           this.address = receipt.contractAddress;
@@ -412,6 +423,20 @@ var require_contract = __commonJS({
         send(methodName, params, options) {
           let receipt = this._send(methodName, params, options);
           return receipt;
+        }
+        _deploy(...params) {
+          return this.__deploy(params);
+        }
+        methods(methodName, ...params) {
+          let method = this._abi.find((e) => e.name == methodName);
+          if (method.stateMutability == "view" || method.stateMutability == "pure") {
+            return this.call(methodName, params);
+          } else if (method.stateMutability == "payable") {
+            let value = params.pop();
+            return this.call(methodName, params, { value });
+          } else {
+            return this.send(methodName, params);
+          }
         }
       };
       let Contract4 = _Contract2;
@@ -472,14 +497,6 @@ var init_erc20 = __esm({
           value: new import_bignumber2.BigNumber(result.value),
           _event: event
         };
-      }
-      methods(methodName, ...params) {
-        let method = Abi.find((e) => e.name == methodName);
-        if (method.stateMutability == "view" || method.stateMutability == "pure") {
-          return this.call(methodName, params);
-        } else {
-          return this.send(methodName, params);
-        }
       }
       async allowance(params) {
         return fromDecimals(await this.methods("allowance", params.owner, params.spender), await this.decimals);
@@ -1177,9 +1194,7 @@ var require_wallet = __commonJS({
       _Wallet.createClientSideProvider = createClientSideProvider;
       const _Wallet2 = class {
         constructor(provider, account) {
-          this._abiHashDict = {};
-          this._abiAddressDict = {};
-          this._abiEventDict = {};
+          this._eventTopicAbi = {};
           this._eventHandler = {};
           this._sendTxEventHandler = {};
           this._contracts = {};
@@ -1442,66 +1457,12 @@ var require_wallet = __commonJS({
             privateKey: value
           };
         }
-        getAbiEvents(abi) {
-          let _web3 = this._web3;
-          let events = abi.filter((e) => e.type == "event");
-          let eventMap = {};
-          for (let i = 0; i < events.length; i++) {
-            let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-            eventMap[topic] = events[i];
+        registerEvent(eventMap, address, handler) {
+          for (let topic in eventMap) {
+            this._eventTopicAbi[topic] = eventMap[topic];
           }
-          return eventMap;
-        }
-        getAbiTopics(abi, eventNames) {
-          if (!eventNames || eventNames.length == 0)
-            eventNames = null;
-          let _web3 = this._web3;
-          let result = [];
-          let events = abi.filter((e) => e.type == "event");
-          for (let i = 0; i < events.length; i++) {
-            if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
-              let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-              result.push(topic);
-            }
-          }
-          if (result.length == 0 && eventNames && eventNames.length > 0)
-            return ["NULL"];
-          return [result];
-        }
-        getContractAbi(address) {
-          return this._abiAddressDict[address];
-        }
-        getContractAbiEvents(address) {
-          let events = this._abiEventDict[address];
-          if (events)
-            return events;
-          let abi = this._abiHashDict[this._abiAddressDict[address]];
-          if (abi) {
-            events = this.getAbiEvents(abi);
-            this._abiEventDict[address] = events;
-            return events;
-          }
-        }
-        registerAbi(abi, address, handler) {
-          let hash = "";
-          if (typeof abi == "string")
-            hash = abi;
-          else
-            hash = this._web3.utils.sha3(JSON.stringify(abi));
-          this._abiHashDict[hash] = abi;
-          if (address)
-            this.registerAbiContracts(hash, address, handler);
-          return hash;
-        }
-        registerAbiContracts(abiHash, address, handler) {
-          if (address) {
-            if (!Array.isArray(address))
-              address = [address];
-            for (let i = 0; i < address.length; i++) {
-              this._abiAddressDict[address[i]] = abiHash;
-              if (handler)
-                this._eventHandler[address[i]] = handler;
-            }
+          if (address && handler) {
+            this._eventHandler[address] = handler;
           }
         }
         decode(abi, event, raw) {
@@ -1535,11 +1496,7 @@ var require_wallet = __commonJS({
           if (events)
             event = events[data.topics[0]];
           else {
-            let _events = this.getContractAbiEvents(data.address);
-            if (_events)
-              event = _events[data.topics[0]];
-            else
-              event = null;
+            event = this._eventTopicAbi[data.topics[0]];
           }
           ;
           let log = this.decode(event, data);

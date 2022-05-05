@@ -67,19 +67,16 @@ declare module Wallet {
         decodeEventData(data: Log, events?: any): Promise<Event>;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         defaultAccount: string;
-        getAbiEvents(abi: any[]): any;
-        getAbiTopics(abi: any[], eventNames?: string[]): any[];
         getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         getChainId(): Promise<number>;
-        getContractAbi(address: string): any;
-        getContractAbiEvents(address: string): any;
         privateKey: string;
         provider: any;
         recoverSigner(msg: string, signature: string): Promise<string>;
-        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
-        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+        registerEvent(eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): any;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         signMessage(msg: string): Promise<string>;
@@ -255,9 +252,7 @@ declare module Wallet {
         private _accounts;
         private _kms;
         private _provider;
-        private _abiHashDict;
-        private _abiAddressDict;
-        private _abiEventDict;
+        private _eventTopicAbi;
         private _eventHandler;
         private _sendTxEventHandler;
         private _contracts;
@@ -296,12 +291,9 @@ declare module Wallet {
         initKMS(value?: IKMS): Promise<void>;
         private get kms();
         set privateKey(value: string);
-        getAbiEvents(abi: any[]): any;
-        getAbiTopics(abi: any[], eventNames?: string[]): any[];
-        getContractAbi(address: string): any;
-        getContractAbiEvents(address: string): any;
-        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
-        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
+        registerEvent(eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): void;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
             topics: string[];

@@ -21,15 +21,17 @@ declare module Contract {
         protected decodeEvents(receipt: TransactionReceipt): any[];
         protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
         get events(): EventType[];
-        protected getAbiTopics(eventNames?: string[]): any[];
         protected getAbiEvents(): any;
+        protected getAbiTopics(eventNames?: string[]): any[];
+        registerEvents(handler: any): void;
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-        call(methodName: string, params?: any[], options?: any): Promise<any>;
-        txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
+        protected call(methodName: string, params?: any[], options?: any): Promise<any>;
+        protected txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
         private _send;
-        _deploy(...params: any[]): Promise<string>;
-        __deploy(params?: any[], options?: any): Promise<string>;
-        send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+        protected __deploy(params?: any[], options?: any): Promise<string>;
+        protected send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+        protected _deploy(...params: any[]): Promise<string>;
+        protected methods(methodName: string, ...params: any[]): Promise<any>;
     }
 }
 export = Contract;

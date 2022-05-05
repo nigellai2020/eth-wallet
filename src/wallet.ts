@@ -75,20 +75,14 @@ module Wallet{
 		decodeEventData(data: Log, events?: any): Promise<Event>;
 		decodeLog(inputs: any, hexString: string, topics: any): any;
 		defaultAccount: string;
-		getAbiEvents(abi: any[]): any;
-		getAbiTopics(abi: any[], eventNames?: string[]): any[];
 		getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
 		getBlockNumber(): Promise<number>;
 		getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
 		getChainId(): Promise<number>;
-		getContractAbi(address: string);
-		getContractAbiEvents(address: string);		
-		// methods(...args: any): Promise<any>;
 		privateKey: string;
 		provider: any;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
-		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
-		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
+		registerEvent(eventMap:{[topics:string]:any}, address: string, handler: any);
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
 		signMessage(msg: string): Promise<string>;
@@ -717,9 +711,7 @@ module Wallet{
 		private _accounts: IAccount[];
 		private _kms: KMS;		
 		private _provider: any;
-		private _abiHashDict: IDictionary = {};
-		private _abiAddressDict: IDictionary = {};
-		private _abiEventDict: IDictionary = {};
+		private _eventTopicAbi: {[topic:string]:any} = {};
 		private _eventHandler = {};
 		private _sendTxEventHandler: ISendTxEventsOptions = {};
 		private _contracts = {};
@@ -919,264 +911,6 @@ module Wallet{
 		registerSendTxEvents(eventsOptions: ISendTxEventsOptions) {
 			this._sendTxEventHandler = eventsOptions;
 		}
-		// async _methods(...args){
-		// 	let _web3 = this._web3;        	
-		// 	let result: any;
-		// 	let value: any;
-		// 	let method: any;
-		// 	let methodAbi: any;
-		// 	let byteCode: any;
-			
-		// 	let abi = args.shift();
-		// 	let address = args.shift();
-		// 	let methodName = args.shift();
-		// 	if (methodName == 'deploy')
-		// 		byteCode = args.shift();			
-		// 	let contract;
-		// 	let hash;
-		// 	if (this._contracts[address])
-		// 		contract = this._contracts[address]
-		// 	else{
-		// 		hash = this._web3.utils.sha3(JSON.stringify(abi));
-		// 		if (this._contracts[hash]){
-		// 			contract = this._contracts[hash];
-		// 		}
-		// 	}
-		// 	if (!contract){
-		// 		contract = new this._web3.eth.Contract(abi);			
-		// 		this._contracts[address] = contract;
-		// 		this._contracts[hash] = contract;
-		// 	}
-		// 	if (methodName == 'deploy'){
-		// 		method = contract[methodName]({
-		// 			data: byteCode,
-		// 			arguments: args
-		// 		});
-		// 	}
-		// 	else {
-		// 		for (let i = 0; i < abi.length; i ++)	{
-		// 			if (abi[i].name == methodName){
-		// 				methodAbi = abi[i];
-		// 				break;
-		// 			}
-		// 		}						
-		// 		if (methodAbi.payable)
-		// 			value = args.pop();
-		// 		for (let i = 0; i < methodAbi.inputs.length; i ++){
-		// 			if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
-		// 				args[i] = args[i] || '';
-		// 				if (methodAbi.inputs[i].type.indexOf('[]') > 0){
-		// 					let a = [];
-		// 					for (let k = 0; k < args[i].length; k ++){
-		// 						let s = args[i][k] || '';
-		// 						if (s.indexOf('0x') != 0)
-		// 							a.push(_web3.utils.fromAscii(s))
-		// 						else
-		// 							a.push(s);
-		// 					}
-		// 					args[i] = a;
-		// 				}
-		// 				else if (args[i].indexOf('0x') != 0)
-		// 					args[i] = _web3.utils.fromAscii(args[i]);
-		// 			}
-		// 			else if (methodAbi.inputs[i].type == 'address'){
-		// 				if (!args[i])
-		// 					args[i] = _web3.eth.abi.encodeParameter('address', 0);
-		// 			}
-		// 		}
-		// 		method = contract.methods[methodName].apply(contract, args);
-		// 	}
-		// 	// let gas = await method.estimateGas({from: this.address, value: value});
-		// 	let tx = {
-		// 		// from: this.address,
-		// 		// nonce: nonce,
-		// 		// gas: gas,
-		// 		to: address,
-		// 		data: method.encodeABI(),
-		// 	};
-		// 	return tx;							
-        // }
-		// async methods(...args: any): Promise<any>{
-        // 	let _web3 = this._web3;
-        // 	if ((<any>_web3).methods){
-        // 		return (<any>_web3).methods.apply(_web3, args);
-        // 	}
-        // 	else{
-        // 		let result: any;
-        // 		let value: any;
-        // 		let method: any;
-        // 		let methodAbi: any;
-        // 		let byteCode: any;
-        		
-        // 		let abi = args.shift();
-        // 		let address = args.shift();
-        // 		let methodName = args.shift();
-        // 		if (methodName == 'deploy')
-        // 			byteCode = args.shift();
-
-		// 		let contract;				
-		// 		let hash;
-		// 		if (address && this._contracts[address])
-		// 			contract = this._contracts[address]
-		// 		else{
-		// 			hash = this._web3.utils.sha3(JSON.stringify(abi));
-		// 			if (this._contracts[hash]){
-		// 				contract = this._contracts[hash];
-		// 			}
-		// 		};
-		// 		if (!contract){
-		// 			contract = new this._web3.eth.Contract(abi);			
-		// 			if (address)
-		// 				this._contracts[address] = contract;
-		// 			this._contracts[hash] = contract;
-		// 		};
-		// 		if (methodName == 'deploy'){
-		// 			method = contract[methodName]({
-		// 				data: byteCode,
-		// 				arguments: args
-		// 			});
-		// 		}
-		// 		else {
-		// 			for (let i = 0; i < abi.length; i ++)	{
-		// 				if (abi[i].name == methodName){
-		// 					methodAbi = abi[i];
-		// 					break;
-		// 				}
-		// 			}						
-		// 			if (methodAbi.payable)
-		// 				value = args.pop();
-		// 			for (let i = 0; i < methodAbi.inputs.length; i ++){
-		// 				if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
-		// 					args[i] = args[i] || '';
-		// 					if (methodAbi.inputs[i].type.indexOf('[]') > 0){
-		// 						let a = [];
-		// 						for (let k = 0; k < args[i].length; k ++){
-		// 							let s = args[i][k] || '';
-		// 							if (s.indexOf('0x') != 0)
-		// 								a.push(_web3.utils.fromAscii(s))
-		// 							else
-		// 								a.push(s);
-		// 						}
-		// 						args[i] = a;
-		// 					}
-		// 					else if (args[i].indexOf('0x') != 0)
-		// 						args[i] = _web3.utils.fromAscii(args[i]);
-		// 				}
-		// 				else if (methodAbi.inputs[i].type == 'address'){
-		// 					if (!args[i])
-		// 						args[i] = _web3.eth.abi.encodeParameter('address', 0);
-		// 				}
-		// 			}					
-		// 			method = contract.methods[methodName].apply(contract, args);
-		// 		};
-
-		// 		contract.options.address = address;				
-		// 		if (methodAbi && (methodAbi.constant || methodAbi.stateMutability == 'view')) {
-		// 			return method.call({from: this.address});
-		// 		}				
-
-        //         if (!this._blockGasLimit) {
-        //             this._blockGasLimit = (await _web3.eth.getBlock('latest')).gasLimit;
-        //         }
-        //         let gas;
-        //         try {
-        //             gas = await method.estimateGas({ from: this.address, to: address, value: value });
-        //             gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
-        //         } catch (e) {
-        //             if (e.message == "Returned error: out of gas"){ // amino
-        //                 console.log(e.message);
-        //                 gas = Math.round(this._blockGasLimit * 0.5);
-        //             } else {
-		// 				try{
-		// 					await method.call({from:this.address, value: value});
-		// 				} catch(e) {
-		// 					if (e.message.includes("VM execution error.")) {
-		// 						var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
-		// 						if (msg && msg.length) {
-		// 							msg = msg[0];
-		// 							if (msg.startsWith("0x08c379a")) {
-		// 								msg = _web3.eth.abi.decodeParameter('string', "0x"+msg.substring(10));
-		// 								throw new Error(msg);
-		// 							}
-		// 						}
-		// 					}
-		// 				}
-        //                 throw e;
-        //             }
-        //         }
-
-        //         let gasPrice = await _web3.eth.getGasPrice();
-
-		// 		if (this._account && this._account.privateKey){
-		// 			let tx = {
-		// 				gas: gas,
-        //                 gasPrice: gasPrice,
-		// 				data: method.encodeABI(),
-		// 				from: this.address,
-		// 				to: address,
-        //                 value: value
-		// 			};
-		// 			let signedTx = await _web3.eth.accounts.signTransaction(tx, this._account.privateKey);
-		// 			result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-		// 			if (methodName == 'deploy')
-		// 				return result.contractAddress;
-		// 			return result;
-		// 		}
-		// 		else if (this._account && this._account.kms){
-		// 			let nonce = await _web3.eth.getTransactionCount(this.address);
-		// 			let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-		// 			let tx = {
-		// 				from: this.address,
-		// 				nonce: nonce,
-		// 				gasPrice: price,
-		// 				gasLimit: gas,
-		// 				gas: gas,
-		// 				to: address,
-		// 				data: method.encodeABI(),
-		// 			};
-		// 			let chainId = await this.getChainId();
-		// 			let txHash = await this.kms.signTransaction(chainId, tx);
-		// 			result = await _web3.eth.sendSignedTransaction(txHash)
-		// 			if (methodName == 'deploy')
-		// 				return result.contractAddress;
-		// 			return result;
-		// 		}
-		// 		else{					
-		// 			contract.options.address = address;
-		// 			let nonce = await _web3.eth.getTransactionCount(this.address);
-		// 			let tx = {
-		// 				from: this.address, 
-		// 				nonce,
-		// 				gasPrice,
-		// 				gas,
-		// 				to: address,
-		// 				value,
-		// 				data: method.encodeABI(),
-		// 			}
-
-		// 			let promiEvent = _web3.eth.sendTransaction(tx);
-		// 			promiEvent.on('error', (error: Error) =>{
-		// 				if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-		// 					return;
-		// 				}
-		// 				if (this._sendTxEventHandler.transactionHash)
-		// 					this._sendTxEventHandler.transactionHash(error);
-		// 			});
-		// 			promiEvent.on('transactionHash', (receipt: string) => {
-		// 				if (this._sendTxEventHandler.transactionHash)
-		// 					this._sendTxEventHandler.transactionHash(null, receipt);
-		// 			});
-		// 			promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
-		// 				if (this._sendTxEventHandler.confirmation && confNumber == 1)
-		// 					this._sendTxEventHandler.confirmation(receipt);                
-		// 			});
-		// 			result = await promiEvent;
-		// 			if (methodName == 'deploy')
-		// 				return result.contractAddress;
-		// 			return result;
-		// 		}	
-        // 	}
-        // };
 		get balance(): Promise<BigNumber>{
 			let self = this;
             let _web3 = this._web3;
@@ -1266,67 +1000,12 @@ module Wallet{
 				privateKey: value
 			}
         };
-        getAbiEvents(abi: any[]): any {
-        	let _web3 = this._web3;
-		    let events = abi.filter(e => e.type=="event");    
-		    let eventMap = {};
-		
-		    for (let i = 0 ; i < events.length ; i++) {
-		        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
-		        eventMap[topic] = events[i];
-		    }
-		    return eventMap;
-		};
-        getAbiTopics(abi: any[], eventNames?: string[]): any[]{
-			if (!eventNames || eventNames.length == 0)
-				eventNames = null;
-			let _web3 = this._web3;
-			let result = [];
-			let events = abi.filter(e => e.type=="event");			
-			for (let i = 0 ; i < events.length ; i++) {
-				if (!eventNames || eventNames.indexOf(events[i].name) >= 0){
-					let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
-					result.push(topic);
-				}
-		    }
-			if (result.length == 0 && eventNames && eventNames.length > 0)
-				return ['NULL']
-		    return [result];
-		};
-		getContractAbi(address: string){
-			return this._abiAddressDict[address];
-		};
-		getContractAbiEvents(address: string){
-			let events = this._abiEventDict[address];
-			if (events)
-				return events;			
-			let abi = this._abiHashDict[this._abiAddressDict[address]];
-			if (abi){
-				events = this.getAbiEvents(abi)
-				this._abiEventDict[address] = events;
-				return events;
+		registerEvent(eventMap:{[topics:string]:any}, address: string, handler: any) {
+			for (let topic in eventMap){
+				this._eventTopicAbi[topic] = eventMap[topic];
 			}
-		};
-		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string{
-			let hash = '';
-			if (typeof(abi) == 'string')
-				hash = abi
-			else
-				hash = this._web3.utils.sha3(JSON.stringify(abi));
-			this._abiHashDict[hash] = abi;
-			if (address)
-				this.registerAbiContracts(hash, address, handler);
-			return hash;
-		};
-		registerAbiContracts(abiHash: string, address: string|string[], handler?: any){			
-			if (address){
-				if (!Array.isArray(address))
-					address = [address];
-				for (let i = 0; i < address.length; i ++){
-					this._abiAddressDict[address[i]] = abiHash;
-					if (handler)
-						this._eventHandler[address[i]] = handler;
-				}
+			if (address && handler) {
+				this._eventHandler[address] = handler;
 			}
 		};
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event{
@@ -1360,11 +1039,7 @@ module Wallet{
 			if (events)
 				event = events[data.topics[0]]
 			else{
-				let _events = this.getContractAbiEvents(data.address);
-				if (_events)
-					event = _events[data.topics[0]]
-				else
-					event = null;
+				event = this._eventTopicAbi[data.topics[0]];
 			};
 			let log = this.decode(event, data);
 			let handler = this._eventHandler[data.address]

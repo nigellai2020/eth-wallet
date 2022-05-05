@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "main": "lib/index.js",
     "bin": {
         "sol2ts": "tools/compile.ts"

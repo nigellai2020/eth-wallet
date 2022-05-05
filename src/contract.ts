@@ -28,14 +28,14 @@ module Contract {
                 }
             }
             else {
-                if (!contract) {
-                    let hash = this.wallet.utils.sha3(JSON.stringify(this._abi));
-                    contract = Contract.contracts[hash];
-                    if (!contract) {
+            //     if (!contract) {
+            //         let hash = this.wallet.utils.sha3(JSON.stringify(this._abi));
+            //         contract = Contract.contracts[hash];
+            //         if (!contract) {
                         contract = this.wallet.newContract(this._abi);
-                        Contract.contracts[hash] = contract;
-                    }
-                }
+            //             Contract.contracts[hash] = contract;
+            //         }
+            //     }
             }
             return contract;            
         }
@@ -107,41 +107,47 @@ module Contract {
             }
             return result;
         }
-        // protected methods(...args): Promise<any>{
-        //     args.unshift(this._address);
-        //     args.unshift(this._abi);
-        //     return this.wallet.methods.apply(this.wallet, args);
-        // }
-        protected getAbiTopics(eventNames?: string[]){
-            return this.wallet.getAbiTopics(this._abi, eventNames);
-        }
         protected getAbiEvents(){
-            if (!this._events)
-                this._events = this.wallet.getAbiEvents(this._abi);
+            if (!this._events){
+                this._events = {};
+                let events = this._abi.filter(e => e.type=="event");
+                for (let i = 0 ; i < events.length ; i++) {
+                    let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
+                    this._events[topic] = events[i];
+                }
+            }
             return this._events;
+        }
+        protected getAbiTopics(eventNames?: string[]): any[]{
+			if (!eventNames || eventNames.length == 0)
+				eventNames = null;
+			let result = [];
+            let events = this.getAbiEvents();
+            for (let topic in events) {
+                if (!eventNames || eventNames.includes(events[topic].name)){
+                    result.push(topic);
+                }
+            }
+			if (result.length == 0 && eventNames && eventNames.length > 0)
+				return ['NULL']
+		    return [result];
+		}
+        registerEvents(handler: any) {
+            if (this._address)
+                this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
         }
         scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<Event[]>{
             let topics = this.getAbiTopics(eventNames);
         	let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         };
-        // async _deploy(...args): Promise<string>{
-        //     if (typeof(args[args.length-1]) == 'undefined')
-        //         args.pop();
-        //     args.unshift(this._bytecode);
-        //     args.unshift('deploy');
-        //     args.unshift(null);
-        //     args.unshift(this._abi);
-        //     this._address = await this.wallet.methods.apply(this.wallet, args);
-        //     return this._address;
-        // }
-        async call(methodName:string, params?:any[], options?:any): Promise<any>{
+        protected async call(methodName:string, params?:any[], options?:any): Promise<any>{
             let contract = await this.getContract();
             params = params || [];
             let method = <IContractMethod>contract.methods[methodName].apply(this, params);
             return method.call({from:this.address, ...options});
         }
-		async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
+		protected async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
             let contract = await this.getContract();
             params = params || [];
 
@@ -230,17 +236,30 @@ module Contract {
             let receipt = await this.wallet.sendTransaction(tx);
             return receipt;
         }
-        _deploy(...params:any[]): Promise<string>{
-            return this.__deploy(params);
-        }
-        async __deploy(params?:any[], options?:any): Promise<string>{
+        protected async __deploy(params?:any[], options?:any): Promise<string>{
             let receipt = await this._send('', params, options);
             this.address = receipt.contractAddress;
             return this.address;
         }
-        send(methodName:string, params?:any[], options?:any): Promise<TransactionReceipt>{
+        protected send(methodName:string, params?:any[], options?:any): Promise<TransactionReceipt>{
             let receipt = this._send(methodName, params, options);
             return receipt;
+        }
+
+        // backward compatability
+        protected _deploy(...params:any[]): Promise<string>{
+            return this.__deploy(params);
+        }
+        protected methods(methodName:string, ...params:any[]) {
+            let method = this._abi.find(e=>e.name==methodName);
+            if (method.stateMutability == "view" || method.stateMutability == "pure") {
+                return this.call(methodName, params);
+            } else if (method.stateMutability=='payable') {
+                let value = params.pop();
+                return this.call(methodName, params, {value:value});
+            } else {
+                return this.send(methodName, params);
+            }
         }
     }
 }
