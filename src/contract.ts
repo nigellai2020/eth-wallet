@@ -184,7 +184,7 @@ module Contract {
 
             let tx:any = {};
             tx.from = this.wallet.address;
-            tx.to = this.address;
+            tx.to = this._address;
             tx.data = method.encodeABI();
             if (options && options.value) {
                 tx.value = options.value;
