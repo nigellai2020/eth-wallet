@@ -1198,6 +1198,9 @@ var require_wallet = __commonJS({
           this._eventHandler = {};
           this._sendTxEventHandler = {};
           this._contracts = {};
+          this._abiHashDict = {};
+          this._abiAddressDict = {};
+          this._abiEventDict = {};
           this._provider = provider;
           this._web3 = new Web32(provider);
           if (Array.isArray(account)) {
@@ -1463,6 +1466,75 @@ var require_wallet = __commonJS({
           }
           if (address && handler) {
             this._eventHandler[address] = handler;
+          }
+        }
+        getAbiEvents(abi) {
+          let _web3 = this._web3;
+          let events = abi.filter((e) => e.type == "event");
+          let eventMap = {};
+          for (let i = 0; i < events.length; i++) {
+            let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+            eventMap[topic] = events[i];
+          }
+          return eventMap;
+        }
+        getAbiTopics(abi, eventNames) {
+          if (!eventNames || eventNames.length == 0)
+            eventNames = null;
+          let _web3 = this._web3;
+          let result = [];
+          let events = abi.filter((e) => e.type == "event");
+          for (let i = 0; i < events.length; i++) {
+            if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
+              let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+              result.push(topic);
+            }
+          }
+          if (result.length == 0 && eventNames && eventNames.length > 0)
+            return ["NULL"];
+          return [result];
+        }
+        getContractAbi(address) {
+          return this._abiAddressDict[address];
+        }
+        getContractAbiEvents(address) {
+          let events = this._abiEventDict[address];
+          if (events)
+            return events;
+          let abi = this._abiHashDict[this._abiAddressDict[address]];
+          if (abi) {
+            events = this.getAbiEvents(abi);
+            this._abiEventDict[address] = events;
+            return events;
+          }
+        }
+        registerAbi(abi, address, handler) {
+          let hash = "";
+          let eventMap;
+          if (typeof abi == "string") {
+            hash = this._web3.utils.sha3(abi);
+            abi = JSON.parse(abi);
+          } else {
+            hash = this._web3.utils.sha3(JSON.stringify(abi));
+          }
+          eventMap = this.getAbiEvents(abi);
+          for (let topic in eventMap) {
+            this._eventTopicAbi[topic] = eventMap[topic];
+          }
+          this._abiHashDict[hash] = abi;
+          if (address)
+            this.registerAbiContracts(hash, address, handler);
+          return hash;
+        }
+        registerAbiContracts(abiHash, address, handler) {
+          if (address) {
+            if (!Array.isArray(address))
+              address = [address];
+            for (let i = 0; i < address.length; i++) {
+              this._abiAddressDict[address[i]] = abiHash;
+              if (handler)
+                this._eventHandler[address[i]] = handler;
+            }
           }
         }
         decode(abi, event, raw) {

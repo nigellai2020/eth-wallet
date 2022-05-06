@@ -92,6 +92,12 @@ declare module Wallet {
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames?: string[]): any[];
+        getContractAbi(address: string): any;
+        getContractAbiEvents(address: string): any;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
     }
     interface IContractMethod {
         call: any;
@@ -294,6 +300,15 @@ declare module Wallet {
         registerEvent(eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): void;
+        private _abiHashDict;
+        private _abiAddressDict;
+        private _abiEventDict;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames?: string[]): any[];
+        getContractAbi(address: string): any;
+        getContractAbiEvents(address: string): any;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
             topics: string[];

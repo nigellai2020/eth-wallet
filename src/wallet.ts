@@ -98,6 +98,14 @@ module Wallet{
 		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
 		newContract(abi:any, address?:string): IContract;
 		decodeErrorMessage(msg: string): any;
+		// rollback
+		getAbiEvents(abi: any[]): any;
+		getAbiTopics(abi: any[], eventNames?: string[]): any[];
+		getContractAbi(address: string);
+		getContractAbiEvents(address: string);		
+		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
+		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
+		// end of rollback	
 	};
 	export interface IContractMethod {
 		call: any;
@@ -1008,6 +1016,81 @@ module Wallet{
 				this._eventHandler[address] = handler;
 			}
 		};
+        // rollback
+		private _abiHashDict: IDictionary = {};
+		private _abiAddressDict: IDictionary = {};
+		private _abiEventDict: IDictionary = {};
+        getAbiEvents(abi: any[]): any {
+        	let _web3 = this._web3;
+		    let events = abi.filter(e => e.type=="event");    
+		    let eventMap = {};
+		
+		    for (let i = 0 ; i < events.length ; i++) {
+		        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
+		        eventMap[topic] = events[i];
+		    }
+		    return eventMap;
+		};
+        getAbiTopics(abi: any[], eventNames?: string[]): any[]{
+			if (!eventNames || eventNames.length == 0)
+				eventNames = null;
+			let _web3 = this._web3;
+			let result = [];
+			let events = abi.filter(e => e.type=="event");			
+			for (let i = 0 ; i < events.length ; i++) {
+				if (!eventNames || eventNames.indexOf(events[i].name) >= 0){
+					let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
+					result.push(topic);
+				}
+		    }
+			if (result.length == 0 && eventNames && eventNames.length > 0)
+				return ['NULL']
+		    return [result];
+		};
+		getContractAbi(address: string){
+			return this._abiAddressDict[address];
+		};
+		getContractAbiEvents(address: string){
+			let events = this._abiEventDict[address];
+			if (events)
+				return events;			
+			let abi = this._abiHashDict[this._abiAddressDict[address]];
+			if (abi){
+				events = this.getAbiEvents(abi)
+				this._abiEventDict[address] = events;
+				return events;
+			}
+		};
+		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string{
+			let hash = '';
+			let eventMap;
+			if (typeof(abi) == 'string'){
+				hash = this._web3.utils.sha3(abi);
+				abi = JSON.parse(abi);
+			}else{
+				hash = this._web3.utils.sha3(JSON.stringify(abi));
+			}
+			eventMap = this.getAbiEvents(<any[]>abi);
+			for (let topic in eventMap){
+				this._eventTopicAbi[topic] = eventMap[topic];
+			}
+			this._abiHashDict[hash] = abi;
+			if (address)
+				this.registerAbiContracts(hash, address, handler);
+			return hash;
+		};
+		registerAbiContracts(abiHash: string, address: string|string[], handler?: any){			
+			if (address){
+				if (!Array.isArray(address))
+					address = [address];
+				for (let i = 0; i < address.length; i ++){
+					this._abiAddressDict[address[i]] = abiHash;
+					if (handler)
+						this._eventHandler[address[i]] = handler;
+				}
+			}
+		};
+		// end of rollback
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event{
 			if (!raw)
 				raw = event as Log;
@@ -1288,7 +1371,7 @@ module Wallet{
 		}
 		public get web3(): W3.default{
 			return this._web3;
-		}		
-    }
+		}
+	}
 };
 export = Wallet;
