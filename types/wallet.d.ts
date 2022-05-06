@@ -92,6 +92,7 @@ declare module Wallet {
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
+        methods(...args: any): Promise<any>;
         getAbiEvents(abi: any[]): any;
         getAbiTopics(abi: any[], eventNames?: string[]): any[];
         getContractAbi(address: string): any;
