@@ -1378,6 +1378,246 @@ var require_wallet = __commonJS({
         registerSendTxEvents(eventsOptions) {
           this._sendTxEventHandler = eventsOptions;
         }
+        async _methods(...args) {
+          let _web3 = this._web3;
+          let result;
+          let value;
+          let method;
+          let methodAbi;
+          let byteCode;
+          let abi = args.shift();
+          let address = args.shift();
+          let methodName = args.shift();
+          if (methodName == "deploy")
+            byteCode = args.shift();
+          let contract;
+          let hash;
+          if (this._contracts[address])
+            contract = this._contracts[address];
+          else {
+            hash = this._web3.utils.sha3(JSON.stringify(abi));
+            if (this._contracts[hash]) {
+              contract = this._contracts[hash];
+            }
+          }
+          if (!contract) {
+            contract = new this._web3.eth.Contract(abi);
+            this._contracts[address] = contract;
+            this._contracts[hash] = contract;
+          }
+          if (methodName == "deploy") {
+            method = contract[methodName]({
+              data: byteCode,
+              arguments: args
+            });
+          } else {
+            for (let i = 0; i < abi.length; i++) {
+              if (abi[i].name == methodName) {
+                methodAbi = abi[i];
+                break;
+              }
+            }
+            if (methodAbi.payable)
+              value = args.pop();
+            for (let i = 0; i < methodAbi.inputs.length; i++) {
+              if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
+                args[i] = args[i] || "";
+                if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
+                  let a = [];
+                  for (let k = 0; k < args[i].length; k++) {
+                    let s = args[i][k] || "";
+                    if (s.indexOf("0x") != 0)
+                      a.push(_web3.utils.fromAscii(s));
+                    else
+                      a.push(s);
+                  }
+                  args[i] = a;
+                } else if (args[i].indexOf("0x") != 0)
+                  args[i] = _web3.utils.fromAscii(args[i]);
+              } else if (methodAbi.inputs[i].type == "address") {
+                if (!args[i])
+                  args[i] = _web3.eth.abi.encodeParameter("address", 0);
+              }
+            }
+            method = contract.methods[methodName].apply(contract, args);
+          }
+          let tx = {
+            to: address,
+            data: method.encodeABI()
+          };
+          return tx;
+        }
+        async methods(...args) {
+          let _web3 = this._web3;
+          if (_web3.methods) {
+            return _web3.methods.apply(_web3, args);
+          } else {
+            let result;
+            let value;
+            let method;
+            let methodAbi;
+            let byteCode;
+            let abi = args.shift();
+            let address = args.shift();
+            let methodName = args.shift();
+            if (methodName == "deploy")
+              byteCode = args.shift();
+            let contract;
+            let hash;
+            if (address && this._contracts[address])
+              contract = this._contracts[address];
+            else {
+              hash = this._web3.utils.sha3(JSON.stringify(abi));
+              if (this._contracts[hash]) {
+                contract = this._contracts[hash];
+              }
+            }
+            ;
+            if (!contract) {
+              contract = new this._web3.eth.Contract(abi);
+              if (address)
+                this._contracts[address] = contract;
+              this._contracts[hash] = contract;
+            }
+            ;
+            if (methodName == "deploy") {
+              method = contract[methodName]({
+                data: byteCode,
+                arguments: args
+              });
+            } else {
+              for (let i = 0; i < abi.length; i++) {
+                if (abi[i].name == methodName) {
+                  methodAbi = abi[i];
+                  break;
+                }
+              }
+              if (methodAbi.payable)
+                value = args.pop();
+              for (let i = 0; i < methodAbi.inputs.length; i++) {
+                if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
+                  args[i] = args[i] || "";
+                  if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
+                    let a = [];
+                    for (let k = 0; k < args[i].length; k++) {
+                      let s = args[i][k] || "";
+                      if (s.indexOf("0x") != 0)
+                        a.push(_web3.utils.fromAscii(s));
+                      else
+                        a.push(s);
+                    }
+                    args[i] = a;
+                  } else if (args[i].indexOf("0x") != 0)
+                    args[i] = _web3.utils.fromAscii(args[i]);
+                } else if (methodAbi.inputs[i].type == "address") {
+                  if (!args[i])
+                    args[i] = _web3.eth.abi.encodeParameter("address", 0);
+                }
+              }
+              method = contract.methods[methodName].apply(contract, args);
+            }
+            ;
+            contract.options.address = address;
+            if (methodAbi && (methodAbi.constant || methodAbi.stateMutability == "view")) {
+              return method.call({ from: this.address });
+            }
+            if (!this._blockGasLimit) {
+              this._blockGasLimit = (await _web3.eth.getBlock("latest")).gasLimit;
+            }
+            let gas;
+            try {
+              gas = await method.estimateGas({ from: this.address, to: address, value });
+              gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
+            } catch (e) {
+              if (e.message == "Returned error: out of gas") {
+                console.log(e.message);
+                gas = Math.round(this._blockGasLimit * 0.5);
+              } else {
+                try {
+                  await method.call({ from: this.address, value });
+                } catch (e2) {
+                  if (e2.message.includes("VM execution error.")) {
+                    var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
+                    if (msg && msg.length) {
+                      msg = msg[0];
+                      if (msg.startsWith("0x08c379a")) {
+                        msg = _web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
+                        throw new Error(msg);
+                      }
+                    }
+                  }
+                }
+                throw e;
+              }
+            }
+            let gasPrice = await _web3.eth.getGasPrice();
+            if (this._account && this._account.privateKey) {
+              let tx = {
+                gas,
+                gasPrice,
+                data: method.encodeABI(),
+                from: this.address,
+                to: address,
+                value
+              };
+              let signedTx = await _web3.eth.accounts.signTransaction(tx, this._account.privateKey);
+              result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+              if (methodName == "deploy")
+                return result.contractAddress;
+              return result;
+            } else if (this._account && this._account.kms) {
+              let nonce = await _web3.eth.getTransactionCount(this.address);
+              let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
+              let tx = {
+                from: this.address,
+                nonce,
+                gasPrice: price,
+                gasLimit: gas,
+                gas,
+                to: address,
+                data: method.encodeABI()
+              };
+              let chainId = await this.getChainId();
+              let txHash = await this.kms.signTransaction(chainId, tx);
+              result = await _web3.eth.sendSignedTransaction(txHash);
+              if (methodName == "deploy")
+                return result.contractAddress;
+              return result;
+            } else {
+              contract.options.address = address;
+              let nonce = await _web3.eth.getTransactionCount(this.address);
+              let tx = {
+                from: this.address,
+                nonce,
+                gasPrice,
+                gas,
+                to: address,
+                value,
+                data: method.encodeABI()
+              };
+              let promiEvent = _web3.eth.sendTransaction(tx);
+              promiEvent.on("error", (error) => {
+                if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+                  return;
+                }
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(error);
+              });
+              promiEvent.on("transactionHash", (receipt) => {
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(null, receipt);
+              });
+              promiEvent.on("confirmation", (confNumber, receipt) => {
+                if (this._sendTxEventHandler.confirmation && confNumber == 1)
+                  this._sendTxEventHandler.confirmation(receipt);
+              });
+              result = await promiEvent;
+              if (methodName == "deploy")
+                return result.contractAddress;
+              return result;
+            }
+          }
+        }
         get balance() {
           let self = this;
           let _web3 = this._web3;

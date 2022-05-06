@@ -288,6 +288,11 @@ declare module Wallet {
         sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
+        _methods(...args: any[]): Promise<{
+            to: any;
+            data: any;
+        }>;
+        methods(...args: any): Promise<any>;
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
         recoverSigner(msg: string, signature: string): Promise<string>;
