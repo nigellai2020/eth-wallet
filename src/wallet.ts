@@ -374,6 +374,17 @@ module Wallet{
 				name: 'FTM',
 				symbol: 'FTM'
 			}
+		},
+		13370: {
+			chainId: 13370,
+			chainName: "AminoX Testnet",
+			rpcUrls: ['https://aminoxtestnet.node.alphacarbon.network'],
+			blockExplorerUrls: ['https://aminoxtestnet.blockscout.alphacarbon.network/'],
+			nativeCurrency: {
+				decimals: 18, 
+				name: 'TACT',
+				symbol: 'TACT'
+			}			
 		}
 	}
 	export enum WalletPlugin {
@@ -490,18 +501,18 @@ module Wallet{
 			let self = this;
 			if (this.installed){
 				this.provider.on('accountsChanged', (accounts) => {
-					let account;
+					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
-						account = accounts[0];
-						(<any>self.wallet.web3).selectedAddress = account;
+						accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
+						(<any>self.wallet.web3).selectedAddress = accountAddress;
 						self.wallet.account = {
-							address: account
+							address: accountAddress
 						};
 					}
 					this._isConnected = hasAccounts;
 					if (self.onAccountChanged)
-						self.onAccountChanged(account);
+						self.onAccountChanged(accountAddress);
 				});
 				this.provider.on('chainChanged', (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
@@ -523,18 +534,18 @@ module Wallet{
 			try {								
 				if (this.installed){
 					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
-						let account;
+						let accountAddress;
 						let hasAccounts = accounts && accounts.length > 0;
-						if (hasAccounts) {
-							account = accounts[0];
-							(<any>self.wallet.web3).selectedAddress = account;
+						if (hasAccounts) {		
+							accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
+							(<any>self.wallet.web3).selectedAddress = accountAddress;
 							self.wallet.account = {
-								address: account
+								address: accountAddress
 							};
 						}
 						this._isConnected = hasAccounts;
 						if (self.onAccountChanged)
-							self.onAccountChanged(account);
+							self.onAccountChanged(accountAddress);
 					});
 				}
 			} catch (error) {
