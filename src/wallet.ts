@@ -378,7 +378,7 @@ module Wallet{
 		13370: {
 			chainId: 13370,
 			chainName: "AminoX Testnet",
-			rpcUrls: ['https://https://aminoxtestnet.node.alphacarbon.network'],
+			rpcUrls: ['https://aminoxtestnet.node.alphacarbon.network'],
 			blockExplorerUrls: ['https://aminoxtestnet.blockscout.alphacarbon.network/'],
 			nativeCurrency: {
 				decimals: 18, 
