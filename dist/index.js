@@ -1895,15 +1895,29 @@ var require_wallet = __commonJS({
         }
         setBlockTime(time) {
           return new Promise((resolve, reject) => {
+            let method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
             this._web3.currentProvider.send({
               jsonrpc: "2.0",
-              method: time > 1e9 ? "evm_mine" : "evm_increaseTime",
+              method,
               params: [time],
               id: new Date().getTime()
             }, (err, result) => {
               if (err)
                 return reject(err);
-              resolve(result);
+              if (method == "evm_mine") {
+                return resolve(result);
+              } else {
+                this._web3.currentProvider.send({
+                  jsonrpc: "2.0",
+                  method: "evm_mine",
+                  params: [time],
+                  id: new Date().getTime()
+                }, (err2, result2) => {
+                  if (err2)
+                    return reject(err2);
+                  return resolve(result2);
+                });
+              }
             });
           });
         }

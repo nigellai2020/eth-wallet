@@ -1508,16 +1508,31 @@ module Wallet{
 		}
 		setBlockTime(time: number): Promise<any>{
 			return new Promise((resolve, reject) => {
+				let method = time > 1000000000 ? 'evm_mine' : 'evm_increaseTime'; 
 				(<any>this._web3.currentProvider).send({
 					jsonrpc: '2.0',
-					method: time > 1000000000 ? 'evm_mine' : 'evm_increaseTime', 
-					params: [time], //[(3600*24*60*60)], //[time],
+					method: method,
+					params: [time],
 					id: new Date().getTime()
 				}, 
 				(err, result) => {
 					if (err)
 						return reject(err); 
-					resolve(result);
+					if (method == 'evm_mine') {
+						return resolve(result);
+					} else {
+						(<any>this._web3.currentProvider).send({
+							jsonrpc: '2.0',
+							method:  'evm_mine',
+							params: [time],
+							id: new Date().getTime()
+						}, 
+						(err, result) => {
+							if (err)
+								return reject(err); 
+							return resolve(result);
+						});
+					}
 				})
 			});
 		}
