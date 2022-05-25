@@ -323,6 +323,7 @@ declare module Wallet {
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;
+        increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
