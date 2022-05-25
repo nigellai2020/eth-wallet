@@ -1521,6 +1521,25 @@ module Wallet{
 				})
 			});
 		}
+	    increaseBlockTime(value: number): Promise<any>{
+			return new Promise((resolve, reject) => {
+				(<any>this._web3.currentProvider).send({
+					jsonrpc: "2.0",
+					method: "evm_increaseTime",
+					params: [value],
+					id: new Date().getTime()
+				}, (err, result) => {
+					(<any>this._web3.currentProvider).send({
+						jsonrpc: '2.0',
+						method: 'evm_mine',
+						params: [],
+						id: new Date().getTime()
+					}, (err, result) => {
+						resolve(result);
+					});
+				});
+			});
+		}			
 		signMessage(msg: string): Promise<string> {
 			let _web3 = this._web3;
 			let address = this.address;

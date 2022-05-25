@@ -1907,6 +1907,25 @@ var require_wallet = __commonJS({
             });
           });
         }
+        increaseBlockTime(value) {
+          return new Promise((resolve, reject) => {
+            this._web3.currentProvider.send({
+              jsonrpc: "2.0",
+              method: "evm_increaseTime",
+              params: [value],
+              id: new Date().getTime()
+            }, (err, result) => {
+              this._web3.currentProvider.send({
+                jsonrpc: "2.0",
+                method: "evm_mine",
+                params: [],
+                id: new Date().getTime()
+              }, (err2, result2) => {
+                resolve(result2);
+              });
+            });
+          });
+        }
         signMessage(msg) {
           let _web3 = this._web3;
           let address = this.address;
