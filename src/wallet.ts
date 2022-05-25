@@ -1524,7 +1524,7 @@ module Wallet{
 						(<any>this._web3.currentProvider).send({
 							jsonrpc: '2.0',
 							method:  'evm_mine',
-							params: [time],
+							params: [],
 							id: new Date().getTime()
 						}, 
 						(err, result) => {

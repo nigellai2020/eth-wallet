@@ -1910,7 +1910,7 @@ var require_wallet = __commonJS({
                 this._web3.currentProvider.send({
                   jsonrpc: "2.0",
                   method: "evm_mine",
-                  params: [time],
+                  params: [],
                   id: new Date().getTime()
                 }, (err2, result2) => {
                   if (err2)
