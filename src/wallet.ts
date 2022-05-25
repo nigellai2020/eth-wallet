@@ -5,6 +5,8 @@ const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
+import Web3Modal, { IProviderOptions } from 'web3modal';
+import WalletConnectProvider from '@walletconnect/web3-provider';
 
 function Web3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
@@ -393,6 +395,7 @@ module Wallet{
 		TrustWallet = 'trustwallet',
 		BinanceChainWallet = 'binancechainwallet',
 		ONTOWallet = 'onto',
+		WalletConnect = 'walletconnect'
 	}
 	export type WalletPluginConfigType = {[key in WalletPlugin]: {
 		provider: () => any;
@@ -457,10 +460,21 @@ module Wallet{
 			homepage: () => {
 				return 'https://onto.app/en/download/?mode=app'
 			}
+		},
+		[WalletPlugin.WalletConnect]: {
+			provider: () => {
+				return window['onto']
+			},
+			installed: () => {
+				return true;
+			},
+			homepage: () => {
+				return 'https://onto.app/en/download/?mode=app'
+			}
 		}
 	}	
 	export class ClientSideProvider {
-		private wallet: Wallet;
+		protected wallet: Wallet;
 		private _isConnected: boolean = false;
 		public readonly walletPlugin: WalletPlugin;
 		public onAccountChanged: (account: string)=>void; 
@@ -471,25 +485,27 @@ module Wallet{
 		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 			this.wallet = wallet;
 			this.walletPlugin = walletPlugin;
-			this.wallet.web3.setProvider(this.provider);
-			this.wallet.web3.eth.getAccounts((err, accounts)=>{
-				if (accounts){
-					(<any>this.wallet.web3).selectedAddress = accounts[0];
-					this.wallet.account = {
-						address: accounts[0]
-					};
-				}					
-			});								
-			this.wallet.web3.eth.net.getId((err, chainId)=>{
-				this.wallet.chainId = chainId;
-			})
-			if (events) {
-				this.onAccountChanged = events.onAccountChanged;
-				this.onChainChanged = events.onChainChanged;
-				this.onConnect = events.onConnect;
-				this.onDisconnect = events.onDisconnect;
+			if (walletPlugin != WalletPlugin.WalletConnect) {
+				this.wallet.web3.setProvider(this.provider);
+				this.wallet.web3.eth.getAccounts((err, accounts)=>{
+					if (accounts){
+						(<any>this.wallet.web3).selectedAddress = accounts[0];
+						this.wallet.account = {
+							address: accounts[0]
+						};
+					}					
+				});								
+				this.wallet.web3.eth.net.getId((err, chainId)=>{
+					this.wallet.chainId = chainId;
+				})
+				if (events) {
+					this.onAccountChanged = events.onAccountChanged;
+					this.onChainChanged = events.onChainChanged;
+					this.onConnect = events.onConnect;
+					this.onDisconnect = events.onDisconnect;
+				}
+				this.initEvents();
 			}
-			this.initEvents();
 		}
 		get installed(): boolean {
 			return WalletPluginConfig[this.walletPlugin].installed();
@@ -710,10 +726,72 @@ module Wallet{
 			})
 		}
 	}
+	export class Web3ModalProvider extends ClientSideProvider {
+		private _provider;
+		private _events?: IClientSideProviderEvents;
+		private walletconnectBridge = "https://bridge.walletconnect.org";
+		private infuraId = "adc596bf88b648e2a8902bc9093930c5";
+		private readonly web3Modal: Web3Modal;
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+			super(wallet, walletPlugin, events);
+			this._events = events;
+			this.web3Modal = this.initializeWeb3Modal();			
+		}
+		get provider(): any {
+			return this._provider;
+		}
+		get installed(): boolean {
+			return true;
+		}		
+		private initializeWeb3Modal(): Web3Modal {
+			const providerOptions: IProviderOptions = {};
+			providerOptions.walletconnect = {
+				package: WalletConnectProvider,
+				options: {
+					infuraId: this.infuraId,
+					bridge: this.walletconnectBridge,
+					rpc: {
+						56: "https://bsc-dataseed.binance.org/",
+						97: "https://data-seed-prebsc-1-s1.binance.org:8545/"
+					}
+				}
+			};
+			return new Web3Modal({
+				cacheProvider: false,
+				providerOptions,
+			});
+		}
+		async connect() {
+			this._provider = await this.web3Modal.connectTo(WalletPlugin.WalletConnect);
+			this.wallet.web3.setProvider(this.provider);
+			this.wallet.web3.eth.getAccounts((err, accounts)=>{
+				if (accounts){
+					(<any>this.wallet.web3).selectedAddress = accounts[0];
+					this.wallet.account = {
+						address: accounts[0]
+					};
+				}					
+			});								
+			this.wallet.web3.eth.net.getId((err, chainId)=>{
+				this.wallet.chainId = chainId;
+			})
+			if (this._events) {
+				this.onAccountChanged = this._events.onAccountChanged;
+				this.onChainChanged = this._events.onChainChanged;
+				this.onConnect = this._events.onConnect;
+				this.onDisconnect = this._events.onDisconnect;
+			}
+			this.initEvents();
+			return this._provider;
+		}
+	}
 	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
 		if (Wallet.isInstalled(walletPlugin)) {
 			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
 				return new BinanceChainWalletProvider(wallet, walletPlugin, events);		
+			}
+			if (walletPlugin == WalletPlugin.WalletConnect) {
+				return new Web3ModalProvider(wallet, walletPlugin, events);		
 			}
 			else {
 				return new ClientSideProvider(wallet, walletPlugin, events);

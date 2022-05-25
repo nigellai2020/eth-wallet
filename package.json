@@ -14,7 +14,9 @@
         "ethereumjs-tx": "2.1.2",
         "ethereumjs-util": "7.0.7",
         "solc": "0.8.6",
-        "web3": "1.7.3"
+        "web3": "1.7.3",
+        "web3modal": "1.9.7",
+        "@walletconnect/web3-provider": "1.4.1"
     },
     "devDependencies": {
         "@types/mocha": "9.1.1",
@@ -27,7 +29,7 @@
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",        
+        "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
         "postinstall": "mkdir -p tools/solcjs"
     }
 }

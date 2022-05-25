@@ -36,6 +36,12 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
+define("web3modal", (require,exports)=>{
+    exports['Web3Modal'] = window["Web3Modal"];
+});
+define("@walletconnect/web3-provider", (require,exports)=>{
+    exports['WalletConnectProvider'] = window["WalletConnectProvider"];
+});
 define("@ijstech/eth-wallet",(require, exports)=>{
 ${content}
 });`
