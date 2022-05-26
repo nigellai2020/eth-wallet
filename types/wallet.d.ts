@@ -89,6 +89,7 @@ declare module Wallet {
         transactionCount(): Promise<number>;
         sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
         sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
+        getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
@@ -334,6 +335,7 @@ declare module Wallet {
         getGasPrice(): Promise<BigNumber>;
         transactionCount(): Promise<number>;
         sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+        getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         call(transaction: Transaction): Promise<any>;
         newContract(abi: any, address?: string): IContract;

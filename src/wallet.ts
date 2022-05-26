@@ -95,6 +95,7 @@ module Wallet{
 		transactionCount(): Promise<number>;
 		sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
 		sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
+		getTransaction(transactionHash: string): Promise<Transaction>;
 		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
 		newContract(abi:any, address?:string): IContract;
 		decodeErrorMessage(msg: string): any;
@@ -1660,6 +1661,18 @@ module Wallet{
 						this._sendTxEventHandler.confirmation(receipt);                
 				});
 				return await promiEvent;
+			}
+		}
+		async getTransaction(transactionHash: string): Promise<Transaction> {
+			let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
+			return {
+				from: web3Receipt.from,
+				to: web3Receipt.to,
+				nonce: web3Receipt.nonce,
+				gas: web3Receipt.gas,
+				gasPrice: web3Receipt.gasPrice,
+				data: web3Receipt.input,
+				value: web3Receipt.value 
 			}
 		}
 		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
