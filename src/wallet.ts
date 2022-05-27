@@ -517,17 +517,6 @@ module Wallet{
 		async connect() {
 			this.provider = WalletPluginConfig[this.walletPlugin].provider();
 			this.wallet.web3.setProvider(this.provider);
-			this.wallet.web3.eth.getAccounts((err, accounts) => {
-				if (accounts) {
-					(<any>this.wallet.web3).selectedAddress = accounts[0];
-					this.wallet.account = {
-						address: accounts[0]
-					};
-				}
-			});
-			this.wallet.web3.eth.net.getId((err, chainId) => {
-				this.wallet.chainId = chainId;
-			})
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
@@ -552,6 +541,9 @@ module Wallet{
 						if (self.onAccountChanged)
 							self.onAccountChanged(accountAddress);
 					});
+					await this.wallet.web3.eth.net.getId((err, chainId) => {
+						this.wallet.chainId = chainId;
+					})
 				}
 			} catch (error) {
 				console.error(error);
@@ -749,7 +741,7 @@ module Wallet{
 			this.initEvents();
 			let self = this;
 			try {
-				this.wallet.web3.eth.getAccounts((err, accounts) => {
+				await this.wallet.web3.eth.getAccounts((err, accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -763,7 +755,7 @@ module Wallet{
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				});
-				this.wallet.web3.eth.net.getId((err, chainId) => {
+				await this.wallet.web3.eth.net.getId((err, chainId) => {
 					this.wallet.chainId = chainId;
 				})
 			} catch (error) {

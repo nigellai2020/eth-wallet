@@ -999,17 +999,6 @@ var require_wallet = __commonJS({
         async connect() {
           this.provider = _Wallet.WalletPluginConfig[this.walletPlugin].provider();
           this.wallet.web3.setProvider(this.provider);
-          this.wallet.web3.eth.getAccounts((err, accounts) => {
-            if (accounts) {
-              this.wallet.web3.selectedAddress = accounts[0];
-              this.wallet.account = {
-                address: accounts[0]
-              };
-            }
-          });
-          this.wallet.web3.eth.net.getId((err, chainId) => {
-            this.wallet.chainId = chainId;
-          });
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
             this.onChainChanged = this._events.onChainChanged;
@@ -1033,6 +1022,9 @@ var require_wallet = __commonJS({
                 this._isConnected = hasAccounts;
                 if (self.onAccountChanged)
                   self.onAccountChanged(accountAddress);
+              });
+              await this.wallet.web3.eth.net.getId((err, chainId) => {
+                this.wallet.chainId = chainId;
               });
             }
           } catch (error) {
@@ -1229,7 +1221,7 @@ var require_wallet = __commonJS({
           this.initEvents();
           let self = this;
           try {
-            this.wallet.web3.eth.getAccounts((err, accounts) => {
+            await this.wallet.web3.eth.getAccounts((err, accounts) => {
               let accountAddress;
               let hasAccounts = accounts && accounts.length > 0;
               if (hasAccounts) {
@@ -1243,7 +1235,7 @@ var require_wallet = __commonJS({
               if (self.onAccountChanged)
                 self.onAccountChanged(accountAddress);
             });
-            this.wallet.web3.eth.net.getId((err, chainId) => {
+            await this.wallet.web3.eth.net.getId((err, chainId) => {
               this.wallet.chainId = chainId;
             });
           } catch (error) {
