@@ -3,29 +3,33 @@ const packageName = require('./package.json').name;
 
 const Fs = require('fs');
 
-async function readFile(fileName){
-    return new Promise((resolve, reject)=>{
-        Fs.readFile(fileName, 'utf8', function (err,data) {
-            if (err)
-                reject(err)
-            else
-                resolve(data)
-        })
+async function readFile(fileName) {
+  return new Promise((resolve, reject) => {
+    Fs.readFile(fileName, 'utf8', function (err, data) {
+      if (err)
+        reject(err)
+      else
+        resolve(data)
     })
+  })
 }
 
-async function build(){
-    let result = await require('esbuild').build({
-        entryPoints: ['src/index.ts'],
-        outdir: 'dist',
-        bundle: true,
-        minify: false,
-        format: 'cjs',
-        external: [...Object.keys(dependencies)],
-        plugins: [],
-      }).catch(() => process.exit(1));      
-    let content = await readFile('dist/index.js');
-    content = `define("aws-sdk", ()=>{});
+async function build() {
+  let result = await require('esbuild').build({
+    entryPoints: ['src/index.ts'],
+    outdir: 'dist',
+    bundle: true,
+    minify: false,
+    format: 'cjs',
+    external: [
+      ...Object.keys(dependencies),
+      'web3modal',
+      '@walletconnect/web3-provider'
+    ],
+    plugins: [],
+  }).catch(() => process.exit(1));
+  let content = await readFile('dist/index.js');
+  content = `define("aws-sdk", ()=>{});
 define("asn1.js", ()=>{});
 define("bn.js", ()=>{});
 define("ethereumjs-tx", ()=>{});
@@ -36,15 +40,12 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
-define("web3modal", (require,exports)=>{
-    exports['Web3Modal'] = window["Web3Modal"];
-});
-define("@walletconnect/web3-provider", (require,exports)=>{
-    exports['WalletConnectProvider'] = window["WalletConnectProvider"];
-});
+define("web3modal", ()=>window["Web3Modal"]);
+define("@walletconnect/web3-provider", ()=>window["WalletConnectProvider"]);
 define("@ijstech/eth-wallet",(require, exports)=>{
 ${content}
 });`
-    Fs.writeFileSync('dist/index.js', content);
+
+  Fs.writeFileSync('dist/index.js', content);
 };
 build();

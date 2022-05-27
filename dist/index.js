@@ -9,12 +9,8 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
-define("web3modal", (require,exports)=>{
-    exports['Web3Modal'] = window["Web3Modal"];
-});
-define("@walletconnect/web3-provider", (require,exports)=>{
-    exports['WalletConnectProvider'] = window["WalletConnectProvider"];
-});
+define("web3modal", ()=>window["Web3Modal"]);
+define("@walletconnect/web3-provider", ()=>window["WalletConnectProvider"]);
 define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -973,33 +969,10 @@ var require_wallet = __commonJS({
           this._isConnected = false;
           this.wallet = wallet;
           this.walletPlugin = walletPlugin;
-          if (walletPlugin != WalletPlugin2.WalletConnect) {
-            this.wallet.web3.setProvider(this.provider);
-            this.wallet.web3.eth.getAccounts((err, accounts) => {
-              if (accounts) {
-                this.wallet.web3.selectedAddress = accounts[0];
-                this.wallet.account = {
-                  address: accounts[0]
-                };
-              }
-            });
-            this.wallet.web3.eth.net.getId((err, chainId) => {
-              this.wallet.chainId = chainId;
-            });
-            if (events) {
-              this.onAccountChanged = events.onAccountChanged;
-              this.onChainChanged = events.onChainChanged;
-              this.onConnect = events.onConnect;
-              this.onDisconnect = events.onDisconnect;
-            }
-            this.initEvents();
-          }
+          this._events = events;
         }
         get installed() {
           return _Wallet.WalletPluginConfig[this.walletPlugin].installed();
-        }
-        get provider() {
-          return _Wallet.WalletPluginConfig[this.walletPlugin].provider();
         }
         initEvents() {
           let self = this;
@@ -1035,6 +1008,26 @@ var require_wallet = __commonJS({
           ;
         }
         async connect() {
+          this.provider = _Wallet.WalletPluginConfig[this.walletPlugin].provider();
+          this.wallet.web3.setProvider(this.provider);
+          this.wallet.web3.eth.getAccounts((err, accounts) => {
+            if (accounts) {
+              this.wallet.web3.selectedAddress = accounts[0];
+              this.wallet.account = {
+                address: accounts[0]
+              };
+            }
+          });
+          this.wallet.web3.eth.net.getId((err, chainId) => {
+            this.wallet.chainId = chainId;
+          });
+          if (this._events) {
+            this.onAccountChanged = this._events.onAccountChanged;
+            this.onChainChanged = this._events.onChainChanged;
+            this.onConnect = this._events.onConnect;
+            this.onDisconnect = this._events.onDisconnect;
+          }
+          this.initEvents();
           let self = this;
           try {
             if (this.installed) {
@@ -1056,6 +1049,7 @@ var require_wallet = __commonJS({
           } catch (error) {
             console.error(error);
           }
+          return this.provider;
         }
         async disconnect() {
           if (this.provider == null) {
@@ -1215,31 +1209,18 @@ var require_wallet = __commonJS({
       }
       _Wallet.BinanceChainWalletProvider = BinanceChainWalletProvider;
       class Web3ModalProvider extends ClientSideProvider {
-        constructor(wallet, walletPlugin, events) {
+        constructor(wallet, walletPlugin, events, options) {
           super(wallet, walletPlugin, events);
-          this.walletconnectBridge = "https://bridge.walletconnect.org";
-          this.infuraId = "adc596bf88b648e2a8902bc9093930c5";
-          this._events = events;
-          this.web3Modal = this.initializeWeb3Modal();
-        }
-        get provider() {
-          return this._provider;
+          this.web3Modal = this.initializeWeb3Modal(options);
         }
         get installed() {
           return true;
         }
-        initializeWeb3Modal() {
+        initializeWeb3Modal(options) {
           const providerOptions = {};
           providerOptions.walletconnect = {
             package: import_web3_provider.default,
-            options: {
-              infuraId: this.infuraId,
-              bridge: this.walletconnectBridge,
-              rpc: {
-                56: "https://bsc-dataseed.binance.org/",
-                97: "https://data-seed-prebsc-1-s1.binance.org:8545/"
-              }
-            }
+            options
           };
           return new import_web3modal.default({
             cacheProvider: false,
@@ -1247,19 +1228,9 @@ var require_wallet = __commonJS({
           });
         }
         async connect() {
-          this._provider = await this.web3Modal.connectTo(WalletPlugin2.WalletConnect);
+          await this.disconnect();
+          this.provider = await this.web3Modal.connectTo(WalletPlugin2.WalletConnect);
           this.wallet.web3.setProvider(this.provider);
-          this.wallet.web3.eth.getAccounts((err, accounts) => {
-            if (accounts) {
-              this.wallet.web3.selectedAddress = accounts[0];
-              this.wallet.account = {
-                address: accounts[0]
-              };
-            }
-          });
-          this.wallet.web3.eth.net.getId((err, chainId) => {
-            this.wallet.chainId = chainId;
-          });
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
             this.onChainChanged = this._events.onChainChanged;
@@ -1267,17 +1238,49 @@ var require_wallet = __commonJS({
             this.onDisconnect = this._events.onDisconnect;
           }
           this.initEvents();
-          return this._provider;
+          let self = this;
+          try {
+            this.wallet.web3.eth.getAccounts((err, accounts) => {
+              let accountAddress;
+              let hasAccounts = accounts && accounts.length > 0;
+              if (hasAccounts) {
+                accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
+                self.wallet.web3.selectedAddress = accountAddress;
+                this.wallet.account = {
+                  address: accountAddress
+                };
+              }
+              this._isConnected = hasAccounts;
+              if (self.onAccountChanged)
+                self.onAccountChanged(accountAddress);
+            });
+            this.wallet.web3.eth.net.getId((err, chainId) => {
+              this.wallet.chainId = chainId;
+            });
+          } catch (error) {
+            console.error(error);
+          }
+          return this.provider;
+        }
+        async disconnect() {
+          if (this.provider == null) {
+            return;
+          }
+          if (this.provider.disconnect) {
+            await this.provider.disconnect();
+          }
+          this.wallet.account = null;
+          this._isConnected = false;
         }
       }
       _Wallet.Web3ModalProvider = Web3ModalProvider;
-      function createClientSideProvider(wallet, walletPlugin, events) {
+      function createClientSideProvider(wallet, walletPlugin, events, providerOptions) {
         if (Wallet3.isInstalled(walletPlugin)) {
           if (walletPlugin == WalletPlugin2.BinanceChainWallet) {
             return new BinanceChainWalletProvider(wallet, walletPlugin, events);
           }
           if (walletPlugin == WalletPlugin2.WalletConnect) {
-            return new Web3ModalProvider(wallet, walletPlugin, events);
+            return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
           } else {
             return new ClientSideProvider(wallet, walletPlugin, events);
           }
@@ -1327,12 +1330,12 @@ var require_wallet = __commonJS({
             this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
           }
         }
-        async connect(walletPlugin, events) {
-          this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);
+        async connect(walletPlugin, events, providerOptions) {
+          this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
           if (this.clientSideProvider) {
+            await this.clientSideProvider.connect();
             if (!this.chainId)
               await this.getChainId();
-            await this.clientSideProvider.connect();
           } else {
             this.setDefaultProvider();
           }
