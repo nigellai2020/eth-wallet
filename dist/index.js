@@ -2120,6 +2120,18 @@ var require_wallet = __commonJS({
             return await promiEvent;
           }
         }
+        async getTransaction(transactionHash) {
+          let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
+          return {
+            from: web3Receipt.from,
+            to: web3Receipt.to,
+            nonce: web3Receipt.nonce,
+            gas: web3Receipt.gas,
+            gasPrice: web3Receipt.gasPrice,
+            data: web3Receipt.input,
+            value: web3Receipt.value
+          };
+        }
         getTransactionReceipt(transactionHash) {
           return this._web3.eth.getTransactionReceipt(transactionHash);
         }
