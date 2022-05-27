@@ -846,8 +846,9 @@ module Wallet{
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
 			if (this.clientSideProvider) {
-				await this.clientSideProvider.connect();
+				if (!this.provider) this.provider = window['ethereum'];	
 				if (!this.chainId) await this.getChainId();
+				await this.clientSideProvider.connect();
 			}
 			else {
 				this.setDefaultProvider();
