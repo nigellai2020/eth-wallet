@@ -951,17 +951,6 @@ var require_wallet = __commonJS({
           homepage: () => {
             return "https://onto.app/en/download/?mode=app";
           }
-        },
-        [WalletPlugin2.WalletConnect]: {
-          provider: () => {
-            return window["onto"];
-          },
-          installed: () => {
-            return true;
-          },
-          homepage: () => {
-            return "https://onto.app/en/download/?mode=app";
-          }
         }
       };
       class ClientSideProvider {
@@ -1311,7 +1300,9 @@ var require_wallet = __commonJS({
           return _Wallet2.instance;
         }
         static isInstalled(walletPlugin) {
-          return _Wallet.WalletPluginConfig[walletPlugin].installed();
+          if (walletPlugin == WalletPlugin2.WalletConnect)
+            return true;
+          return _Wallet.WalletPluginConfig[walletPlugin] ? _Wallet.WalletPluginConfig[walletPlugin].installed() : false;
         }
         get isConnected() {
           return this.clientSideProvider ? this.clientSideProvider.isConnected : false;

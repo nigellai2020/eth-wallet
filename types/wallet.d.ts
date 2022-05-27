@@ -221,7 +221,7 @@ declare module Wallet {
         WalletConnect = "walletconnect"
     }
     type WalletPluginConfigType = {
-        [key in WalletPlugin]: {
+        [key in WalletPlugin]?: {
             provider: () => any;
             installed: () => boolean;
             homepage?: () => string;

@@ -398,7 +398,7 @@ module Wallet{
 		ONTOWallet = 'onto',
 		WalletConnect = 'walletconnect'
 	}
-	export type WalletPluginConfigType = { [key in WalletPlugin]: {
+	export type WalletPluginConfigType = { [key in WalletPlugin]?: {
 		provider: () => any;
 		installed: () => boolean;
 		homepage?: () => string;
@@ -457,17 +457,6 @@ module Wallet{
 			},
 			installed: () => {
 				return !!window['onto'];
-			},
-			homepage: () => {
-				return 'https://onto.app/en/download/?mode=app'
-			}
-		},
-		[WalletPlugin.WalletConnect]: {
-			provider: () => {
-				return window['onto']
-			},
-			installed: () => {
-				return true;
 			},
 			homepage: () => {
 				return 'https://onto.app/en/download/?mode=app'
@@ -843,7 +832,8 @@ module Wallet{
 		  return Wallet.instance;
 		}
 		static isInstalled(walletPlugin: WalletPlugin) {
-			return WalletPluginConfig[walletPlugin].installed();
+			if (walletPlugin == WalletPlugin.WalletConnect) return true;
+			return WalletPluginConfig[walletPlugin] ? WalletPluginConfig[walletPlugin].installed() : false;
 		}
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
