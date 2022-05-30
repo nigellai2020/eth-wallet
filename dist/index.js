@@ -697,14 +697,26 @@ var require_wallet = __commonJS({
     var import_bignumber4 = __toModule(require("bignumber.js"));
     init_erc20();
     var import_kms = __toModule(require_kms());
-    var import_web3modal = __toModule(require("web3modal"));
-    var import_web3_provider = __toModule(require("@walletconnect/web3-provider"));
     var Web32 = Web3Lib2();
+    var Web3Modal = Web3ModalLib();
+    var WalletConnectProvider = WalletConnectProviderLib();
     function Web3Lib2() {
       if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
       else
         return require("web3");
+    }
+    function Web3ModalLib() {
+      if (typeof window !== "undefined" && window["Web3Modal"])
+        return window["Web3Modal"];
+      else
+        return null;
+    }
+    function WalletConnectProviderLib() {
+      if (typeof window !== "undefined" && window["WalletConnectProvider"])
+        return window["WalletConnectProvider"];
+      else
+        return null;
     }
     var Wallet2;
     (function(_Wallet) {
@@ -1200,10 +1212,10 @@ var require_wallet = __commonJS({
         initializeWeb3Modal(options) {
           const providerOptions = {};
           providerOptions.walletconnect = {
-            package: import_web3_provider.default,
+            package: WalletConnectProvider.default,
             options
           };
-          return new import_web3modal.default({
+          return new Web3Modal.default({
             cacheProvider: false,
             providerOptions
           });

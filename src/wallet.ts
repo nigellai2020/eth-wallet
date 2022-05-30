@@ -5,8 +5,8 @@ const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
-import Web3Modal, { IProviderOptions } from 'web3modal';
-import WalletConnectProvider from '@walletconnect/web3-provider';
+const Web3Modal = Web3ModalLib();
+const WalletConnectProvider = WalletConnectProviderLib();
 
 function Web3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
@@ -14,6 +14,19 @@ function Web3Lib(){
 	else
         return require("web3");
 };
+function Web3ModalLib(){
+	if (typeof window !== "undefined" && window["Web3Modal"])
+		return window["Web3Modal"];
+	else
+		return null;
+}
+function WalletConnectProviderLib(){
+	if (typeof window !== "undefined" && window["WalletConnectProvider"])
+		return window["WalletConnectProvider"];
+	else
+		return null;
+}
+
 module Wallet{    
 	export interface IWalletUtils{
 		fromWei(value: any, unit?: string): string;
@@ -709,7 +722,7 @@ module Wallet{
 		}
 	}
 	export class Web3ModalProvider extends ClientSideProvider {
-		private readonly web3Modal: Web3Modal;
+		private readonly web3Modal: any;
 		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any) {
 			super(wallet, walletPlugin, events);
 			this.web3Modal = this.initializeWeb3Modal(options);
@@ -717,13 +730,13 @@ module Wallet{
 		get installed(): boolean {
 			return true;
 		}
-		private initializeWeb3Modal(options?: any): Web3Modal {
-			const providerOptions: IProviderOptions = {};
+		private initializeWeb3Modal(options?: any): any {
+			const providerOptions: any = {};
 			providerOptions.walletconnect = {
-				package: WalletConnectProvider,
+				package: WalletConnectProvider.default,
 				options
 			};
-			return new Web3Modal({
+			return new Web3Modal.default({
 				cacheProvider: false,
 				providerOptions,
 			});
