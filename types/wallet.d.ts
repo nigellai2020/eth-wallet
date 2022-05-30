@@ -217,10 +217,11 @@ declare module Wallet {
         Coin98 = "coin98",
         TrustWallet = "trustwallet",
         BinanceChainWallet = "binancechainwallet",
-        ONTOWallet = "onto"
+        ONTOWallet = "onto",
+        WalletConnect = "walletconnect"
     }
     type WalletPluginConfigType = {
-        [key in WalletPlugin]: {
+        [key in WalletPlugin]?: {
             provider: () => any;
             installed: () => boolean;
             homepage?: () => string;
@@ -228,8 +229,10 @@ declare module Wallet {
     };
     const WalletPluginConfig: WalletPluginConfigType;
     class ClientSideProvider {
-        private wallet;
-        private _isConnected;
+        protected wallet: Wallet;
+        protected provider: any;
+        protected _events?: IClientSideProviderEvents;
+        protected _isConnected: boolean;
         readonly walletPlugin: WalletPlugin;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
@@ -237,9 +240,8 @@ declare module Wallet {
         onDisconnect: (error: any) => void;
         constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents);
         get installed(): boolean;
-        get provider(): any;
         initEvents(): void;
-        connect(): Promise<void>;
+        connect(): Promise<any>;
         disconnect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -249,7 +251,15 @@ declare module Wallet {
     class BinanceChainWalletProvider extends ClientSideProvider {
         switchNetwork(chainId: number): Promise<boolean>;
     }
-    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents): ClientSideProvider;
+    class Web3ModalProvider extends ClientSideProvider {
+        private readonly web3Modal;
+        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any);
+        get installed(): boolean;
+        private initializeWeb3Modal;
+        connect(): Promise<any>;
+        disconnect(): Promise<void>;
+    }
+    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): ClientSideProvider;
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -274,7 +284,7 @@ declare module Wallet {
         get isConnected(): boolean;
         switchNetwork(chainId: number): Promise<any>;
         setDefaultProvider(): void;
-        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents): Promise<ClientSideProvider>;
+        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): Promise<ClientSideProvider>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;

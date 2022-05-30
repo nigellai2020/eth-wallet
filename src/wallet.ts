@@ -5,6 +5,8 @@ const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
+import Web3Modal, { IProviderOptions } from 'web3modal';
+import WalletConnectProvider from '@walletconnect/web3-provider';
 
 function Web3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
@@ -221,14 +223,14 @@ module Wallet{
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
 	}
-	export const Networks: {[chainId: number]: INetwork} = {
+	export const Networks: { [chainId: number]: INetwork } = {
 		1: {
 			chainId: 1,
 			chainName: "Ethereum Mainnet",
 			rpcUrls: ['https://mainnet.infura.io/v3/'],
 			blockExplorerUrls: ['https://etherscan.io/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'ETH',
 				symbol: 'ETH'
 			}
@@ -239,7 +241,7 @@ module Wallet{
 			rpcUrls: ['https://ropsten.infura.io/v3/'],
 			blockExplorerUrls: ['https://ropsten.etherscan.io'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'ETH',
 				symbol: 'ETH'
 			}
@@ -250,7 +252,7 @@ module Wallet{
 			rpcUrls: ['https://rinkeby.infura.io/v3/'],
 			blockExplorerUrls: ['https://rinkeby.etherscan.io'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'ETH',
 				symbol: 'ETH'
 			}
@@ -261,7 +263,7 @@ module Wallet{
 			rpcUrls: ['https://kovan.infura.io/v3/'],
 			blockExplorerUrls: ['https://kovan.etherscan.io/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'ETH',
 				symbol: 'ETH'
 			}
@@ -272,7 +274,7 @@ module Wallet{
 			rpcUrls: ['https://bsc-dataseed.binance.org'],
 			blockExplorerUrls: ['https://bscscan.com'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'BNB',
 				symbol: 'BNB'
 			}
@@ -283,7 +285,7 @@ module Wallet{
 			rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
 			blockExplorerUrls: ['https://testnet.bscscan.com'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'BNB',
 				symbol: 'BNB'
 			}
@@ -294,10 +296,10 @@ module Wallet{
 			rpcUrls: ['https://polygon-rpc.com'],
 			blockExplorerUrls: ['https://polygonscan.com/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'MATIC',
 				symbol: 'MATIC'
-			}			
+			}
 		},
 		1287: {
 			chainId: 1287,
@@ -305,7 +307,7 @@ module Wallet{
 			rpcUrls: ['https://rpc.testnet.moonbeam.network'],
 			blockExplorerUrls: ['https://moonbase-blockscout.testnet.moonbeam.network'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'MOON',
 				symbol: 'MOON'
 			}
@@ -316,10 +318,10 @@ module Wallet{
 			rpcUrls: ['https://leucine0.node.alphacarbon.network'],
 			blockExplorerUrls: ['https://leucine0.blockscout.alphacarbon.network'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'TACT',
 				symbol: 'TACT'
-			}			
+			}
 		},
 		80001: {
 			chainId: 80001,
@@ -327,10 +329,10 @@ module Wallet{
 			rpcUrls: ['https://matic-mumbai.chainstacklabs.com'],
 			blockExplorerUrls: ['https://mumbai.polygonscan.com/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'MATIC',
 				symbol: 'MATIC'
-			}				
+			}
 		},
 		43113: {
 			chainId: 43113,
@@ -338,40 +340,40 @@ module Wallet{
 			rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
 			blockExplorerUrls: ['https://testnet.snowtrace.io/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'AVAX',
 				symbol: 'AVAX'
-			}				
+			}
 		},
-		43114: {		
+		43114: {
 			chainId: 43114,
 			chainName: "Avalanche Mainnet C-Chain",
 			rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
 			blockExplorerUrls: ['https://snowtrace.io/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'AVAX',
 				symbol: 'AVAX'
 			}
 		},
-		4002: {			
+		4002: {
 			chainId: 4002,
 			chainName: "Fantom Testnet",
 			rpcUrls: ['https://rpc.testnet.fantom.network/'],
 			blockExplorerUrls: ['https://testnet.ftmscan.com/', 'https://explorer.testnet.fantom.network/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'FTM',
 				symbol: 'FTM'
 			}
 		},
-		250: {		
+		250: {
 			chainId: 250,
 			chainName: "Fantom Opera",
 			rpcUrls: ['https://rpc.ftm.tools/'],
 			blockExplorerUrls: ['https://ftmscan.com/', 'https://explorer.fantom.network/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'FTM',
 				symbol: 'FTM'
 			}
@@ -382,10 +384,10 @@ module Wallet{
 			rpcUrls: ['https://aminoxtestnet.node.alphacarbon.network'],
 			blockExplorerUrls: ['https://aminoxtestnet.blockscout.alphacarbon.network/'],
 			nativeCurrency: {
-				decimals: 18, 
+				decimals: 18,
 				name: 'TACT',
 				symbol: 'TACT'
-			}			
+			}
 		}
 	}
 	export enum WalletPlugin {
@@ -394,12 +396,13 @@ module Wallet{
 		TrustWallet = 'trustwallet',
 		BinanceChainWallet = 'binancechainwallet',
 		ONTOWallet = 'onto',
+		WalletConnect = 'walletconnect'
 	}
-	export type WalletPluginConfigType = {[key in WalletPlugin]: {
+	export type WalletPluginConfigType = { [key in WalletPlugin]?: {
 		provider: () => any;
 		installed: () => boolean;
 		homepage?: () => string;
-	}};
+	} };
 	export const WalletPluginConfig: WalletPluginConfigType = {
 		[WalletPlugin.MetaMask]: {
 			provider: () => {
@@ -411,7 +414,7 @@ module Wallet{
 			},
 			homepage: () => {
 				return 'https://metamask.io/download.html'
-			}	
+			}
 		},
 		[WalletPlugin.Coin98]: {
 			provider: () => {
@@ -430,7 +433,7 @@ module Wallet{
 				return window['ethereum']
 			},
 			installed: () => {
-				let ethereum = window['ethereum'];		
+				let ethereum = window['ethereum'];
 				return !!ethereum && !!ethereum.isTrust;
 			},
 			homepage: () => {
@@ -459,48 +462,29 @@ module Wallet{
 				return 'https://onto.app/en/download/?mode=app'
 			}
 		}
-	}	
+	}
 	export class ClientSideProvider {
-		private wallet: Wallet;
-		private _isConnected: boolean = false;
+		protected wallet: Wallet;
+		protected provider: any;
+		protected _events?: IClientSideProviderEvents;
+		protected _isConnected: boolean = false;
 		public readonly walletPlugin: WalletPlugin;
-		public onAccountChanged: (account: string)=>void; 
-		public onChainChanged: (chainId: string)=>void;
-		public onConnect: (connectInfo: any)=>void;
-		public onDisconnect: (error: any)=>void;
+		public onAccountChanged: (account: string) => void;
+		public onChainChanged: (chainId: string) => void;
+		public onConnect: (connectInfo: any) => void;
+		public onDisconnect: (error: any) => void;
 
-		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents) {
 			this.wallet = wallet;
 			this.walletPlugin = walletPlugin;
-			this.wallet.web3.setProvider(this.provider);
-			this.wallet.web3.eth.getAccounts((err, accounts)=>{
-				if (accounts){
-					(<any>this.wallet.web3).selectedAddress = accounts[0];
-					this.wallet.account = {
-						address: accounts[0]
-					};
-				}					
-			});								
-			this.wallet.web3.eth.net.getId((err, chainId)=>{
-				this.wallet.chainId = chainId;
-			})
-			if (events) {
-				this.onAccountChanged = events.onAccountChanged;
-				this.onChainChanged = events.onChainChanged;
-				this.onConnect = events.onConnect;
-				this.onDisconnect = events.onDisconnect;
-			}
-			this.initEvents();
+			this._events = events;
 		}
 		get installed(): boolean {
 			return WalletPluginConfig[this.walletPlugin].installed();
 		}
-		get provider(): any {
-			return WalletPluginConfig[this.walletPlugin].provider();
-		}
-		initEvents(){
+		initEvents() {
 			let self = this;
-			if (this.installed){
+			if (this.installed) {
 				this.provider.on('accountsChanged', (accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
@@ -527,17 +511,26 @@ module Wallet{
 				this.provider.on('disconnect', (error) => {
 					if (self.onDisconnect)
 						self.onDisconnect(error);
-				});	
+				});
 			};
 		}
-		async connect(){
+		async connect() {
+			this.provider = WalletPluginConfig[this.walletPlugin].provider();
+			this.wallet.web3.setProvider(this.provider);
+			if (this._events) {
+				this.onAccountChanged = this._events.onAccountChanged;
+				this.onChainChanged = this._events.onChainChanged;
+				this.onConnect = this._events.onConnect;
+				this.onDisconnect = this._events.onDisconnect;
+			}
+			this.initEvents();
 			let self = this;
-			try {								
-				if (this.installed){
+			try {
+				if (this.installed) {
 					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
 						let accountAddress;
 						let hasAccounts = accounts && accounts.length > 0;
-						if (hasAccounts) {		
+						if (hasAccounts) {
 							accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
 							(<any>self.wallet.web3).selectedAddress = accountAddress;
 							self.wallet.account = {
@@ -548,12 +541,16 @@ module Wallet{
 						if (self.onAccountChanged)
 							self.onAccountChanged(accountAddress);
 					});
+					await this.wallet.web3.eth.net.getId((err, chainId) => {
+						this.wallet.chainId = chainId;
+					})
 				}
 			} catch (error) {
 				console.error(error);
 			}
+			return this.provider;
 		}
-		async disconnect(){
+		async disconnect() {
 			if (this.provider == null) {
 				return;
 			}
@@ -563,30 +560,30 @@ module Wallet{
 			this.wallet.account = null;
 			this._isConnected = false;
 		}
-		get isConnected(){
+		get isConnected() {
 			return this._isConnected;
 		}
-		addToken(option: ITokenOption, type?: string): Promise<boolean>{
-			return new Promise(async function(resolve, reject){
-				try{
+		addToken(option: ITokenOption, type?: string): Promise<boolean> {
+			return new Promise(async function (resolve, reject) {
+				try {
 					let result = await this.provider.request({
-					    method: 'wallet_watchAsset',
-					    params: {
-					      type: type || 'ERC20', 
-					      options: option,
-					    },
-					  });
+						method: 'wallet_watchAsset',
+						params: {
+							type: type || 'ERC20',
+							options: option,
+						},
+					});
 					resolve(result);
 				}
-				catch(err){
+				catch (err) {
 					reject(err)
 				}
 			})
 		}
-		switchNetwork(chainId: number): Promise<boolean>{
+		switchNetwork(chainId: number): Promise<boolean> {
 			let self = this;
-			return new Promise(async function(resolve, reject){
-				try{
+			return new Promise(async function (resolve, reject) {
+				try {
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
 						let result = await self.provider.request({
@@ -601,7 +598,7 @@ module Wallet{
 							try {
 								let network = Networks[chainId];
 								if (!network) resolve(false);
-								let {chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls} = network;
+								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
 									rpcUrls = [rpcUrls];
 								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
@@ -624,47 +621,47 @@ module Wallet{
 								reject(error);
 							}
 						} else
-						reject(error);
+							reject(error);
 					}
-				}	
-				catch(err){
+				}
+				catch (err) {
 					reject(err)
 				}
 			})
 		}
-		addNetwork(options: INetwork): Promise<boolean>{
-			return new Promise(async function(resolve, reject){
-				try{
+		addNetwork(options: INetwork): Promise<boolean> {
+			return new Promise(async function (resolve, reject) {
+				try {
 					options = JSON.parse(JSON.stringify(options));
 					let chainIdHex = '0x' + options.chainId.toString(16)
-					try{
+					try {
 						await this.provider.request({
-						    method: 'wallet_switchEthereumChain',
-						    params: [{ chainId: chainIdHex}],
+							method: 'wallet_switchEthereumChain',
+							params: [{ chainId: chainIdHex }],
 						});
 						resolve(true);
 					}
-					catch(err){
+					catch (err) {
 						let result = await this.provider.request({
-						    method: 'wallet_addEthereumChain',
-						    params: [
-						    	options
-						    ],
-						  });
-						resolve(!result);	
+							method: 'wallet_addEthereumChain',
+							params: [
+								options
+							],
+						});
+						resolve(!result);
 					}
 				}
-				catch(err){
+				catch (err) {
 					reject(err)
 				}
 			})
 		}
 	}
 	export class BinanceChainWalletProvider extends ClientSideProvider {
-		switchNetwork(chainId: number): Promise<boolean>{
+		switchNetwork(chainId: number): Promise<boolean> {
 			let self = this;
-			return new Promise(async function(resolve, reject){
-				try{
+			return new Promise(async function (resolve, reject) {
+				try {
 					let chainIdHex = '0x' + chainId.toString(16);
 					try {
 						let result = await self.provider.request({
@@ -679,7 +676,7 @@ module Wallet{
 							try {
 								let network = Networks[chainId];
 								if (!network) resolve(false);
-								let {chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls} = network;
+								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
 									rpcUrls = [rpcUrls];
 								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
@@ -702,24 +699,93 @@ module Wallet{
 								reject(error);
 							}
 						} else
-						reject(error);
+							reject(error);
 					}
-				}	
-				catch(err){
+				}
+				catch (err) {
 					reject(err)
 				}
 			})
 		}
 	}
-	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
+	export class Web3ModalProvider extends ClientSideProvider {
+		private readonly web3Modal: Web3Modal;
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any) {
+			super(wallet, walletPlugin, events);
+			this.web3Modal = this.initializeWeb3Modal(options);
+		}
+		get installed(): boolean {
+			return true;
+		}
+		private initializeWeb3Modal(options?: any): Web3Modal {
+			const providerOptions: IProviderOptions = {};
+			providerOptions.walletconnect = {
+				package: WalletConnectProvider,
+				options
+			};
+			return new Web3Modal({
+				cacheProvider: false,
+				providerOptions,
+			});
+		}
+		async connect() {
+			await this.disconnect();
+			this.provider = await this.web3Modal.connectTo(WalletPlugin.WalletConnect);
+			this.wallet.web3.setProvider(this.provider);
+			if (this._events) {
+				this.onAccountChanged = this._events.onAccountChanged;
+				this.onChainChanged = this._events.onChainChanged;
+				this.onConnect = this._events.onConnect;
+				this.onDisconnect = this._events.onDisconnect;
+			}
+			this.initEvents();
+			let self = this;
+			try {
+				await this.wallet.web3.eth.getAccounts((err, accounts) => {
+					let accountAddress;
+					let hasAccounts = accounts && accounts.length > 0;
+					if (hasAccounts) {
+						accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
+						(<any>self.wallet.web3).selectedAddress = accountAddress;
+						this.wallet.account = {
+							address: accountAddress
+						};
+					}
+					this._isConnected = hasAccounts;
+					if (self.onAccountChanged)
+						self.onAccountChanged(accountAddress);
+				});
+				await this.wallet.web3.eth.net.getId((err, chainId) => {
+					this.wallet.chainId = chainId;
+				})
+			} catch (error) {
+				console.error(error);
+			}
+			return this.provider;
+		}
+		async disconnect() {
+			if (this.provider == null) {
+				return;
+			}
+			if (this.provider.disconnect) {
+				await this.provider.disconnect()
+			}
+			this.wallet.account = null;
+			this._isConnected = false;
+		}
+	}
+	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
 		if (Wallet.isInstalled(walletPlugin)) {
 			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
-				return new BinanceChainWalletProvider(wallet, walletPlugin, events);		
+				return new BinanceChainWalletProvider(wallet, walletPlugin, events);
+			}
+			if (walletPlugin == WalletPlugin.WalletConnect) {
+				return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
 			}
 			else {
 				return new ClientSideProvider(wallet, walletPlugin, events);
-			}			
-		}	
+			}
+		}
 		return null;
 	}
 	export interface ISendTxEventsOptions {
@@ -758,7 +824,8 @@ module Wallet{
 		  return Wallet.instance;
 		}
 		static isInstalled(walletPlugin: WalletPlugin) {
-			return WalletPluginConfig[walletPlugin].installed();
+			if (walletPlugin == WalletPlugin.WalletConnect) return true;
+			return WalletPluginConfig[walletPlugin] ? WalletPluginConfig[walletPlugin].installed() : false;
 		}
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
@@ -776,9 +843,10 @@ module Wallet{
 				this.provider = Networks[this.chainId].rpcUrls[0];
 			}
 		}
-		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents){
-			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events);	
+		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
+			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
 			if (this.clientSideProvider) {
+				if (!this.provider) this.provider = window['ethereum'];	
 				if (!this.chainId) await this.getChainId();
 				await this.clientSideProvider.connect();
 			}
