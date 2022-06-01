@@ -2,6 +2,7 @@ const dependencies = require('./package.json').dependencies || {};
 const packageName = require('./package.json').name;
 
 const Fs = require('fs');
+const { promises: fs } = require("fs")
 
 async function readFile(fileName) {
   return new Promise((resolve, reject) => {
@@ -13,6 +14,17 @@ async function readFile(fileName) {
     })
   })
 }
+
+async function buildWeb3Modal() {
+  let web3modal = await readFile('./node_modules/web3modal/dist/index.js');
+  let walletconnect = await readFile('./node_modules/@walletconnect/web3-provider/dist/umd/index.min.js');
+  await fs.mkdir('./dist/lib/web3modal', { recursive: true });
+  let content = `
+${web3modal}
+${walletconnect}
+`;
+  Fs.writeFileSync('./dist/lib/web3modal/index.js', content);
+};
 
 async function build() {
   let result = await require('esbuild').build({
@@ -47,5 +59,6 @@ ${content}
 });`
 
   Fs.writeFileSync('dist/index.js', content);
+  await buildWeb3Modal();
 };
 build();
