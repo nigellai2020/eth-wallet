@@ -1450,13 +1450,17 @@ module Wallet{
 			if (!raw)
 				raw = event as Log;
 			let d;
-			if (abi) {
-				d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
-				if (d.__length__){
-					for (let k = 0; k < d.__length__; k ++)
-						delete d[k];
-					delete d['__length__'];
+			try {
+				if (abi) {
+					d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
+					if (d.__length__){
+						for (let k = 0; k < d.__length__; k ++)
+							delete d[k];
+						delete d['__length__'];
+					}
 				}
+			}
+			catch (err) {
 			}
 			let log = {
 				address: event.address,

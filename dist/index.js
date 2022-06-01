@@ -1874,13 +1874,16 @@ var require_wallet = __commonJS({
           if (!raw)
             raw = event;
           let d;
-          if (abi) {
-            d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
-            if (d.__length__) {
-              for (let k = 0; k < d.__length__; k++)
-                delete d[k];
-              delete d["__length__"];
+          try {
+            if (abi) {
+              d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
+              if (d.__length__) {
+                for (let k = 0; k < d.__length__; k++)
+                  delete d[k];
+                delete d["__length__"];
+              }
             }
+          } catch (err) {
           }
           let log = {
             address: event.address,
