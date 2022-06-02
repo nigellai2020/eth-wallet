@@ -332,7 +332,7 @@ var require_contract = __commonJS({
           let contract = await this.getContract();
           params = params || [];
           let method = contract.methods[methodName].apply(this, params);
-          return method.call(__spreadValues({ from: this.address }, options));
+          return method.call(__spreadValues({ from: this.wallet.address }, options));
         }
         async txObj(methodName, params, options) {
           let contract = await this.getContract();
