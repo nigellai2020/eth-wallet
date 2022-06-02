@@ -145,7 +145,7 @@ module Contract {
             let contract = await this.getContract();
             params = params || [];
             let method = <IContractMethod>contract.methods[methodName].apply(this, params);
-            return method.call({from:this.address, ...options});
+            return method.call({from:this.wallet.address, ...options});
         }
 		protected async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
             let contract = await this.getContract();
