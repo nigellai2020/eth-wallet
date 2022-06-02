@@ -385,7 +385,7 @@ var require_contract = __commonJS({
                 tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
               } else {
                 try {
-                  await method.call(__spreadValues({ from: this.address }, options));
+                  await method.call(__spreadValues({ from: this.wallet.address }, options));
                 } catch (e2) {
                   if (e2.message.includes("VM execution error.")) {
                     var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
