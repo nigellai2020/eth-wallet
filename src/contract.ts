@@ -204,7 +204,7 @@ module Contract {
                         tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
                     } else {
                         try{
-                            await method.call({from:this.address, ...options});
+                            await method.call({from:this.wallet.address, ...options});
                         } catch(e) {
                             if (e.message.includes("VM execution error.")) {
                                 var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
