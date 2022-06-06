@@ -18,12 +18,14 @@ async function readFile(fileName) {
 async function buildWeb3Modal() {
   let web3modal = await readFile('./node_modules/web3modal/dist/index.js');
   let walletconnect = await readFile('./node_modules/@walletconnect/web3-provider/dist/umd/index.min.js');
-  await fs.mkdir('./dist/lib/web3modal', { recursive: true });
+  await fs.mkdir('./dist/web3modal', { recursive: true });
   let content = `
 ${web3modal}
 ${walletconnect}
+window['Web3Modal'] = require("Web3Modal");
+window["WalletConnectProvider"] = require("WalletConnectProvider");
 `;
-  Fs.writeFileSync('./dist/lib/web3modal/index.js', content);
+  Fs.writeFileSync('./dist/web3modal/index.js', content);
 };
 
 async function build() {
@@ -52,8 +54,6 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
-define("web3modal", ()=>window["Web3Modal"]);
-define("@walletconnect/web3-provider", ()=>window["WalletConnectProvider"]);
 define("@ijstech/eth-wallet",(require, exports)=>{
 ${content}
 });`
