@@ -5,8 +5,8 @@ const Web3 = Web3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
-const Web3Modal = Web3ModalLib();
-const WalletConnectProvider = WalletConnectProviderLib();
+let Web3Modal;
+let WalletConnectProvider;
 
 function Web3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
@@ -732,10 +732,16 @@ module Wallet{
 		}
 		private initializeWeb3Modal(options?: any): any {
 			const providerOptions: any = {};
+			if (!WalletConnectProvider) {
+				WalletConnectProvider = WalletConnectProviderLib();
+			}
 			providerOptions.walletconnect = {
 				package: WalletConnectProvider.default,
 				options
 			};
+			if (!Web3Modal) {
+				Web3Modal = Web3ModalLib();
+			}
 			return new Web3Modal.default({
 				cacheProvider: false,
 				providerOptions,

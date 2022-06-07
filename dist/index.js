@@ -9,8 +9,6 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
-define("web3modal", ()=>window["Web3Modal"]);
-define("@walletconnect/web3-provider", ()=>window["WalletConnectProvider"]);
 define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -698,8 +696,8 @@ var require_wallet = __commonJS({
     init_erc20();
     var import_kms = __toModule(require_kms());
     var Web32 = Web3Lib2();
-    var Web3Modal = Web3ModalLib();
-    var WalletConnectProvider = WalletConnectProviderLib();
+    var Web3Modal;
+    var WalletConnectProvider;
     function Web3Lib2() {
       if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
@@ -1211,10 +1209,16 @@ var require_wallet = __commonJS({
         }
         initializeWeb3Modal(options) {
           const providerOptions = {};
+          if (!WalletConnectProvider) {
+            WalletConnectProvider = WalletConnectProviderLib();
+          }
           providerOptions.walletconnect = {
             package: WalletConnectProvider.default,
             options
           };
+          if (!Web3Modal) {
+            Web3Modal = Web3ModalLib();
+          }
           return new Web3Modal.default({
             cacheProvider: false,
             providerOptions
