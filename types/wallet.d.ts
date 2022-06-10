@@ -52,6 +52,11 @@ declare module Wallet {
         totalSupply: BigNumber;
         decimals: number;
     }
+    interface IBatchRequestObj {
+        batch: any;
+        promises: any[];
+        execute: any;
+    }
     interface IWallet {
         account: IAccount;
         accounts: Promise<string[]>;
@@ -230,9 +235,9 @@ declare module Wallet {
     const WalletPluginConfig: WalletPluginConfigType;
     class ClientSideProvider {
         protected wallet: Wallet;
-        protected provider: any;
         protected _events?: IClientSideProviderEvents;
         protected _isConnected: boolean;
+        provider: any;
         readonly walletPlugin: WalletPlugin;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
@@ -350,6 +355,7 @@ declare module Wallet {
         call(transaction: Transaction): Promise<any>;
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
+        newBatchRequest(): Promise<IBatchRequestObj>;
         get web3(): W3.default;
     }
 }

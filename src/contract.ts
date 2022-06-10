@@ -1,10 +1,9 @@
-import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog} from "./wallet";
+import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog, IBatchRequestObj} from "./wallet";
 import * as Utils from "./utils";
 
 import {BigNumber} from "bignumber.js";
 // import * as W3 from 'web3';
 // const Web3 = require('web3'); // tslint:disable-line
-
 module Contract {
     export interface EventType{
 		name: string
@@ -141,6 +140,18 @@ module Contract {
         	let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         };
+        async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params: any, ctx: any){
+            let contract = await this.getContract();
+            let method: IContractMethod;
+            method = contract.methods[methodName].apply(this, params);
+            batchObj.promises.push(new Promise((resolve, reject) => {
+                batchObj.batch.add(method.call.request({from: this.wallet.address}, 
+                    (e,v) => {
+                        return resolve({key:key, result:e ? null : v, ctx:ctx});
+                    }
+                ));
+            }));
+        }        
         protected async call(methodName:string, params?:any[], options?:any): Promise<any>{
             let contract = await this.getContract();
             params = params || [];

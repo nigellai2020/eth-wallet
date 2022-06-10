@@ -1,4 +1,4 @@
-import { IWallet, IContract, Transaction, TransactionReceipt, Event } from "./wallet";
+import { IWallet, IContract, Transaction, TransactionReceipt, Event, IBatchRequestObj } from "./wallet";
 declare module Contract {
     interface EventType {
         name: string;
@@ -25,6 +25,7 @@ declare module Contract {
         protected getAbiTopics(eventNames?: string[]): any[];
         registerEvents(handler: any): void;
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
+        batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params: any, ctx: any): Promise<void>;
         protected call(methodName: string, params?: any[], options?: any): Promise<any>;
         protected txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
         private _send;
