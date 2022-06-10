@@ -331,7 +331,9 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     }
     addLine(1, `private assign(){`);
     for (let i = 0 ; i < txFunctions.length ; i++) {
-        addLine(2, `this.${txFunctions[i]} = Object.assign(this.${txFunctions[i]}_send, {call:this.${txFunctions[i]}_call});`);
+        addLine(2, `this.${txFunctions[i]} = Object.assign(this.${txFunctions[i]}_send, {`);
+        addLine(3, `call:this.${txFunctions[i]}_call.bind(this)`);
+        addLine(2, `});`);
     }
     addLine(1, `}`);
     addLine(0, `}`);
