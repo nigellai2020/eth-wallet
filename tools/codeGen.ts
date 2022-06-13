@@ -232,13 +232,21 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     }
 
     let functionNames = {};
-    const callFunction = function(name: string, item: Item): void {
+    const callFunction = function(name: string, item: Item, isLocalVariable?: boolean): void {
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {
-        let result = await this.call('${item.name}'${input}${_payable});`)
-        returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
-        addLine(2, '}');
+        if (isLocalVariable) {
+            addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {
+            let result = await this.call('${item.name}'${input}${_payable});`)
+            returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
+            addLine(2, '}');
+        }
+        else {
+            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}>{
+            let result = await this.call('${item.name}'${input}${_payable});`)
+            returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
+            addLine(1, '}');       
+        }
     }
     const sendFunction = function(name: string, item: Item): void { 
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
@@ -333,7 +341,7 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     for (let i = 0 ; i < txFunctions.length ; i++) {
         let abiItem = abiItemMap.get(txFunctions[i])
         sendFunction(txFunctions[i]+"_send", abiItem);
-        callFunction(txFunctions[i]+"_call", abiItem);
+        callFunction(txFunctions[i]+"_call", abiItem, true);
         addLine(2, `this.${txFunctions[i]} = Object.assign(this.${txFunctions[i]}_send, {`);
         addLine(3, `call:this.${txFunctions[i]}_call.bind(this)`);
         addLine(2, `});`);
