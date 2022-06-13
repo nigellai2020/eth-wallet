@@ -81,7 +81,7 @@ module Wallet{
 	export interface IBatchRequestObj {
 		batch: any;
 		promises: any[];
-		execute: any;
+		execute: (batch: IBatchRequestObj, promises: any[]) => void;
 	}
 	export interface IWallet {		
 		account: IAccount;
@@ -535,6 +535,7 @@ module Wallet{
 		}
 		async connect() {
 			this.provider = WalletPluginConfig[this.walletPlugin].provider();
+			this.wallet.chainId = parseInt(this.provider.chainId, 16);
 			// this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
@@ -756,7 +757,8 @@ module Wallet{
 		async connect() {
 			await this.disconnect();
 			this.provider = await this.web3Modal.connectTo(WalletPlugin.WalletConnect);
-			// this.wallet.web3.setProvider(this.provider);
+			this.wallet.chainId = this.provider.chainId;
+			this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
@@ -873,7 +875,6 @@ module Wallet{
 			if (this.clientSideProvider) {
 				// if (!this.provider) this.provider = window['ethereum'];	
 				// if (!this.chainId) await this.getChainId();
-				if (!this.chainId && window['ethereum']) this.chainId = parseInt(window['ethereum'].chainId, 16);
 				await this.clientSideProvider.connect();
 				this.setDefaultProvider();
 			}
@@ -1804,7 +1805,7 @@ module Wallet{
                     resolve({
                         batch: new this._web3.BatchRequest(),
                         promises: [],
-                        execute: (batch: IBatchRequestObj, promises: any[]) => {
+                        execute: (batch: any, promises: any[]) => {
                             batch.execute(); 
                             return Promise.all(promises);
                         }

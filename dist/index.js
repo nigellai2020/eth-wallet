@@ -1020,6 +1020,7 @@ var require_wallet = __commonJS({
         }
         async connect() {
           this.provider = _Wallet.WalletPluginConfig[this.walletPlugin].provider();
+          this.wallet.chainId = parseInt(this.provider.chainId, 16);
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
             this.onChainChanged = this._events.onChainChanged;
@@ -1235,6 +1236,8 @@ var require_wallet = __commonJS({
         async connect() {
           await this.disconnect();
           this.provider = await this.web3Modal.connectTo(WalletPlugin2.WalletConnect);
+          this.wallet.chainId = this.provider.chainId;
+          this.wallet.web3.setProvider(this.provider);
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
             this.onChainChanged = this._events.onChainChanged;
@@ -1336,8 +1339,6 @@ var require_wallet = __commonJS({
         async connect(walletPlugin, events, providerOptions) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
           if (this.clientSideProvider) {
-            if (!this.chainId && window["ethereum"])
-              this.chainId = parseInt(window["ethereum"].chainId, 16);
             await this.clientSideProvider.connect();
             this.setDefaultProvider();
           } else {

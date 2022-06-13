@@ -55,7 +55,7 @@ declare module Wallet {
     interface IBatchRequestObj {
         batch: any;
         promises: any[];
-        execute: any;
+        execute: (batch: IBatchRequestObj, promises: any[]) => void;
     }
     interface IWallet {
         account: IAccount;
