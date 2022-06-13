@@ -19,7 +19,8 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     if (abi.length) {
     let result = [];
     let events = {};
-    let txFunctions = [];
+    let txFunctions: string[] = [];
+    let abiItemMap: Map<string, Item> = new Map();
     const addLine = function(indent: number, code: string): void {
         if (indent)
             result.push(`    `.repeat(indent) + code)
@@ -234,18 +235,18 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     const callFunction = function(name: string, item: Item): void {
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}>{
+        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {
         let result = await this.call('${item.name}'${input}${_payable});`)
-        returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
-        addLine(1, '}');
+        returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
+        addLine(2, '}');
     }
     const sendFunction = function(name: string, item: Item): void { 
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<TransactionReceipt>{
+        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<TransactionReceipt> => {
         let result = await this.send('${item.name}'${input}${_payable});`);
-        addLine(2, 'return result;')
-        addLine(1, '}');
+        addLine(3, 'return result;')
+        addLine(2, '}');
     }
     const txObjFunction = function(name: string, item: Item): void { 
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
@@ -267,8 +268,6 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         if (constantFunction){
             callFunction(name, item);
         } else {
-            sendFunction(name+"_send", item);
-            callFunction(name+"_call", item);
             // txObjFunction(name+"_txObj", item);
             addLine(1, `${name}: {`);
             addLine(2, `(${inputs(item)}${payable(item)}): Promise<TransactionReceipt>;`);
@@ -276,6 +275,7 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
             // addLine(2, `txObj: (${inputs(item)}) => Promise<Transaction>;`);
             addLine(1, `}`);
             txFunctions.push(name);
+            abiItemMap.set(name, item);
         }
     }
     const addEvent = function(item: Item): void {
@@ -331,6 +331,9 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     }
     addLine(1, `private assign(){`);
     for (let i = 0 ; i < txFunctions.length ; i++) {
+        let abiItem = abiItemMap.get(name)
+        sendFunction(name+"_send", abiItem);
+        callFunction(name+"_call", abiItem);
         addLine(2, `this.${txFunctions[i]} = Object.assign(this.${txFunctions[i]}_send, {`);
         addLine(3, `call:this.${txFunctions[i]}_call.bind(this)`);
         addLine(2, `});`);
