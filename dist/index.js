@@ -326,13 +326,14 @@ var require_contract = __commonJS({
           let events = this.getAbiEvents();
           return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         }
-        async batchCall(batchObj, key, methodName, params, ctx) {
+        async batchCall(batchObj, key, methodName, params, options) {
           let contract = await this.getContract();
-          let method;
-          method = contract.methods[methodName].apply(this, params);
+          if (!contract.methods[methodName])
+            return;
+          let method = contract.methods[methodName].apply(this, params);
           batchObj.promises.push(new Promise((resolve, reject) => {
-            batchObj.batch.add(method.call.request({ from: this.wallet.address }, (e, v) => {
-              return resolve({ key, result: e ? null : v, ctx });
+            batchObj.batch.add(method.call.request(__spreadValues({ from: this.wallet.address }, options), (e, v) => {
+              return resolve({ key, result: e ? null : v });
             }));
           }));
         }

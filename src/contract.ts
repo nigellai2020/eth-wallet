@@ -140,14 +140,14 @@ module Contract {
         	let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         };
-        async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params: any, ctx: any){
+        async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?:any){
             let contract = await this.getContract();
-            let method: IContractMethod;
-            method = contract.methods[methodName].apply(this, params);
+            if (!contract.methods[methodName]) return;
+            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
             batchObj.promises.push(new Promise((resolve, reject) => {
-                batchObj.batch.add(method.call.request({from: this.wallet.address}, 
+                batchObj.batch.add(method.call.request({from: this.wallet.address, ...options}, 
                     (e,v) => {
-                        return resolve({key:key, result:e ? null : v, ctx:ctx});
+                        return resolve({key:key, result:e ? null : v});
                     }
                 ));
             }));
