@@ -236,14 +236,14 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         if (isLocalVariable) {
-            addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {
-            let result = await this.call('${item.name}'${input}${_payable});`)
+            addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {`);
+            addLine(3, `let result = await this.call('${item.name}'${input}${_payable});`);
             returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
             addLine(2, '}');
         }
         else {
-            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}>{
-            let result = await this.call('${item.name}'${input}${_payable});`)
+            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}>{`);
+            addLine(2, `let result = await this.call('${item.name}'${input}${_payable});`);
             returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
             addLine(1, '}');       
         }
@@ -251,8 +251,8 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     const sendFunction = function(name: string, item: Item): void { 
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<TransactionReceipt> => {
-        let result = await this.send('${item.name}'${input}${_payable});`);
+        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<TransactionReceipt> => {`);
+        addLine(3, `let result = await this.send('${item.name}'${input}${_payable});`);
         addLine(3, 'return result;')
         addLine(2, '}');
     }
@@ -342,8 +342,8 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         let abiItem = abiItemMap.get(txFunctions[i])
         sendFunction(txFunctions[i]+"_send", abiItem);
         callFunction(txFunctions[i]+"_call", abiItem, true);
-        addLine(2, `this.${txFunctions[i]} = Object.assign(this.${txFunctions[i]}_send, {`);
-        addLine(3, `call:this.${txFunctions[i]}_call.bind(this)`);
+        addLine(2, `this.${txFunctions[i]} = Object.assign(${txFunctions[i]}_send, {`);
+        addLine(3, `call:${txFunctions[i]}_call`);
         addLine(2, `});`);
     }
     addLine(1, `}`);
