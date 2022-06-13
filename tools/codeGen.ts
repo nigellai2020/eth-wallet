@@ -252,7 +252,9 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     const batchCallFunction = function(name: string, item: Item): void {
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        addLine(2, `let ${name} = async (batchObj: IBatchRequestObj, key: string, ${inputs(item)}${payable(item)}): Promise<void> => {`);
+        let args = `${inputs(item)}${payable(item)}`;
+        let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
+        addLine(2, `let ${name} = async (${batchCallArgs}): Promise<void> => {`);
         addLine(3, `await this.batchCall(batchObj, key, '${item.name}'${input}${_payable});`);
         addLine(2, '}');
     }
@@ -285,9 +287,10 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         if (constantFunction){
             // callFunction(name, item);
             let args = `${inputs(item)}${payable(item)}`;
+            let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
             addLine(1, `${name}: {`);
             addLine(2, `(${args}): Promise<TransactionReceipt>;`);
-            addLine(2, `batchCall: (${args}) => Promise<void>;`);
+            addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
             addLine(1, `}`);
             callFunctionNames.push(name);
         } else {
