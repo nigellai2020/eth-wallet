@@ -2200,6 +2200,7 @@ __export(exports, {
   Erc20: () => Erc20,
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
+  IBatchRequestObj: () => import_wallet.IBatchRequestObj,
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,

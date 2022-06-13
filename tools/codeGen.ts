@@ -289,7 +289,7 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
             let args = `${inputs(item)}${payable(item)}`;
             let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
             addLine(1, `${name}: {`);
-            addLine(2, `(${args}): Promise<TransactionReceipt>;`);
+            addLine(2, `(${args}): Promise<${outputs(item.outputs)}>;`);
             addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
             addLine(1, `}`);
             callFunctionNames.push(name);
@@ -342,7 +342,7 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
                 break;
         }
     }
-    addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event} from "@ijstech/eth-wallet";`);
+    addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
     addLine(0, `export class ${name} extends Contract{`);
