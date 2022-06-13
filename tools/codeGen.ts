@@ -19,7 +19,8 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     if (abi.length) {
     let result = [];
     let events = {};
-    let txFunctions: string[] = [];
+    let callFunctionNames: string[] = [];
+    let txFunctionNames: string[] = [];
     let abiItemMap: Map<string, Item> = new Map();
     const addLine = function(indent: number, code: string): void {
         if (indent)
@@ -248,6 +249,13 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
             addLine(1, '}');       
         }
     }
+    const batchCallFunction = function(name: string, item: Item): void {
+        let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
+        let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
+        addLine(2, `let ${name} = async (batchObj: IBatchRequestObj, key: string, ${inputs(item)}${payable(item)}): Promise<void> => {`);
+        addLine(3, `await this.batchCall(batchObj, key, '${item.name}'${input}${_payable});`);
+        addLine(2, '}');
+    }
     const sendFunction = function(name: string, item: Item): void { 
         let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
@@ -273,17 +281,24 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         }
         functionNames[name] = true;
         let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
+        abiItemMap.set(name, item);
         if (constantFunction){
-            callFunction(name, item);
+            // callFunction(name, item);
+            let args = `${inputs(item)}${payable(item)}`;
+            addLine(1, `${name}: {`);
+            addLine(2, `(${args}): Promise<TransactionReceipt>;`);
+            addLine(2, `batchCall: (${args}) => Promise<void>;`);
+            addLine(1, `}`);
+            callFunctionNames.push(name);
         } else {
             // txObjFunction(name+"_txObj", item);
+            let args = `${inputs(item)}${payable(item)}`;
             addLine(1, `${name}: {`);
-            addLine(2, `(${inputs(item)}${payable(item)}): Promise<TransactionReceipt>;`);
-            addLine(2, `call: (${inputs(item)}${payable(item)}) => Promise<${outputs(item.outputs)}>;`);
+            addLine(2, `(${args}): Promise<TransactionReceipt>;`);
+            addLine(2, `call: (${args}) => Promise<${outputs(item.outputs)}>;`);
             // addLine(2, `txObj: (${inputs(item)}) => Promise<Transaction>;`);
             addLine(1, `}`);
-            txFunctions.push(name);
-            abiItemMap.set(name, item);
+            txFunctionNames.push(name);         
         }
     }
     const addEvent = function(item: Item): void {
@@ -338,12 +353,22 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
         addAbiItem(abi[i]);
     }
     addLine(1, `private assign(){`);
-    for (let i = 0 ; i < txFunctions.length ; i++) {
-        let abiItem = abiItemMap.get(txFunctions[i])
-        sendFunction(txFunctions[i]+"_send", abiItem);
-        callFunction(txFunctions[i]+"_call", abiItem, true);
-        addLine(2, `this.${txFunctions[i]} = Object.assign(${txFunctions[i]}_send, {`);
-        addLine(3, `call:${txFunctions[i]}_call`);
+    for (let i = 0 ; i < callFunctionNames.length ; i++) {
+        let functionName = callFunctionNames[i];
+        let abiItem = abiItemMap.get(functionName);
+        callFunction(functionName+"_call", abiItem, true);
+        batchCallFunction(functionName+"_batchCall", abiItem);
+        addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
+        addLine(3, `batchCall:${functionName}_batchCall`);
+        addLine(2, `});`);
+    }
+    for (let i = 0 ; i < txFunctionNames.length ; i++) {
+        let functionName = txFunctionNames[i];
+        let abiItem = abiItemMap.get(functionName);
+        sendFunction(functionName+"_send", abiItem);
+        callFunction(functionName+"_call", abiItem, true);
+        addLine(2, `this.${functionName} = Object.assign(${functionName}_send, {`);
+        addLine(3, `call:${functionName}_call`);
         addLine(2, `});`);
     }
     addLine(1, `}`);
