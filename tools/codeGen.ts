@@ -24,7 +24,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     let events = {};
     let callFunctionNames: string[] = [];
     let txFunctionNames: string[] = [];
-    let abiItemMap: Map<string, Item> = new Map();
+    let abiFunctionItemMap: Map<string, Item> = new Map();
     const addLine = function(indent: number, code: string): void {
         if (indent)
             result.push(`    `.repeat(indent) + code)
@@ -131,7 +131,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             return result;
         }
     }
-    const addParamsInterface = function(functionName: string, item: Item) {
+    const getParamsInterface = function(functionName: string, item: Item) {
         if (!item.inputs || item.inputs.length <= 1)
             return null;
         else {
@@ -307,42 +307,21 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         addLine(3, 'return result;')
         addLine(2, '}');
     }
-    // const txObjFunction = function(name: string, item: Item): void { 
-    //     let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
-    //     let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-    //     let args = `${inputs(name, item)}${payable(item)}`;
-    //     addLine(1, `async ${name}(${args}): Promise<Transaction>{
-    //     let result = await this.txObj('${item.name}'${input}${_payable});`);
-    //     addLine(2, 'return result;')
-    //     addLine(1, '}');
-    // }
-    const addFunction = function(item: Item): void {
-        let name = item.name;
-        let counter = 1;
-        while(functionNames[name]){
-            name = name + "_" + counter;
-            counter++;
-        }
-        functionNames[name] = true;
+    const addFunction = function(functionName: string, item: Item): void {
         let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
-        abiItemMap.set(name, item);
         if (constantFunction){
-            let args = `${inputs(name, item)}${payable(item)}`;
+            let args = `${inputs(functionName, item)}${payable(item)}`;
             let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
-            addLine(1, `${name}: {`);
+            addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<${outputs(item.outputs)}>;`);
             addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
             addLine(1, `}`);
-            callFunctionNames.push(name);
         } else {
-            // txObjFunction(name+"_txObj", item);
-            let args = `${inputs(name, item)}${payable(item)}`;
-            addLine(1, `${name}: {`);
+            let args = `${inputs(functionName, item)}${payable(item)}`;
+            addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<TransactionReceipt>;`);
             addLine(2, `call: (${args}) => Promise<${outputs(item.outputs)}>;`);
-            // addLine(2, `txObj: (${inputs(item)}) => Promise<Transaction>;`);
-            addLine(1, `}`);
-            txFunctionNames.push(name);         
+            addLine(1, `}`);       
         }
     }
     const addEvent = function(item: Item): void {
@@ -373,34 +352,33 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             addLine(1, `}`);
         }
     }
-    const addAbiItem = function(item: Item): void {
-        switch (item.type){
-            case "function":
-                addFunction(item);
-                break;
-            case "event":
-                addEvent(item);
-                break;
+    const addParamsInterface = function(item: Item): void {
+        let counter = 1;
+        let name = item.name;
+        while(functionNames[name]){
+            name = name + "_" + counter;
+            counter++;
+        }
+        functionNames[name] = true;
+        let paramsInterface = getParamsInterface(name, item);
+        if (paramsInterface) {
+            addLine(0, paramsInterface);
+        } 
+        let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
+        abiFunctionItemMap.set(name, item);
+        if (constantFunction){
+            callFunctionNames.push(name);
+        }
+        else {
+            txFunctionNames.push(name); 
         }
     }
     addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
-    for (let i = 0 ; i < callFunctionNames.length ; i++) {
-        let functionName = callFunctionNames[i];
-        let abiItem = abiItemMap.get(functionName);
-        let result = addParamsInterface(functionName, abiItem);
-        if (result) {
-            addLine(0, result);
-        } 
-    }
-    for (let i = 0 ; i < txFunctionNames.length ; i++) {
-        let functionName = txFunctionNames[i];
-        let abiItem = abiItemMap.get(functionName);
-        let result = addParamsInterface(functionName, abiItem);
-        if (result) {
-            addLine(0, result);
-        } 
+    for (let i = 0; i < abi.length; i++) {
+        if (abi[i].type != 'function') continue;
+        addParamsInterface(abi[i]);
     }
     addLine(0, `export class ${name} extends Contract{`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
@@ -409,13 +387,17 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     addLine(1, `}`);
     if (options.outputBytecode)
         addDeployer(abi);
-    for (let i = 0; i < abi.length; i++) {
-        addAbiItem(abi[i]);
+    let eventAbiItems = abi.filter(v => v.type == 'event');
+    for (let i = 0; i < eventAbiItems.length; i++) {
+        addEvent(eventAbiItems[i]);
     }
+    abiFunctionItemMap.forEach((item, name) => {
+        addFunction(name, item);
+    })
     addLine(1, `private assign(){`);
     for (let i = 0 ; i < callFunctionNames.length ; i++) {
         let functionName = callFunctionNames[i];
-        let abiItem = abiItemMap.get(functionName);
+        let abiItem = abiFunctionItemMap.get(functionName);
         paramsFunction(functionName, abiItem);
         callFunction(functionName+"_call", abiItem);
         batchCallFunction(functionName+"_batchCall", abiItem);
@@ -425,7 +407,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     }
     for (let i = 0 ; i < txFunctionNames.length ; i++) {
         let functionName = txFunctionNames[i];
-        let abiItem = abiItemMap.get(functionName);
+        let abiItem = abiFunctionItemMap.get(functionName);
         paramsFunction(functionName, abiItem);
         sendFunction(functionName+"_send", abiItem);
         callFunction(functionName+"_call", abiItem);
