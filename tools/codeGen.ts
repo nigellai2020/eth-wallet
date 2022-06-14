@@ -269,7 +269,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(item.name)}(params)]`;
+            input = `,${getParamsFunctionName(item.name)}(params)`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         let args = `${inputs(item.name, item)}${payable(item)}`;
@@ -284,7 +284,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(item.name)}(params)]`;
+            input = `,${getParamsFunctionName(item.name)}(params)`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         let args = `${inputs(item.name, item)}${payable(item)}`;
@@ -299,7 +299,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(item.name)}(params)]`;
+            input = `,${getParamsFunctionName(item.name)}(params)`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         let args = `${inputs(item.name, item)}${payable(item)}`;
