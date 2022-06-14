@@ -163,7 +163,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         if (item.inputs && item.inputs.length > 0) {
             let paramsFunctionName = getParamsFunctionName(item);
             let interfaceName = getParamsInferfaceName(item);
-            addLine(1, `let ${paramsFunctionName} = (params: ${interfaceName}) => [${toSolidityInput(item)}];`);
+            addLine(2, `let ${paramsFunctionName} = (params: ${interfaceName}) => [${toSolidityInput(item)}];`);
         }
     }
     const toSolidityType = function(prefix: string, inputs: Type[]): string {
@@ -271,21 +271,13 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     }
 
     let functionNames = {};
-    const callFunction = function(name: string, item: Item, isLocalVariable?: boolean): void {
+    const callFunction = function(name: string, item: Item): void {
         let input = (item.inputs.length > 0) ? `,[${getParamsFunctionName(item)}(params)]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        if (isLocalVariable) {
-            addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {`);
-            addLine(3, `let result = await this.call('${item.name}'${input}${_payable});`);
-            returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
-            addLine(2, '}');
-        }
-        else {
-            addLine(1, `async ${name}(${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}>{`);
-            addLine(2, `let result = await this.call('${item.name}'${input}${_payable});`);
-            returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+2, e.text));
-            addLine(1, '}');       
-        }
+        addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {`);
+        addLine(3, `let result = await this.call('${item.name}'${input}${_payable});`);
+        returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
+        addLine(2, '}');
     }
     const batchCallFunction = function(name: string, item: Item): void {
         let input = (item.inputs.length > 0) ? `,[${getParamsFunctionName(item)}(params)]` : "";
@@ -323,7 +315,6 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
         abiItemMap.set(name, item);
         if (constantFunction){
-            // callFunction(name, item);
             let args = `${inputs(item)}${payable(item)}`;
             let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
             addLine(1, `${name}: {`);
@@ -404,7 +395,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         let functionName = callFunctionNames[i];
         let abiItem = abiItemMap.get(functionName);
         paramsFunction(abiItem);
-        callFunction(functionName+"_call", abiItem, true);
+        callFunction(functionName+"_call", abiItem);
         batchCallFunction(functionName+"_batchCall", abiItem);
         addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
         addLine(3, `batchCall:${functionName}_batchCall`);
@@ -415,7 +406,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         let abiItem = abiItemMap.get(functionName);
         paramsFunction(abiItem);
         sendFunction(functionName+"_send", abiItem);
-        callFunction(functionName+"_call", abiItem, true);
+        callFunction(functionName+"_call", abiItem);
         addLine(2, `this.${functionName} = Object.assign(${functionName}_send, {`);
         addLine(3, `call:${functionName}_call`);
         addLine(2, `});`);
