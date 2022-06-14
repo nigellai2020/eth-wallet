@@ -346,10 +346,6 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             addLine(1, `deploy(${inputs(item.name, item)}${payable(item)}): Promise<string>{`);
             addLine(2, `return this.__deploy(${input}${_payable});`);
             addLine(1, `}`);
-            let paramsInterface = getParamsInterface(item.name, item);
-            if (paramsInterface) {
-                addLine(0, paramsInterface);
-            } 
         } else {
             addLine(1, `deploy(): Promise<string>{`);
             addLine(2, `return this.__deploy();`);
@@ -357,31 +353,33 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         }
     }
     const addParamsInterface = function(item: Item): void {
-        let counter = 1;
-        let name = item.name;
-        while(functionNames[name]){
-            name = name + "_" + counter;
-            counter++;
+        if (item.name) {
+            let counter = 1;
+            let name = item.name;
+            while(functionNames[name]){
+                name = name + "_" + counter;
+                counter++;
+            }
+            functionNames[name] = true;
+            let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
+            abiFunctionItemMap.set(name, item);
+            if (constantFunction){
+                callFunctionNames.push(name);
+            }
+            else {
+                txFunctionNames.push(name); 
+            }
         }
-        functionNames[name] = true;
         let paramsInterface = getParamsInterface(name, item);
         if (paramsInterface) {
             addLine(0, paramsInterface);
         } 
-        let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
-        abiFunctionItemMap.set(name, item);
-        if (constantFunction){
-            callFunctionNames.push(name);
-        }
-        else {
-            txFunctionNames.push(name); 
-        }
     }
     addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
     for (let i = 0; i < abi.length; i++) {
-        if (abi[i].type != 'function') continue;
+        if (abi[i].type != 'function' || abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
     }
     addLine(0, `export class ${name} extends Contract{`);
