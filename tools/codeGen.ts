@@ -310,25 +310,22 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     }
     const addFunction = function(functionName: string, item: Item): void {
         let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
+        let args = `${inputs(functionName, item)}${payable(item)}`;
         let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
+        addLine(1, `${functionName}: {`);
         if (constantFunction){
-            let args = `${inputs(functionName, item)}${payable(item)}`;
-            addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<${outputs(item.outputs)}>;`);
             if (options.hasBatchCall) {
                 addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
             }
-            addLine(1, `}`);
         } else {
-            let args = `${inputs(functionName, item)}${payable(item)}`;
-            addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<TransactionReceipt>;`);
             addLine(2, `call: (${args}) => Promise<${outputs(item.outputs)}>;`);
             if (options.hasBatchCall) {
                 addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
-            }
-            addLine(1, `}`);       
+            }   
         }
+        addLine(1, `}`);
     }
     const addEvent = function(item: Item): void {
         let eventItems = item.inputs;
