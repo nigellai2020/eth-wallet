@@ -17,6 +17,7 @@ interface Line {
 }
 export interface IUserDefinedOptions {
     outputBytecode: boolean;
+    hasBatchCall: boolean;
 }
 export default function(name: string, abiPath: string, abi: Item[], options: IUserDefinedOptions){
     if (abi.length) {
@@ -309,18 +310,23 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     }
     const addFunction = function(functionName: string, item: Item): void {
         let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
+        let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
         if (constantFunction){
             let args = `${inputs(functionName, item)}${payable(item)}`;
-            let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
             addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<${outputs(item.outputs)}>;`);
-            addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
+            if (options.hasBatchCall) {
+                addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
+            }
             addLine(1, `}`);
         } else {
             let args = `${inputs(functionName, item)}${payable(item)}`;
             addLine(1, `${functionName}: {`);
             addLine(2, `(${args}): Promise<TransactionReceipt>;`);
             addLine(2, `call: (${args}) => Promise<${outputs(item.outputs)}>;`);
+            if (options.hasBatchCall) {
+                addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
+            }
             addLine(1, `}`);       
         }
     }
@@ -402,10 +408,15 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         let abiItem = abiFunctionItemMap.get(functionName);
         paramsFunction(functionName, abiItem);
         callFunction(functionName+"_call", abiItem);
-        batchCallFunction(functionName+"_batchCall", abiItem);
-        addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
-        addLine(3, `batchCall:${functionName}_batchCall`);
-        addLine(2, `});`);
+        if (options.hasBatchCall) {
+            batchCallFunction(functionName+"_batchCall", abiItem);
+            addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
+            addLine(3, `batchCall:${functionName}_batchCall`);
+            addLine(2, `});`)
+        }
+        else {
+            addLine(2, `this.${functionName} = ${functionName}_call`);
+        };
     }
     for (let i = 0 ; i < txFunctionNames.length ; i++) {
         let functionName = txFunctionNames[i];
@@ -413,8 +424,16 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         paramsFunction(functionName, abiItem);
         sendFunction(functionName+"_send", abiItem);
         callFunction(functionName+"_call", abiItem);
+        if (options.hasBatchCall) {
+            batchCallFunction(functionName+"_batchCall", abiItem);
+        }
         addLine(2, `this.${functionName} = Object.assign(${functionName}_send, {`);
-        addLine(3, `call:${functionName}_call`);
+        if (options.hasBatchCall) {
+            addLine(3, `call:${functionName}_call, batchCall:${functionName}_batchCall`);
+        }
+        else {
+            addLine(3, `call:${functionName}_call`);
+        }
         addLine(2, `});`);
     }
     addLine(1, `}`);

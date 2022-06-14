@@ -218,15 +218,19 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                     if (abi && abi.length) {
                         file["abi"] = abi;
                     }
-                    let outputBytecode = bytecode && (outputObjects && outputObjects.indexOf("bytecode") >= 0);
+                    let outputObjectsArr = outputObjects ? outputObjects.split(',') : [];
+                    
+                    let outputBytecode = bytecode && outputObjectsArr.includes("bytecode");
                     if (outputBytecode) {
                         file["bytecode"] = bytecode;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
 
-                    let relPath = './';                
+                    let relPath = './';         
+                    let hasBatchCall = outputObjectsArr.includes("batchcall");       
                     let options: IUserDefinedOptions = {
-                        outputBytecode
+                        outputBytecode,
+                        hasBatchCall
                     }
                     let code = codeGen(j, relPath, abi, options);
                     fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
