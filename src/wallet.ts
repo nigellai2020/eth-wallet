@@ -241,7 +241,7 @@ module Wallet{
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
 	}
-	export const Networks: { [chainId: number]: INetwork } = {
+	export const DefaultNetworks: { [chainId: number]: INetwork } = {
 		1: {
 			chainId: 1,
 			chainName: "Ethereum Mainnet",
@@ -600,8 +600,11 @@ module Wallet{
 				}
 			})
 		}
-		switchNetwork(chainId: number): Promise<boolean> {
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
 			let self = this;
+			if (onChainChanged) {
+				this.onChainChanged = onChainChanged;
+			}
 			return new Promise(async function (resolve, reject) {
 				try {
 					let chainIdHex = '0x' + chainId.toString(16);
@@ -616,7 +619,7 @@ module Wallet{
 					} catch (error) {
 						if (error.code === 4902) {
 							try {
-								let network = Networks[chainId];
+								let network = DefaultNetworks[chainId];
 								if (!network) resolve(false);
 								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
@@ -678,8 +681,11 @@ module Wallet{
 		}
 	}
 	export class BinanceChainWalletProvider extends ClientSideProvider {
-		switchNetwork(chainId: number): Promise<boolean> {
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
 			let self = this;
+			if (onChainChanged) {
+				this.onChainChanged = onChainChanged;
+			}
 			return new Promise(async function (resolve, reject) {
 				try {
 					let chainIdHex = '0x' + chainId.toString(16);
@@ -694,7 +700,7 @@ module Wallet{
 					} catch (error) {
 						if (error.code === 4902) {
 							try {
-								let network = Networks[chainId];
+								let network = DefaultNetworks[chainId];
 								if (!network) resolve(false);
 								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
@@ -857,17 +863,22 @@ module Wallet{
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
 		}
-		async switchNetwork(chainId: number) {
+		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
 			let result;
 			if (this.clientSideProvider) {
-				result = await this.clientSideProvider.switchNetwork(chainId);
+				result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
+			}
+			else {
+				this.chainId = chainId;
+				this.setDefaultProvider();
+				onChainChanged('0x' + chainId.toString(16));
 			}
 			return result;
 		}
 		setDefaultProvider(){
 			if (!this.chainId) this.chainId = 56;	
-			if (Networks[this.chainId] && Networks[this.chainId].rpcUrls.length > 0) {
-				this.provider = Networks[this.chainId].rpcUrls[0];
+			if (DefaultNetworks[this.chainId] && DefaultNetworks[this.chainId].rpcUrls.length > 0) {
+				this.provider = DefaultNetworks[this.chainId].rpcUrls[0];
 			}
 		}
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
@@ -1294,7 +1305,7 @@ module Wallet{
             let _web3 = this._web3;
 			return new Promise(async function(resolve){
 				try{
-					let network = Networks[self.chainId];
+					let network = DefaultNetworks[self.chainId];
 					let decimals = 18;
 					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
 						decimals = network.nativeCurrency.decimals;
@@ -1312,7 +1323,7 @@ module Wallet{
             let _web3 = this._web3;
 			return new Promise(async function(resolve){
 				try{
-					let network = Networks[self.chainId];
+					let network = DefaultNetworks[self.chainId];
 					let decimals = 18;
 					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
 						decimals = network.nativeCurrency.decimals;

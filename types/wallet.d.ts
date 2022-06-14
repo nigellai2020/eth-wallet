@@ -214,7 +214,7 @@ declare module Wallet {
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
-    const Networks: {
+    const DefaultNetworks: {
         [chainId: number]: INetwork;
     };
     enum WalletPlugin {
@@ -250,11 +250,11 @@ declare module Wallet {
         disconnect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
-        switchNetwork(chainId: number): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
     }
     class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId: number): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     }
     class Web3ModalProvider extends ClientSideProvider {
         private readonly web3Modal;
@@ -287,7 +287,7 @@ declare module Wallet {
         static getInstance(): Wallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
-        switchNetwork(chainId: number): Promise<any>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         setDefaultProvider(): void;
         connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): Promise<ClientSideProvider>;
         disconnect(): Promise<void>;

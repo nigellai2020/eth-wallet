@@ -738,7 +738,7 @@ var require_wallet = __commonJS({
           return new import_bignumber4.BigNumber(W3.default.utils.fromWei(value));
         }
       };
-      _Wallet.Networks = {
+      _Wallet.DefaultNetworks = {
         1: {
           chainId: 1,
           chainName: "Ethereum Mainnet",
@@ -1080,8 +1080,11 @@ var require_wallet = __commonJS({
             }
           });
         }
-        switchNetwork(chainId) {
+        switchNetwork(chainId, onChainChanged) {
           let self = this;
+          if (onChainChanged) {
+            this.onChainChanged = onChainChanged;
+          }
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
@@ -1096,7 +1099,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.Networks[chainId];
+                    let network = _Wallet.DefaultNetworks[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1157,8 +1160,11 @@ var require_wallet = __commonJS({
       }
       _Wallet.ClientSideProvider = ClientSideProvider;
       class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId) {
+        switchNetwork(chainId, onChainChanged) {
           let self = this;
+          if (onChainChanged) {
+            this.onChainChanged = onChainChanged;
+          }
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
@@ -1173,7 +1179,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.Networks[chainId];
+                    let network = _Wallet.DefaultNetworks[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1322,18 +1328,22 @@ var require_wallet = __commonJS({
         get isConnected() {
           return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
         }
-        async switchNetwork(chainId) {
+        async switchNetwork(chainId, onChainChanged) {
           let result;
           if (this.clientSideProvider) {
-            result = await this.clientSideProvider.switchNetwork(chainId);
+            result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
+          } else {
+            this.chainId = chainId;
+            this.setDefaultProvider();
+            onChainChanged("0x" + chainId.toString(16));
           }
           return result;
         }
         setDefaultProvider() {
           if (!this.chainId)
             this.chainId = 56;
-          if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
-            this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
+          if (_Wallet.DefaultNetworks[this.chainId] && _Wallet.DefaultNetworks[this.chainId].rpcUrls.length > 0) {
+            this.provider = _Wallet.DefaultNetworks[this.chainId].rpcUrls[0];
           }
         }
         async connect(walletPlugin, events, providerOptions) {
@@ -1724,7 +1734,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.Networks[self.chainId];
+              let network = _Wallet.DefaultNetworks[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
@@ -1740,7 +1750,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.Networks[self.chainId];
+              let network = _Wallet.DefaultNetworks[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
