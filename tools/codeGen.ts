@@ -353,9 +353,9 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         }
     }
     const addParamsInterface = function(item: Item): void {
-        if (item.name) {
+        let name = item.name;
+        if (name) {
             let counter = 1;
-            let name = item.name;
             while(functionNames[name]){
                 name = name + "_" + counter;
                 counter++;
