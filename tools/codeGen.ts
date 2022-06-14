@@ -113,6 +113,12 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         else
             return isEvent ? '{}' : 'any';
     }
+    const capitalizeFirstLetter = function(value: string) {
+        return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+    const getParamsInferfaceName = function(item: Item) {
+        return `I${item.name ? capitalizeFirstLetter(item.name) : 'Deploy'}Params`;
+    }
     const inputs = function(item: Item): string {
         if (item.inputs.length == 0)
             return '';
@@ -120,7 +126,8 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             return `${paramName(item.inputs[0].name,0)}:${inputDataType(item.inputs[0])}`;
         }
         else{
-            let result = `params: I${item.name}Params`;
+            let interfaceName = getParamsInferfaceName(item);
+            let result = `params: ${interfaceName}`;
             return result;
             // let result = 'params:{';
             // if (item.inputs){
@@ -133,11 +140,12 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             // return result+'}';
         }
     }
-    const addParamsInterface = function(item: Item): string {
+    const addParamsInterface = function(item: Item) {
         if (!item.inputs || item.inputs.length <= 1)
             return null;
-        else{
-            let result = `Export Interface I${item.name}Params {`;
+        else {
+            let interfaceName = getParamsInferfaceName(item);
+            let result = `export interface ${interfaceName} {`;
             if (item.inputs){
                 for (let i = 0; i < item.inputs.length; i ++){
                     if (i > 0)
@@ -146,6 +154,16 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
                 }
             }
             return result+'}';
+        }
+    }
+    const getParamsFunctionName = function(item: Item) {
+        return `${item.name}Params`;
+    }
+    const paramsFunction = function(item: Item) {
+        if (item.inputs && item.inputs.length > 0) {
+            let paramsFunctionName = getParamsFunctionName(item);
+            let interfaceName = getParamsInferfaceName(item);
+            addLine(1, `let ${paramsFunctionName} = (params: ${interfaceName}) => [${toSolidityInput(item)}];`);
         }
     }
     const toSolidityType = function(prefix: string, inputs: Type[]): string {
@@ -254,7 +272,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
 
     let functionNames = {};
     const callFunction = function(name: string, item: Item, isLocalVariable?: boolean): void {
-        let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
+        let input = (item.inputs.length > 0) ? `,[${getParamsFunctionName(item)}(params)]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         if (isLocalVariable) {
             addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<${outputs(item.outputs)}> => {`);
@@ -270,7 +288,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         }
     }
     const batchCallFunction = function(name: string, item: Item): void {
-        let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
+        let input = (item.inputs.length > 0) ? `,[${getParamsFunctionName(item)}(params)]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         let args = `${inputs(item)}${payable(item)}`;
         let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
@@ -279,7 +297,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         addLine(2, '}');
     }
     const sendFunction = function(name: string, item: Item): void { 
-        let input = (item.inputs.length > 0) ? `,[${toSolidityInput(item)}]` : "";
+        let input = (item.inputs.length > 0) ? `,[${getParamsFunctionName(item)}(params)]` : "";
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
         addLine(2, `let ${name} = async (${inputs(item)}${payable(item)}): Promise<TransactionReceipt> => {`);
         addLine(3, `let result = await this.send('${item.name}'${input}${_payable});`);
@@ -385,6 +403,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     for (let i = 0 ; i < callFunctionNames.length ; i++) {
         let functionName = callFunctionNames[i];
         let abiItem = abiItemMap.get(functionName);
+        paramsFunction(abiItem);
         callFunction(functionName+"_call", abiItem, true);
         batchCallFunction(functionName+"_batchCall", abiItem);
         addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
@@ -394,6 +413,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     for (let i = 0 ; i < txFunctionNames.length ; i++) {
         let functionName = txFunctionNames[i];
         let abiItem = abiItemMap.get(functionName);
+        paramsFunction(abiItem);
         sendFunction(functionName+"_send", abiItem);
         callFunction(functionName+"_call", abiItem, true);
         addLine(2, `this.${functionName} = Object.assign(${functionName}_send, {`);
