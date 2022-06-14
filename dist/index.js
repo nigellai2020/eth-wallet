@@ -738,7 +738,7 @@ var require_wallet = __commonJS({
           return new import_bignumber4.BigNumber(W3.default.utils.fromWei(value));
         }
       };
-      _Wallet.DefaultNetworks = {
+      _Wallet.DefaultNetworksMap = {
         1: {
           chainId: 1,
           chainName: "Ethereum Mainnet",
@@ -1099,7 +1099,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.DefaultNetworks[chainId];
+                    let network = self.wallet.networksMap[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1179,7 +1179,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.DefaultNetworks[chainId];
+                    let network = self.wallet.networksMap[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1304,6 +1304,7 @@ var require_wallet = __commonJS({
           this._eventHandler = {};
           this._sendTxEventHandler = {};
           this._contracts = {};
+          this._networksMap = {};
           this._abiHashDict = {};
           this._abiAddressDict = {};
           this._abiEventDict = {};
@@ -1316,6 +1317,7 @@ var require_wallet = __commonJS({
             this._account = account;
           if (this._account && this._account.privateKey && !this._account.address)
             this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+          this._networksMap = _Wallet.DefaultNetworksMap;
         }
         static getInstance() {
           return _Wallet2.instance;
@@ -1342,8 +1344,8 @@ var require_wallet = __commonJS({
         setDefaultProvider() {
           if (!this.chainId)
             this.chainId = 56;
-          if (_Wallet.DefaultNetworks[this.chainId] && _Wallet.DefaultNetworks[this.chainId].rpcUrls.length > 0) {
-            this.provider = _Wallet.DefaultNetworks[this.chainId].rpcUrls[0];
+          if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
+            this.provider = this._networksMap[this.chainId].rpcUrls[0];
           }
         }
         async connect(walletPlugin, events, providerOptions) {
@@ -1404,6 +1406,20 @@ var require_wallet = __commonJS({
           this._kms = null;
           this._web3.eth.defaultAccount = "";
           this._account = value;
+        }
+        get networksMap() {
+          return this._networksMap;
+        }
+        getNetworkInfo(chainId) {
+          return this._networksMap[chainId];
+        }
+        setNetworkInfo(network) {
+          this._networksMap[network.chainId] = network;
+        }
+        setMultipleNetworksInfo(networks) {
+          for (let network of networks) {
+            this.setNetworkInfo(network);
+          }
         }
         createAccount() {
           let acc = this._web3.eth.accounts.create();
@@ -1734,7 +1750,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.DefaultNetworks[self.chainId];
+              let network = self._networksMap[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
@@ -1750,7 +1766,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.DefaultNetworks[self.chainId];
+              let network = self._networksMap[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
@@ -2212,6 +2228,7 @@ __export(exports, {
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
   IBatchRequestObj: () => import_wallet.IBatchRequestObj,
+  INetwork: () => import_wallet.INetwork,
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,

@@ -9,7 +9,8 @@ export {
     ISendTxEventsOptions, 
     WalletPlugin,
     WalletPluginConfig,
-    IBatchRequestObj
+    IBatchRequestObj,
+    INetwork
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";

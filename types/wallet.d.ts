@@ -214,9 +214,10 @@ declare module Wallet {
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
-    const DefaultNetworks: {
+    type NetworksMapType = {
         [chainId: number]: INetwork;
     };
+    const DefaultNetworksMap: NetworksMapType;
     enum WalletPlugin {
         MetaMask = "metamask",
         Coin98 = "coin98",
@@ -280,6 +281,7 @@ declare module Wallet {
         private _sendTxEventHandler;
         private _contracts;
         private _blockGasLimit;
+        private _networksMap;
         chainId: number;
         clientSideProvider: ClientSideProvider;
         constructor(provider?: any, account?: IAccount | IAccount[]);
@@ -295,6 +297,10 @@ declare module Wallet {
         get address(): string;
         get account(): IAccount;
         set account(value: IAccount);
+        get networksMap(): NetworksMapType;
+        getNetworkInfo(chainId: number): INetwork;
+        setNetworkInfo(network: INetwork): void;
+        setMultipleNetworksInfo(networks: INetwork[]): void;
         createAccount(): IAccount;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         get defaultAccount(): string;

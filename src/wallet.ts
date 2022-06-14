@@ -241,7 +241,8 @@ module Wallet{
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
 	}
-	export const DefaultNetworks: { [chainId: number]: INetwork } = {
+	export type NetworksMapType = { [chainId: number]: INetwork }
+	export const DefaultNetworksMap: NetworksMapType = {
 		1: {
 			chainId: 1,
 			chainName: "Ethereum Mainnet",
@@ -619,7 +620,7 @@ module Wallet{
 					} catch (error) {
 						if (error.code === 4902) {
 							try {
-								let network = DefaultNetworks[chainId];
+								let network = self.wallet.networksMap[chainId];
 								if (!network) resolve(false);
 								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
@@ -700,7 +701,7 @@ module Wallet{
 					} catch (error) {
 						if (error.code === 4902) {
 							try {
-								let network = DefaultNetworks[chainId];
+								let network = self.wallet.networksMap[chainId];
 								if (!network) resolve(false);
 								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
 								if (!Array.isArray(rpcUrls))
@@ -836,8 +837,9 @@ module Wallet{
 		private _sendTxEventHandler: ISendTxEventsOptions = {};
 		private _contracts = {};
 		private _blockGasLimit: number;
+		private _networksMap: NetworksMapType = {};    
 		public chainId: number;   
-		public clientSideProvider: ClientSideProvider;    
+		public clientSideProvider: ClientSideProvider;  
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			this._provider = provider;			
@@ -851,6 +853,7 @@ module Wallet{
 
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+			this._networksMap = DefaultNetworksMap;
 		}
 		private static readonly instance: Wallet = new Wallet();
 		static getInstance(): Wallet {
@@ -877,8 +880,8 @@ module Wallet{
 		}
 		setDefaultProvider(){
 			if (!this.chainId) this.chainId = 56;	
-			if (DefaultNetworks[this.chainId] && DefaultNetworks[this.chainId].rpcUrls.length > 0) {
-				this.provider = DefaultNetworks[this.chainId].rpcUrls[0];
+			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
+				this.provider = this._networksMap[this.chainId].rpcUrls[0];
 			}
 		}
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
@@ -948,6 +951,20 @@ module Wallet{
 			this._web3.eth.defaultAccount = '';
             this._account = value;
         }
+		get networksMap() {
+			return this._networksMap;
+		}
+		getNetworkInfo(chainId: number){
+			return this._networksMap[chainId];
+		}
+		setNetworkInfo(network: INetwork){
+			this._networksMap[network.chainId] = network;
+		}
+		setMultipleNetworksInfo(networks: INetwork[]){
+			for (let network of networks) {
+				this.setNetworkInfo(network);
+			}
+		}
         createAccount(): IAccount{
         	let acc = this._web3.eth.accounts.create();
         	return {
@@ -1305,7 +1322,7 @@ module Wallet{
             let _web3 = this._web3;
 			return new Promise(async function(resolve){
 				try{
-					let network = DefaultNetworks[self.chainId];
+					let network = self._networksMap[self.chainId];
 					let decimals = 18;
 					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
 						decimals = network.nativeCurrency.decimals;
@@ -1323,7 +1340,7 @@ module Wallet{
             let _web3 = this._web3;
 			return new Promise(async function(resolve){
 				try{
-					let network = DefaultNetworks[self.chainId];
+					let network = self._networksMap[self.chainId];
 					let decimals = 18;
 					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
 						decimals = network.nativeCurrency.decimals;
