@@ -15,7 +15,10 @@ interface Line {
     indent: number;
     text: string;
 }
-export default function(name: string, abiPath: string, abi: Item[], hasBytecode: boolean){
+export interface IUserDefinedOptions {
+    outputBytecode: boolean;
+}
+export default function(name: string, abiPath: string, abi: Item[], options: IUserDefinedOptions){
     if (abi.length) {
     let result = [];
     let events = {};
@@ -117,11 +120,28 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
             return `${paramName(item.inputs[0].name,0)}:${inputDataType(item.inputs[0])}`;
         }
         else{
-            let result = 'params:{';
+            let result = `params: I${item.name}Params`;
+            return result;
+            // let result = 'params:{';
+            // if (item.inputs){
+            //     for (let i = 0; i < item.inputs.length; i ++){
+            //         if (i > 0)
+            //             result += ',';
+            //         result += `${paramName(item.inputs[i].name,i)}:${inputDataType(item.inputs[i])}`;
+            //     }
+            // }
+            // return result+'}';
+        }
+    }
+    const paramsInterface = function(item: Item): string {
+        if (item.inputs.length <= 1)
+            return '';
+        else{
+            let result = `Export Interface I${item.name}Params {`;
             if (item.inputs){
                 for (let i = 0; i < item.inputs.length; i ++){
                     if (i > 0)
-                        result += ',';
+                        result += ';';
                     result += `${paramName(item.inputs[i].name,i)}:${inputDataType(item.inputs[i])}`;
                 }
             }
@@ -345,12 +365,15 @@ export default function(name: string, abiPath: string, abi: Item[], hasBytecode:
     addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
+    for (let i = 0; i < abi.length; i++) {
+        paramsInterface(abi[i]);
+    }
     addLine(0, `export class ${name} extends Contract{`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
-    addLine(2, hasBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
+    addLine(2, options.outputBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
     addLine(2, `this.assign()`);
     addLine(1, `}`);
-    if (hasBytecode)
+    if (options.outputBytecode)
         addDeployer(abi);
     for (let i = 0; i < abi.length; i++) {
         addAbiItem(abi[i]);

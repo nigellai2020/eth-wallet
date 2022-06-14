@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as https from 'https';
 import * as http from 'http';
 
-import codeGen from './codeGen';
+import codeGen, {IUserDefinedOptions} from './codeGen';
 
 const SolcjsPath = path.resolve(__dirname, 'solcjs');
 const RootPath = process.env.PWD;
@@ -224,8 +224,11 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                     }
                     fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
 
-                    let relPath = './';
-                    let code = codeGen(j, relPath, abi, outputBytecode);
+                    let relPath = './';                
+                    let options: IUserDefinedOptions = {
+                        outputBytecode
+                    }
+                    let code = codeGen(j, relPath, abi, options);
                     fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
 
                     index += `export { ${j} } from \'./${p + j}\';\n`;
