@@ -133,9 +133,9 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             // return result+'}';
         }
     }
-    const paramsInterface = function(item: Item): string {
-        if (item.inputs.length <= 1)
-            return '';
+    const addParamsInterface = function(item: Item): string {
+        if (!item.inputs || item.inputs.length <= 1)
+            return null;
         else{
             let result = `Export Interface I${item.name}Params {`;
             if (item.inputs){
@@ -366,7 +366,10 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
     for (let i = 0; i < abi.length; i++) {
-        paramsInterface(abi[i]);
+        let result = addParamsInterface(abi[i]);
+        if (result) {
+            addLine(0, result);
+        } 
     }
     addLine(0, `export class ${name} extends Contract{`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
