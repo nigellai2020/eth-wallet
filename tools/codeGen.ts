@@ -379,7 +379,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
     for (let i = 0; i < abi.length; i++) {
-        if (abi[i].type != 'function' || abi[i].type != 'constructor') continue;
+        if (abi[i].type != 'function' && abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
     }
     addLine(0, `export class ${name} extends Contract{`);
