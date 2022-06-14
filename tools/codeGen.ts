@@ -268,10 +268,10 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(name)}(params)]`;
+            input = `,[${getParamsFunctionName(item.name)}(params)]`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        let args = `${inputs(name, item)}${payable(item)}`;
+        let args = `${inputs(item.name, item)}${payable(item)}`;
         addLine(2, `let ${name} = async (${args}): Promise<${outputs(item.outputs)}> => {`);
         addLine(3, `let result = await this.call('${item.name}'${input}${_payable});`);
         returnOutputs(item.outputs, true).forEach((e,i,a)=>addLine(e.indent+3, e.text));
@@ -283,10 +283,10 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(name)}(params)]`;
+            input = `,[${getParamsFunctionName(item.name)}(params)]`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        let args = `${inputs(name, item)}${payable(item)}`;
+        let args = `${inputs(item.name, item)}${payable(item)}`;
         let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
         addLine(2, `let ${name} = async (${batchCallArgs}): Promise<void> => {`);
         addLine(3, `await this.batchCall(batchObj, key, '${item.name}'${input}${_payable});`);
@@ -298,10 +298,10 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             input = `,[${toSolidityInput(item)}]`;
         }
         else if (item.inputs.length > 1) {
-            input = `,[${getParamsFunctionName(name)}(params)]`;
+            input = `,[${getParamsFunctionName(item.name)}(params)]`;
         }
         let _payable = item.stateMutability=='payable'?((item.inputs.length==0?", []":"")+', {value:_value}'):'';
-        let args = `${inputs(name, item)}${payable(item)}`;
+        let args = `${inputs(item.name, item)}${payable(item)}`;
         addLine(2, `let ${name} = async (${args}): Promise<TransactionReceipt> => {`);
         addLine(3, `let result = await this.send('${item.name}'${input}${_payable});`);
         addLine(3, 'return result;')
@@ -346,6 +346,10 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             addLine(1, `deploy(${inputs(item.name, item)}${payable(item)}): Promise<string>{`);
             addLine(2, `return this.__deploy(${input}${_payable});`);
             addLine(1, `}`);
+            let paramsInterface = getParamsInterface(item.name, item);
+            if (paramsInterface) {
+                addLine(0, paramsInterface);
+            } 
         } else {
             addLine(1, `deploy(): Promise<string>{`);
             addLine(2, `return this.__deploy();`);
