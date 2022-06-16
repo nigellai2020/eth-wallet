@@ -284,6 +284,7 @@ declare module Wallet {
         private _networksMap;
         chainId: number;
         clientSideProvider: ClientSideProvider;
+        private _infuraId;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): Wallet;
@@ -297,6 +298,8 @@ declare module Wallet {
         get address(): string;
         get account(): IAccount;
         set account(value: IAccount);
+        get infuraId(): string;
+        set infuraId(value: string);
         get networksMap(): NetworksMapType;
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;

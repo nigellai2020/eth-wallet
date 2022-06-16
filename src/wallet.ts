@@ -246,7 +246,7 @@ module Wallet{
 		1: {
 			chainId: 1,
 			chainName: "Ethereum Mainnet",
-			rpcUrls: ['https://mainnet.infura.io/v3/'],
+			rpcUrls: ['https://mainnet.infura.io/v3/{INFURA_ID}'],
 			blockExplorerUrls: ['https://etherscan.io/'],
 			nativeCurrency: {
 				decimals: 18,
@@ -257,7 +257,7 @@ module Wallet{
 		3: {
 			chainId: 3,
 			chainName: "Ropsten Test Network",
-			rpcUrls: ['https://ropsten.infura.io/v3/'],
+			rpcUrls: ['https://ropsten.infura.io/v3/{INFURA_ID}'],
 			blockExplorerUrls: ['https://ropsten.etherscan.io'],
 			nativeCurrency: {
 				decimals: 18,
@@ -268,7 +268,7 @@ module Wallet{
 		4: {
 			chainId: 4,
 			chainName: "Rinkeby Test Network",
-			rpcUrls: ['https://rinkeby.infura.io/v3/'],
+			rpcUrls: ['https://rinkeby.infura.io/v3/{INFURA_ID}'],
 			blockExplorerUrls: ['https://rinkeby.etherscan.io'],
 			nativeCurrency: {
 				decimals: 18,
@@ -279,7 +279,7 @@ module Wallet{
 		42: {
 			chainId: 42,
 			chainName: "Kovan Test Network",
-			rpcUrls: ['https://kovan.infura.io/v3/'],
+			rpcUrls: ['https://kovan.infura.io/v3/{INFURA_ID}'],
 			blockExplorerUrls: ['https://kovan.etherscan.io/'],
 			nativeCurrency: {
 				decimals: 18,
@@ -562,9 +562,6 @@ module Wallet{
 						if (self.onAccountChanged)
 							self.onAccountChanged(accountAddress);
 					});
-					// await this.wallet.web3.eth.net.getId((err, chainId) => {
-					// 	this.wallet.chainId = chainId;
-					// })
 				}
 			} catch (error) {
 				console.error(error);
@@ -789,9 +786,6 @@ module Wallet{
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				});
-				// await this.wallet.web3.eth.net.getId((err, chainId) => {
-				// 	this.wallet.chainId = chainId;
-				// })
 			} catch (error) {
 				console.error(error);
 			}
@@ -840,6 +834,7 @@ module Wallet{
 		private _networksMap: NetworksMapType = {};    
 		public chainId: number;   
 		public clientSideProvider: ClientSideProvider;  
+		private _infuraId: string;
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			this._provider = provider;			
@@ -881,14 +876,16 @@ module Wallet{
 		setDefaultProvider(){
 			if (!this.chainId) this.chainId = 56;	
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
-				this.provider = this._networksMap[this.chainId].rpcUrls[0];
+				let rpc = this._networksMap[this.chainId].rpcUrls[0];
+				if (rpc.indexOf('{INFURA_ID}') && this._infuraId) {
+					rpc = rpc.replace('{INFURA_ID}', this._infuraId);
+				}
+				this.provider = rpc;
 			}
 		}
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
 			if (this.clientSideProvider) {
-				// if (!this.provider) this.provider = window['ethereum'];	
-				// if (!this.chainId) await this.getChainId();
 				await this.clientSideProvider.connect();
 				this.setDefaultProvider();
 			}
@@ -951,6 +948,13 @@ module Wallet{
 			this._web3.eth.defaultAccount = '';
             this._account = value;
         }
+		get infuraId() {
+			return this._infuraId;
+		}
+		set infuraId(value: string) {
+			this._infuraId = value;
+			this.setDefaultProvider();
+		}
 		get networksMap() {
 			return this._networksMap;
 		}
@@ -1378,9 +1382,6 @@ module Wallet{
 			else	
 				return <number>block.timestamp
 		};		
-		// get network(): INetwork{
-		// 	return Networks[this.chainId];
-		// };
 		async initKMS(value?: IKMS){			
 			value = value || this._account.kms;			
 			if (value){

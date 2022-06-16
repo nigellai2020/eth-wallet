@@ -742,7 +742,7 @@ var require_wallet = __commonJS({
         1: {
           chainId: 1,
           chainName: "Ethereum Mainnet",
-          rpcUrls: ["https://mainnet.infura.io/v3/"],
+          rpcUrls: ["https://mainnet.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://etherscan.io/"],
           nativeCurrency: {
             decimals: 18,
@@ -753,7 +753,7 @@ var require_wallet = __commonJS({
         3: {
           chainId: 3,
           chainName: "Ropsten Test Network",
-          rpcUrls: ["https://ropsten.infura.io/v3/"],
+          rpcUrls: ["https://ropsten.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://ropsten.etherscan.io"],
           nativeCurrency: {
             decimals: 18,
@@ -764,7 +764,7 @@ var require_wallet = __commonJS({
         4: {
           chainId: 4,
           chainName: "Rinkeby Test Network",
-          rpcUrls: ["https://rinkeby.infura.io/v3/"],
+          rpcUrls: ["https://rinkeby.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://rinkeby.etherscan.io"],
           nativeCurrency: {
             decimals: 18,
@@ -775,7 +775,7 @@ var require_wallet = __commonJS({
         42: {
           chainId: 42,
           chainName: "Kovan Test Network",
-          rpcUrls: ["https://kovan.infura.io/v3/"],
+          rpcUrls: ["https://kovan.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://kovan.etherscan.io/"],
           nativeCurrency: {
             decimals: 18,
@@ -1345,7 +1345,11 @@ var require_wallet = __commonJS({
           if (!this.chainId)
             this.chainId = 56;
           if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
-            this.provider = this._networksMap[this.chainId].rpcUrls[0];
+            let rpc = this._networksMap[this.chainId].rpcUrls[0];
+            if (rpc.indexOf("{INFURA_ID}") && this._infuraId) {
+              rpc = rpc.replace("{INFURA_ID}", this._infuraId);
+            }
+            this.provider = rpc;
           }
         }
         async connect(walletPlugin, events, providerOptions) {
@@ -1406,6 +1410,13 @@ var require_wallet = __commonJS({
           this._kms = null;
           this._web3.eth.defaultAccount = "";
           this._account = value;
+        }
+        get infuraId() {
+          return this._infuraId;
+        }
+        set infuraId(value) {
+          this._infuraId = value;
+          this.setDefaultProvider();
         }
         get networksMap() {
           return this._networksMap;
