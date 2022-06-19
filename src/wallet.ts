@@ -1844,6 +1844,9 @@ module Wallet{
                 }
             });
         }		
+		soliditySha3(...val: any[]) {
+			return this._web3.utils.soliditySha3(...val);
+		}
 		public get web3(): W3.default{
 			return this._web3;
 		}
