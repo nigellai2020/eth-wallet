@@ -52,6 +52,11 @@ declare module Wallet {
         totalSupply: BigNumber;
         decimals: number;
     }
+    interface IBatchRequestObj {
+        batch: any;
+        promises: any[];
+        execute: (batch: IBatchRequestObj, promises: any[]) => void;
+    }
     interface IWallet {
         account: IAccount;
         accounts: Promise<string[]>;
@@ -209,9 +214,10 @@ declare module Wallet {
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
-    const Networks: {
+    type NetworksMapType = {
         [chainId: number]: INetwork;
     };
+    const DefaultNetworksMap: NetworksMapType;
     enum WalletPlugin {
         MetaMask = "metamask",
         Coin98 = "coin98",
@@ -228,11 +234,16 @@ declare module Wallet {
         };
     };
     const WalletPluginConfig: WalletPluginConfigType;
+    interface IClientProviderOptions {
+        infuraId?: string;
+        callWithDefaultProvider?: boolean;
+        [key: string]: any;
+    }
     class ClientSideProvider {
         protected wallet: Wallet;
-        protected provider: any;
         protected _events?: IClientSideProviderEvents;
         protected _isConnected: boolean;
+        provider: any;
         readonly walletPlugin: WalletPlugin;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
@@ -245,21 +256,21 @@ declare module Wallet {
         disconnect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
-        switchNetwork(chainId: number): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
     }
     class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId: number): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     }
     class Web3ModalProvider extends ClientSideProvider {
         private readonly web3Modal;
-        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any);
+        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get installed(): boolean;
         private initializeWeb3Modal;
         connect(): Promise<any>;
         disconnect(): Promise<void>;
     }
-    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): ClientSideProvider;
+    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): ClientSideProvider;
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -275,21 +286,29 @@ declare module Wallet {
         private _sendTxEventHandler;
         private _contracts;
         private _blockGasLimit;
+        private _networksMap;
         chainId: number;
         clientSideProvider: ClientSideProvider;
+        private _infuraId;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): Wallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
-        switchNetwork(chainId: number): Promise<any>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         setDefaultProvider(): void;
-        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): Promise<ClientSideProvider>;
+        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<ClientSideProvider>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;
         set account(value: IAccount);
+        get infuraId(): string;
+        set infuraId(value: string);
+        get networksMap(): NetworksMapType;
+        getNetworkInfo(chainId: number): INetwork;
+        setNetworkInfo(network: INetwork): void;
+        setMultipleNetworksInfo(networks: INetwork[]): void;
         createAccount(): IAccount;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         get defaultAccount(): string;
@@ -350,6 +369,8 @@ declare module Wallet {
         call(transaction: Transaction): Promise<any>;
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
+        newBatchRequest(): Promise<IBatchRequestObj>;
+        soliditySha3(...val: any[]): string;
         get web3(): W3.default;
     }
 }

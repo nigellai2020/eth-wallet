@@ -326,6 +326,17 @@ var require_contract = __commonJS({
           let events = this.getAbiEvents();
           return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         }
+        async batchCall(batchObj, key, methodName, params, options) {
+          let contract = await this.getContract();
+          if (!contract.methods[methodName])
+            return;
+          let method = contract.methods[methodName].apply(this, params);
+          batchObj.promises.push(new Promise((resolve, reject) => {
+            batchObj.batch.add(method.call.request(__spreadValues({ from: this.wallet.address }, options), (e, v) => {
+              return resolve({ key, result: e ? null : v });
+            }));
+          }));
+        }
         async call(methodName, params, options) {
           let contract = await this.getContract();
           params = params || [];
@@ -695,22 +706,22 @@ var require_wallet = __commonJS({
     var import_bignumber4 = __toModule(require("bignumber.js"));
     init_erc20();
     var import_kms = __toModule(require_kms());
-    var Web32 = Web3Lib2();
+    var Web32 = initWeb3Lib();
     var Web3Modal;
     var WalletConnectProvider;
-    function Web3Lib2() {
+    function initWeb3Lib() {
       if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
       else
         return require("web3");
     }
-    function Web3ModalLib() {
+    function initWeb3ModalLib() {
       if (typeof window !== "undefined" && window["Web3Modal"])
         return window["Web3Modal"];
       else
         return null;
     }
-    function WalletConnectProviderLib() {
+    function initWalletConnectProviderLib() {
       if (typeof window !== "undefined" && window["WalletConnectProvider"])
         return window["WalletConnectProvider"];
       else
@@ -727,11 +738,11 @@ var require_wallet = __commonJS({
           return new import_bignumber4.BigNumber(W3.default.utils.fromWei(value));
         }
       };
-      _Wallet.Networks = {
+      _Wallet.DefaultNetworksMap = {
         1: {
           chainId: 1,
           chainName: "Ethereum Mainnet",
-          rpcUrls: ["https://mainnet.infura.io/v3/"],
+          rpcUrls: ["https://mainnet.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://etherscan.io/"],
           nativeCurrency: {
             decimals: 18,
@@ -742,7 +753,7 @@ var require_wallet = __commonJS({
         3: {
           chainId: 3,
           chainName: "Ropsten Test Network",
-          rpcUrls: ["https://ropsten.infura.io/v3/"],
+          rpcUrls: ["https://ropsten.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://ropsten.etherscan.io"],
           nativeCurrency: {
             decimals: 18,
@@ -753,7 +764,7 @@ var require_wallet = __commonJS({
         4: {
           chainId: 4,
           chainName: "Rinkeby Test Network",
-          rpcUrls: ["https://rinkeby.infura.io/v3/"],
+          rpcUrls: ["https://rinkeby.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://rinkeby.etherscan.io"],
           nativeCurrency: {
             decimals: 18,
@@ -764,7 +775,7 @@ var require_wallet = __commonJS({
         42: {
           chainId: 42,
           chainName: "Kovan Test Network",
-          rpcUrls: ["https://kovan.infura.io/v3/"],
+          rpcUrls: ["https://kovan.infura.io/v3/{INFURA_ID}"],
           blockExplorerUrls: ["https://kovan.etherscan.io/"],
           nativeCurrency: {
             decimals: 18,
@@ -992,6 +1003,7 @@ var require_wallet = __commonJS({
             });
             this.provider.on("chainChanged", (chainId) => {
               self.wallet.chainId = parseInt(chainId);
+              self.wallet.setDefaultProvider();
               if (self.onChainChanged)
                 self.onChainChanged(chainId);
             });
@@ -1008,7 +1020,7 @@ var require_wallet = __commonJS({
         }
         async connect() {
           this.provider = _Wallet.WalletPluginConfig[this.walletPlugin].provider();
-          this.wallet.web3.setProvider(this.provider);
+          this.wallet.chainId = parseInt(this.provider.chainId, 16);
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
             this.onChainChanged = this._events.onChainChanged;
@@ -1032,9 +1044,6 @@ var require_wallet = __commonJS({
                 this._isConnected = hasAccounts;
                 if (self.onAccountChanged)
                   self.onAccountChanged(accountAddress);
-              });
-              await this.wallet.web3.eth.net.getId((err, chainId) => {
-                this.wallet.chainId = chainId;
               });
             }
           } catch (error) {
@@ -1071,8 +1080,11 @@ var require_wallet = __commonJS({
             }
           });
         }
-        switchNetwork(chainId) {
+        switchNetwork(chainId, onChainChanged) {
           let self = this;
+          if (onChainChanged) {
+            this.onChainChanged = onChainChanged;
+          }
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
@@ -1087,7 +1099,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.Networks[chainId];
+                    let network = self.wallet.networksMap[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1148,8 +1160,11 @@ var require_wallet = __commonJS({
       }
       _Wallet.ClientSideProvider = ClientSideProvider;
       class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId) {
+        switchNetwork(chainId, onChainChanged) {
           let self = this;
+          if (onChainChanged) {
+            this.onChainChanged = onChainChanged;
+          }
           return new Promise(async function(resolve, reject) {
             try {
               let chainIdHex = "0x" + chainId.toString(16);
@@ -1164,7 +1179,7 @@ var require_wallet = __commonJS({
               } catch (error) {
                 if (error.code === 4902) {
                   try {
-                    let network = _Wallet.Networks[chainId];
+                    let network = self.wallet.networksMap[chainId];
                     if (!network)
                       resolve(false);
                     let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
@@ -1210,14 +1225,14 @@ var require_wallet = __commonJS({
         initializeWeb3Modal(options) {
           const providerOptions = {};
           if (!WalletConnectProvider) {
-            WalletConnectProvider = WalletConnectProviderLib();
+            WalletConnectProvider = initWalletConnectProviderLib();
           }
           providerOptions.walletconnect = {
             package: WalletConnectProvider.default,
             options
           };
           if (!Web3Modal) {
-            Web3Modal = Web3ModalLib();
+            Web3Modal = initWeb3ModalLib();
           }
           return new Web3Modal.default({
             cacheProvider: false,
@@ -1227,6 +1242,7 @@ var require_wallet = __commonJS({
         async connect() {
           await this.disconnect();
           this.provider = await this.web3Modal.connectTo(WalletPlugin2.WalletConnect);
+          this.wallet.chainId = this.provider.chainId;
           this.wallet.web3.setProvider(this.provider);
           if (this._events) {
             this.onAccountChanged = this._events.onAccountChanged;
@@ -1250,9 +1266,6 @@ var require_wallet = __commonJS({
               this._isConnected = hasAccounts;
               if (self.onAccountChanged)
                 self.onAccountChanged(accountAddress);
-            });
-            await this.wallet.web3.eth.net.getId((err, chainId) => {
-              this.wallet.chainId = chainId;
             });
           } catch (error) {
             console.error(error);
@@ -1291,6 +1304,7 @@ var require_wallet = __commonJS({
           this._eventHandler = {};
           this._sendTxEventHandler = {};
           this._contracts = {};
+          this._networksMap = {};
           this._abiHashDict = {};
           this._abiAddressDict = {};
           this._abiEventDict = {};
@@ -1303,6 +1317,7 @@ var require_wallet = __commonJS({
             this._account = account;
           if (this._account && this._account.privateKey && !this._account.address)
             this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+          this._networksMap = _Wallet.DefaultNetworksMap;
         }
         static getInstance() {
           return _Wallet2.instance;
@@ -1315,28 +1330,39 @@ var require_wallet = __commonJS({
         get isConnected() {
           return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
         }
-        async switchNetwork(chainId) {
+        async switchNetwork(chainId, onChainChanged) {
           let result;
           if (this.clientSideProvider) {
-            result = await this.clientSideProvider.switchNetwork(chainId);
+            result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
+          } else {
+            this.chainId = chainId;
+            this.setDefaultProvider();
+            onChainChanged("0x" + chainId.toString(16));
           }
           return result;
         }
         setDefaultProvider() {
           if (!this.chainId)
             this.chainId = 56;
-          if (_Wallet.Networks[this.chainId] && _Wallet.Networks[this.chainId].rpcUrls.length > 0) {
-            this.provider = _Wallet.Networks[this.chainId].rpcUrls[0];
+          if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
+            let rpc = this._networksMap[this.chainId].rpcUrls[0];
+            if (rpc.indexOf("{INFURA_ID}") && this._infuraId) {
+              rpc = rpc.replace("{INFURA_ID}", this._infuraId);
+            }
+            this.provider = rpc;
           }
         }
         async connect(walletPlugin, events, providerOptions) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
           if (this.clientSideProvider) {
-            if (!this.provider)
-              this.provider = window["ethereum"];
-            if (!this.chainId)
-              await this.getChainId();
             await this.clientSideProvider.connect();
+            if (providerOptions && providerOptions.callWithDefaultProvider) {
+              if (providerOptions.infuraId)
+                this._infuraId = providerOptions.infuraId;
+              this.setDefaultProvider();
+            } else {
+              this.provider = this.clientSideProvider.provider;
+            }
           } else {
             this.setDefaultProvider();
           }
@@ -1390,6 +1416,27 @@ var require_wallet = __commonJS({
           this._kms = null;
           this._web3.eth.defaultAccount = "";
           this._account = value;
+        }
+        get infuraId() {
+          return this._infuraId;
+        }
+        set infuraId(value) {
+          this._infuraId = value;
+          this.setDefaultProvider();
+        }
+        get networksMap() {
+          return this._networksMap;
+        }
+        getNetworkInfo(chainId) {
+          return this._networksMap[chainId];
+        }
+        setNetworkInfo(network) {
+          this._networksMap[network.chainId] = network;
+        }
+        setMultipleNetworksInfo(networks) {
+          for (let network of networks) {
+            this.setNetworkInfo(network);
+          }
         }
         createAccount() {
           let acc = this._web3.eth.accounts.create();
@@ -1720,7 +1767,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.Networks[self.chainId];
+              let network = self._networksMap[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
@@ -1736,7 +1783,7 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           return new Promise(async function(resolve) {
             try {
-              let network = _Wallet.Networks[self.chainId];
+              let network = self._networksMap[self.chainId];
               let decimals = 18;
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
@@ -2100,32 +2147,41 @@ var require_wallet = __commonJS({
         async sendTransaction(transaction) {
           transaction.value = new import_bignumber4.BigNumber(transaction.value).toFixed();
           transaction.gasPrice = new import_bignumber4.BigNumber(transaction.gasPrice).toFixed();
-          if (this._account && this._account.privateKey) {
-            let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
-            return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-          } else if (this._account && this._account.kms) {
-            let chainId = await this.getChainId();
-            let signedTx = await this.kms.signTransaction(chainId, transaction);
-            return await this._web3.eth.sendSignedTransaction(signedTx);
-          } else {
-            let promiEvent = this._web3.eth.sendTransaction(transaction);
-            promiEvent.on("error", (error) => {
-              if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-                return;
-              }
-              if (this._sendTxEventHandler.transactionHash)
-                this._sendTxEventHandler.transactionHash(error);
-            });
-            promiEvent.on("transactionHash", (receipt) => {
-              if (this._sendTxEventHandler.transactionHash)
-                this._sendTxEventHandler.transactionHash(null, receipt);
-            });
-            promiEvent.on("confirmation", (confNumber, receipt) => {
-              if (this._sendTxEventHandler.confirmation && confNumber == 1)
-                this._sendTxEventHandler.confirmation(receipt);
-            });
-            return await promiEvent;
+          let currentProvider = this.provider;
+          try {
+            if (typeof window !== "undefined" && this.clientSideProvider) {
+              this.provider = this.clientSideProvider.provider;
+            }
+            if (this._account && this._account.privateKey) {
+              let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
+              return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+            } else if (this._account && this._account.kms) {
+              let chainId = await this.getChainId();
+              let signedTx = await this.kms.signTransaction(chainId, transaction);
+              return await this._web3.eth.sendSignedTransaction(signedTx);
+            } else {
+              let promiEvent = this._web3.eth.sendTransaction(transaction);
+              promiEvent.on("error", (error) => {
+                if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+                  return;
+                }
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(error);
+              });
+              promiEvent.on("transactionHash", (receipt) => {
+                if (this._sendTxEventHandler.transactionHash)
+                  this._sendTxEventHandler.transactionHash(null, receipt);
+              });
+              promiEvent.on("confirmation", (confNumber, receipt) => {
+                if (this._sendTxEventHandler.confirmation && confNumber == 1)
+                  this._sendTxEventHandler.confirmation(receipt);
+              });
+              return await promiEvent;
+            }
+          } catch (err) {
           }
+          this.provider = currentProvider;
+          return null;
         }
         async getTransaction(transactionHash) {
           let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
@@ -2153,6 +2209,25 @@ var require_wallet = __commonJS({
         decodeErrorMessage(msg) {
           return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
         }
+        async newBatchRequest() {
+          return new Promise((resolve, reject) => {
+            try {
+              resolve({
+                batch: new this._web3.BatchRequest(),
+                promises: [],
+                execute: (batch, promises) => {
+                  batch.execute();
+                  return Promise.all(promises);
+                }
+              });
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+        soliditySha3(...val) {
+          return this._web3.utils.soliditySha3(...val);
+        }
         get web3() {
           return this._web3;
         }
@@ -2172,6 +2247,9 @@ __export(exports, {
   Erc20: () => Erc20,
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
+  IBatchRequestObj: () => import_wallet.IBatchRequestObj,
+  IClientProviderOptions: () => import_wallet.IClientProviderOptions,
+  INetwork: () => import_wallet.INetwork,
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,
