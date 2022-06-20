@@ -1356,7 +1356,13 @@ var require_wallet = __commonJS({
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
           if (this.clientSideProvider) {
             await this.clientSideProvider.connect();
-            this.setDefaultProvider();
+            if (providerOptions && providerOptions.callWithDefaultProvider) {
+              if (providerOptions.infuraId)
+                this._infuraId = providerOptions.infuraId;
+              this.setDefaultProvider();
+            } else {
+              this.provider = this.clientSideProvider.provider;
+            }
           } else {
             this.setDefaultProvider();
           }
@@ -2219,6 +2225,9 @@ var require_wallet = __commonJS({
             }
           });
         }
+        soliditySha3(...val) {
+          return this._web3.utils.soliditySha3(...val);
+        }
         get web3() {
           return this._web3;
         }
@@ -2239,6 +2248,7 @@ __export(exports, {
   Event: () => import_wallet.Event,
   IAccount: () => import_wallet.IAccount,
   IBatchRequestObj: () => import_wallet.IBatchRequestObj,
+  IClientProviderOptions: () => import_wallet.IClientProviderOptions,
   INetwork: () => import_wallet.INetwork,
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,

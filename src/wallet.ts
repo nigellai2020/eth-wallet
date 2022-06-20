@@ -482,6 +482,11 @@ module Wallet{
 			}
 		}
 	}
+	export interface IClientProviderOptions {	
+		infuraId?: string;
+		callWithDefaultProvider?: boolean;
+		[key: string]: any;		
+	}
 	export class ClientSideProvider {
 		protected wallet: Wallet;
 		protected _events?: IClientSideProviderEvents;
@@ -734,14 +739,14 @@ module Wallet{
 	}
 	export class Web3ModalProvider extends ClientSideProvider {
 		private readonly web3Modal: any;
-		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any) {
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			super(wallet, walletPlugin, events);
 			this.web3Modal = this.initializeWeb3Modal(options);
 		}
 		get installed(): boolean {
 			return true;
 		}
-		private initializeWeb3Modal(options?: any): any {
+		private initializeWeb3Modal(options?: IClientProviderOptions): any {
 			const providerOptions: any = {};
 			if (!WalletConnectProvider) {
 				WalletConnectProvider = initWalletConnectProviderLib();
@@ -802,7 +807,7 @@ module Wallet{
 			this._isConnected = false;
 		}
 	}
-	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
+	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
 		if (Wallet.isInstalled(walletPlugin)) {
 			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
 				return new BinanceChainWalletProvider(wallet, walletPlugin, events);
@@ -883,11 +888,17 @@ module Wallet{
 				this.provider = rpc;
 			}
 		}
-		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any) {
+		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
 			if (this.clientSideProvider) {
 				await this.clientSideProvider.connect();
-				this.setDefaultProvider();
+				if (providerOptions && providerOptions.callWithDefaultProvider) {
+					if (providerOptions.infuraId) this._infuraId = providerOptions.infuraId;
+					this.setDefaultProvider();
+				}
+				else {
+					this.provider = this.clientSideProvider.provider;
+				}
 			}
 			else {
 				this.setDefaultProvider();

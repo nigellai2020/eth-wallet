@@ -7,6 +7,7 @@ export {
     Event, 
     TransactionReceipt, 
     ISendTxEventsOptions, 
+    IClientProviderOptions,
     WalletPlugin,
     WalletPluginConfig,
     IBatchRequestObj,

@@ -234,6 +234,11 @@ declare module Wallet {
         };
     };
     const WalletPluginConfig: WalletPluginConfigType;
+    interface IClientProviderOptions {
+        infuraId?: string;
+        callWithDefaultProvider?: boolean;
+        [key: string]: any;
+    }
     class ClientSideProvider {
         protected wallet: Wallet;
         protected _events?: IClientSideProviderEvents;
@@ -259,13 +264,13 @@ declare module Wallet {
     }
     class Web3ModalProvider extends ClientSideProvider {
         private readonly web3Modal;
-        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: any);
+        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get installed(): boolean;
         private initializeWeb3Modal;
         connect(): Promise<any>;
         disconnect(): Promise<void>;
     }
-    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): ClientSideProvider;
+    function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): ClientSideProvider;
     interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -292,7 +297,7 @@ declare module Wallet {
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         setDefaultProvider(): void;
-        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: any): Promise<ClientSideProvider>;
+        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<ClientSideProvider>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
@@ -365,6 +370,7 @@ declare module Wallet {
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
         newBatchRequest(): Promise<IBatchRequestObj>;
+        soliditySha3(...val: any[]): string;
         get web3(): W3.default;
     }
 }
