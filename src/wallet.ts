@@ -126,8 +126,9 @@ module Wallet{
 		getContractAbi(address: string);
 		getContractAbiEvents(address: string);		
 		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
-		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
+		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;	
 		// end of rollback	
+		soliditySha3(...val: any[]): string;	
 	};
 	export interface IContractMethod {
 		call: any;

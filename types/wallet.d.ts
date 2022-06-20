@@ -105,6 +105,7 @@ declare module Wallet {
         getContractAbiEvents(address: string): any;
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+        soliditySha3(...val: any[]): string;
     }
     interface IContractMethod {
         call: any;
