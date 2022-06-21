@@ -52,10 +52,14 @@ declare module Wallet {
         totalSupply: BigNumber;
         decimals: number;
     }
+    interface IBatchRequestResult {
+        key: string;
+        result: any;
+    }
     interface IBatchRequestObj {
         batch: any;
-        promises: any[];
-        execute: (batch: IBatchRequestObj, promises: any[]) => void;
+        promises: Promise<IBatchRequestResult>[];
+        execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
     }
     interface IWallet {
         account: IAccount;
@@ -243,6 +247,7 @@ declare module Wallet {
     class ClientSideProvider {
         protected wallet: Wallet;
         protected _events?: IClientSideProviderEvents;
+        protected _options?: IClientProviderOptions;
         protected _isConnected: boolean;
         provider: any;
         readonly walletPlugin: WalletPlugin;
@@ -250,7 +255,7 @@ declare module Wallet {
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
-        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents);
+        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get installed(): boolean;
         initEvents(): void;
         connect(): Promise<any>;

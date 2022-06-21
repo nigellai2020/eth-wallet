@@ -78,10 +78,14 @@ module Wallet{
 		totalSupply: BigNumber;
 		decimals: number;	
 	}
+	export interface IBatchRequestResult {
+		key: string;
+		result: any;
+	}	
 	export interface IBatchRequestObj {
 		batch: any;
-		promises: any[];
-		execute: (batch: IBatchRequestObj, promises: any[]) => void;
+		promises: Promise<IBatchRequestResult>[];
+		execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
 	}
 	export interface IWallet {		
 		account: IAccount;
@@ -491,6 +495,7 @@ module Wallet{
 	export class ClientSideProvider {
 		protected wallet: Wallet;
 		protected _events?: IClientSideProviderEvents;
+		protected _options?: IClientProviderOptions;
 		protected _isConnected: boolean = false;
 		public provider: any;
 		public readonly walletPlugin: WalletPlugin;
@@ -499,10 +504,11 @@ module Wallet{
 		public onConnect: (connectInfo: any) => void;
 		public onDisconnect: (error: any) => void;
 
-		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents) {
+		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			this.wallet = wallet;
 			this.walletPlugin = walletPlugin;
 			this._events = events;
+			this._options = options;
 		}
 		get installed(): boolean {
 			return WalletPluginConfig[this.walletPlugin].installed();
@@ -526,7 +532,10 @@ module Wallet{
 				});
 				this.provider.on('chainChanged', (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
-					self.wallet.setDefaultProvider();
+					if (this._options && this._options.callWithDefaultProvider) {
+						if (this._options.infuraId) this.wallet.infuraId = this._options.infuraId;
+						self.wallet.setDefaultProvider();
+					}
 					if (self.onChainChanged)
 						self.onChainChanged(chainId);
 				});
@@ -883,8 +892,8 @@ module Wallet{
 			if (!this.chainId) this.chainId = 56;	
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
 				let rpc = this._networksMap[this.chainId].rpcUrls[0];
-				if (rpc.indexOf('{INFURA_ID}') && this._infuraId) {
-					rpc = rpc.replace('{INFURA_ID}', this._infuraId);
+				if (rpc.indexOf('{INFURA_ID}')) {
+					rpc = rpc.replace('{INFURA_ID}', this._infuraId??'');
 				}
 				this.provider = rpc;
 			}

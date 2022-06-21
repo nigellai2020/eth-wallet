@@ -333,7 +333,10 @@ var require_contract = __commonJS({
           let method = contract.methods[methodName].apply(this, params);
           batchObj.promises.push(new Promise((resolve, reject) => {
             batchObj.batch.add(method.call.request(__spreadValues({ from: this.wallet.address }, options), (e, v) => {
-              return resolve({ key, result: e ? null : v });
+              return resolve({
+                key,
+                result: e ? null : v
+              });
             }));
           }));
         }
@@ -975,11 +978,12 @@ var require_wallet = __commonJS({
         }
       };
       class ClientSideProvider {
-        constructor(wallet, walletPlugin, events) {
+        constructor(wallet, walletPlugin, events, options) {
           this._isConnected = false;
           this.wallet = wallet;
           this.walletPlugin = walletPlugin;
           this._events = events;
+          this._options = options;
         }
         get installed() {
           return _Wallet.WalletPluginConfig[this.walletPlugin].installed();
@@ -1003,7 +1007,11 @@ var require_wallet = __commonJS({
             });
             this.provider.on("chainChanged", (chainId) => {
               self.wallet.chainId = parseInt(chainId);
-              self.wallet.setDefaultProvider();
+              if (this._options && this._options.callWithDefaultProvider) {
+                if (this._options.infuraId)
+                  this.wallet.infuraId = this._options.infuraId;
+                self.wallet.setDefaultProvider();
+              }
               if (self.onChainChanged)
                 self.onChainChanged(chainId);
             });
@@ -1342,12 +1350,13 @@ var require_wallet = __commonJS({
           return result;
         }
         setDefaultProvider() {
+          var _a;
           if (!this.chainId)
             this.chainId = 56;
           if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
             let rpc = this._networksMap[this.chainId].rpcUrls[0];
-            if (rpc.indexOf("{INFURA_ID}") && this._infuraId) {
-              rpc = rpc.replace("{INFURA_ID}", this._infuraId);
+            if (rpc.indexOf("{INFURA_ID}")) {
+              rpc = rpc.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
             }
             this.provider = rpc;
           }
