@@ -147,7 +147,10 @@ module Contract {
             batchObj.promises.push(new Promise((resolve, reject) => {
                 batchObj.batch.add(method.call.request({from: this.wallet.address, ...options}, 
                     (e,v) => {
-                        return resolve({key:key, result:e ? null : v});
+                        return resolve({
+                            key:key, 
+                            result:e ? null : v
+                        });
                     }
                 ));
             }));
