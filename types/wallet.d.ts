@@ -269,7 +269,7 @@ declare module Wallet {
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     }
     class Web3ModalProvider extends ClientSideProvider {
-        private readonly web3Modal;
+        private web3Modal;
         constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get installed(): boolean;
         private initializeWeb3Modal;
