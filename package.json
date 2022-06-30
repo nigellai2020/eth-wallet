@@ -19,13 +19,11 @@
     "devDependencies": {
         "@types/mocha": "9.1.1",
         "@types/node": "14.17",
-        "@walletconnect/web3-provider": "1.4.1",
         "esbuild": "0.13.13",
         "ganache": "7.2.0",
         "mocha": "10.0.0",
         "ts-node": "10.1.0",
-        "typescript": "4.2.4",
-        "web3modal": "git+https://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:x-oauth-basic@github.com/ijstech/web3modal.git"
+        "typescript": "4.2.4"
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",

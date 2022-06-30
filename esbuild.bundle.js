@@ -15,16 +15,6 @@ async function readFile(fileName) {
   })
 }
 
-async function buildWeb3Modal() {
-  let web3modal = await readFile('./node_modules/web3modal/dist/index.js');
-  let walletconnect = await readFile('./node_modules/@walletconnect/web3-provider/dist/umd/index.min.js');
-  let content = `
-${web3modal}
-${walletconnect}
-`;
-  Fs.writeFileSync('./dist/web3modal.js', content);
-};
-
 async function build() {
   let result = await require('esbuild').build({
     entryPoints: ['src/index.ts'],
@@ -33,9 +23,7 @@ async function build() {
     minify: false,
     format: 'cjs',
     external: [
-      ...Object.keys(dependencies),
-      'web3modal',
-      '@walletconnect/web3-provider'
+      ...Object.keys(dependencies)
     ],
     plugins: [],
   }).catch(() => process.exit(1));
@@ -56,6 +44,5 @@ ${content}
 });`
 
   Fs.writeFileSync('dist/index.js', content);
-  await buildWeb3Modal();
 };
 build();
