@@ -8,23 +8,25 @@ import {KMS} from './kms';
 let Web3Modal;
 let WalletConnectProvider;
 
+const RequireJS = {    
+    require(reqs:string[], callback:any):void {
+        (<any>window.require)(reqs, callback);
+    }
+}
 function initWeb3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
 	else
-        return require("web3");
+		return require("web3");
 };
-function initWeb3ModalLib(){
-	if (typeof window !== "undefined" && window["Web3Modal"])
-		return window["Web3Modal"];
-	else
-		return null;
-}
-function initWalletConnectProviderLib(){
-	if (typeof window !== "undefined" && window["WalletConnectProvider"])
-		return window["WalletConnectProvider"];
-	else
-		return null;
+function initWeb3ModalLib(callback: () => void){
+	if (typeof window !== "undefined") {
+		RequireJS.require(['WalletConnectProvider', 'Web3Modal'], (walletconnect, web3modal) => {
+			window["WalletConnectProvider"] = walletconnect;
+			window["Web3Modal"] = web3modal;
+			callback();
+		})		
+	}
 }
 
 module Wallet{    
@@ -748,30 +750,30 @@ module Wallet{
 		}
 	}
 	export class Web3ModalProvider extends ClientSideProvider {
-		private readonly web3Modal: any;
+		private web3Modal: any;
 		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			super(wallet, walletPlugin, events);
-			this.web3Modal = this.initializeWeb3Modal(options);
+			this.initializeWeb3Modal(options);
 		}
 		get installed(): boolean {
 			return true;
 		}
 		private initializeWeb3Modal(options?: IClientProviderOptions): any {
-			const providerOptions: any = {};
-			if (!WalletConnectProvider) {
-				WalletConnectProvider = initWalletConnectProviderLib();
+			let func = () => {
+				WalletConnectProvider = window["WalletConnectProvider"];
+				const providerOptions = {
+					walletconnect: {
+						package: WalletConnectProvider.default,
+						options
+					}
+				};
+				Web3Modal = window["Web3Modal"]
+				this.web3Modal = new Web3Modal.default({
+					cacheProvider: false,
+					providerOptions,
+				});
 			}
-			providerOptions.walletconnect = {
-				package: WalletConnectProvider.default,
-				options
-			};
-			if (!Web3Modal) {
-				Web3Modal = initWeb3ModalLib();
-			}
-			return new Web3Modal.default({
-				cacheProvider: false,
-				providerOptions,
-			});
+			initWeb3ModalLib(func);
 		}
 		async connect() {
 			await this.disconnect();
