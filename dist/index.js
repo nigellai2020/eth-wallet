@@ -918,6 +918,7 @@ var require_wallet = __commonJS({
         WalletPlugin3["BinanceChainWallet"] = "binancechainwallet";
         WalletPlugin3["ONTOWallet"] = "onto";
         WalletPlugin3["WalletConnect"] = "walletconnect";
+        WalletPlugin3["BitKeepWallet"] = "bitkeepwallet";
       })(WalletPlugin2 = _Wallet.WalletPlugin || (_Wallet.WalletPlugin = {}));
       _Wallet.WalletPluginConfig = {
         [WalletPlugin2.MetaMask]: {
@@ -976,6 +977,17 @@ var require_wallet = __commonJS({
           },
           homepage: () => {
             return "https://onto.app/en/download/?mode=app";
+          }
+        },
+        [WalletPlugin2.BitKeepWallet]: {
+          provider: () => {
+            return window["bitkeep"]["ethereum"];
+          },
+          installed: () => {
+            return !!window["isBitKeep"];
+          },
+          homepage: () => {
+            return "https://bitkeep.com/download?type=2";
           }
         }
       };
