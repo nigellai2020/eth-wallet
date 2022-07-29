@@ -1,4 +1,6 @@
 import {BigNumber} from "bignumber.js";
+import { Wallet } from "./wallet";
+import MerkleTree from './merkleTree';
 const Web3 = Web3Lib(); // tslint:disable-line
 
 function Web3Lib(){
@@ -134,3 +136,58 @@ export function toString(value:any){
         return value;
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
+
+export interface IWhitelistTreeData {
+    account: string;
+    [key: string]: any;
+}
+
+export interface IWhitelistTreeABIItem {
+    name: string;
+    type: string;
+}
+
+function getSha3HashBufferFunc(wallet: Wallet, abi: IWhitelistTreeABIItem[]){
+    return (treeItem: IWhitelistTreeData) => {
+        let encodePackedInput = abi.map((abiItem) => {
+            return {
+                t: abiItem.type,
+                v: treeItem[abiItem.name]
+            }
+        })
+        let hex = wallet.soliditySha3(
+            { t: "address", v: treeItem.account },
+            ...encodePackedInput
+        );
+        return hex;
+    };    
+}
+export function generateWhitelistTree(wallet: Wallet, data: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]){
+    const hashFunc = getSha3HashBufferFunc(wallet, abi);
+    const leaves = data.map((item) => hashFunc(item));
+    const merkleTree = MerkleTree.create(wallet, leaves);
+    const merkleRoot = merkleTree.getHexRoot();
+    return {
+        root: merkleRoot,
+        tree: merkleTree.toString()
+    };
+}
+
+export function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]) {
+    const hashFunc = getSha3HashBufferFunc(wallet, abi);
+    let accountLeaf: string;
+    let leaves: string[] = [];
+    for (let item of rawData) {
+        let leaf = hashFunc(item);
+        if (wallet.address == item.account) {
+            accountLeaf = leaf;
+        }
+        leaves.push(leaf);
+    }
+    if (!accountLeaf) return null;
+    const tree = MerkleTree.create(wallet, leaves);
+    const calculatedRoot = tree.getHexRoot();
+    if (calculatedRoot != inputRoot) return null;
+    const proof = tree.getHexProof(accountLeaf);
+    return proof;
+}
