@@ -422,7 +422,8 @@ module Wallet{
 		TrustWallet = 'trustwallet',
 		BinanceChainWallet = 'binancechainwallet',
 		ONTOWallet = 'onto',
-		WalletConnect = 'walletconnect'
+		WalletConnect = 'walletconnect',
+		BitKeepWallet = 'bitkeepwallet',
 	}
 	export type WalletPluginConfigType = { [key in WalletPlugin]?: {
 		provider: () => any;
@@ -486,6 +487,17 @@ module Wallet{
 			},
 			homepage: () => {
 				return 'https://onto.app/en/download/?mode=app'
+			}
+		},
+		[WalletPlugin.BitKeepWallet]: {
+			provider: () => {
+				return window['bitkeep']['ethereum']
+			},
+			installed: () => {
+				return !!window['isBitKeep'];
+			},
+			homepage: () => {
+				return 'https://bitkeep.com/download?type=2'
 			}
 		}
 	}

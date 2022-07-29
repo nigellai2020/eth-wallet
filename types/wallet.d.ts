@@ -229,7 +229,8 @@ declare module Wallet {
         TrustWallet = "trustwallet",
         BinanceChainWallet = "binancechainwallet",
         ONTOWallet = "onto",
-        WalletConnect = "walletconnect"
+        WalletConnect = "walletconnect",
+        BitKeepWallet = "bitkeepwallet"
     }
     type WalletPluginConfigType = {
         [key in WalletPlugin]?: {
