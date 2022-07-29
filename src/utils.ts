@@ -1,4 +1,5 @@
 import {BigNumber} from "bignumber.js";
+import { Wallet } from "./wallet";
 const Web3 = Web3Lib(); // tslint:disable-line
 
 function Web3Lib(){
@@ -134,3 +135,90 @@ export function toString(value:any){
         return value;
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
+
+export interface IWhitelistTreeData {
+    account: string;
+    [key: string]: any;
+}
+
+export interface IWhitelistTreeABIItem {
+    name: string;
+    type: string;
+}
+
+function importBufferModule() {
+	if (typeof window !== "undefined") {
+        return require("buffer").Buffer;
+    }
+	else
+		return Buffer;
+}
+
+function importJsSha3Module() {
+	if (typeof window !== "undefined") {
+        return window['js-sha3'];
+    }
+	else
+		return require("js-sha3");
+}
+
+function importMerkleTreeModule() {
+	if (typeof window !== "undefined") {
+        return window['MerkleTree'];
+    }
+	else
+		return require("merkletreejs").MerkleTree;
+}
+
+export function getSha3HashBufferFunc(wallet: Wallet, abi: IWhitelistTreeABIItem[]){
+    const import_buffer = importBufferModule();
+    return (treeItem: IWhitelistTreeData) => {
+        let encodePackedInput = abi.map((abiItem) => {
+            return {
+                t: abiItem.type,
+                v: treeItem[abiItem.name]
+            }
+        })
+        let hex = wallet.soliditySha3(
+            { t: "address", v: treeItem.account },
+            ...encodePackedInput
+        ).slice(2);
+        
+        return import_buffer.from(hex, "hex");
+    };    
+}
+
+export function generateWhitelistTree(wallet: Wallet, data: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]){
+    const import_jsSha3 = importJsSha3Module();
+    const import_merkleTree = importMerkleTreeModule();
+    const hashFunc = getSha3HashBufferFunc(wallet, abi);
+    const leaves = data.map((item) => hashFunc(item));
+    const merkleTree = new import_merkleTree(leaves, import_jsSha3.keccak256, { sortPairs: true });
+    const merkleRoot = merkleTree.getHexRoot();
+    return {
+        root: merkleRoot,
+        tree: merkleTree.toString()
+    };
+}
+
+export function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]) {
+    const import_jsSha3 = importJsSha3Module();
+    const import_merkleTree = importMerkleTreeModule();
+    const hashFunc = getSha3HashBufferFunc(wallet, abi);
+    let accountLeaf: Buffer;
+    let leaves: Buffer[] = [];
+    for (let item of rawData) {
+        let leaf = hashFunc(item);
+        if (wallet.address == item.account) {
+            accountLeaf = leaf;
+        }
+        leaves.push(leaf);
+    }
+    if (!accountLeaf) return null;
+    const tree = new import_merkleTree(leaves, import_jsSha3.keccak256, { sortPairs: true });
+    const calculatedRoot = tree.getHexRoot();
+    if (calculatedRoot != inputRoot) return null;
+    const proof = tree.getHexProof(accountLeaf);
+    const valid = tree.verify(proof, accountLeaf, calculatedRoot);
+    return valid ? proof : null;
+}
