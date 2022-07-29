@@ -26,10 +26,9 @@ export interface IWhitelistTreeABIItem {
     name: string;
     type: string;
 }
-export declare function getSha3HashBufferFunc(wallet: Wallet, abi: IWhitelistTreeABIItem[]): (treeItem: IWhitelistTreeData) => any;
 export declare function generateWhitelistTree(wallet: Wallet, data: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): {
-    root: any;
-    tree: any;
+    root: string;
+    tree: string;
 };
-export declare function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): any;
+export declare function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): any[];
 export {};

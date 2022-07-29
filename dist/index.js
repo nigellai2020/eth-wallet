@@ -63,6 +63,60 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// src/merkleTree.ts
+var import_bignumber, MerkleTree, merkleTree_default;
+var init_merkleTree = __esm({
+  "src/merkleTree.ts"() {
+    import_bignumber = __toModule(require("bignumber.js"));
+    MerkleTree = class {
+      constructor(wallet, leaves) {
+        this.tree = [];
+        this.tree.push(leaves);
+        while (this.tree[this.tree.length - 1].length > 1) {
+          let children = this.tree[this.tree.length - 1];
+          let parent = [];
+          for (let i = 0; i < children.length - 1; i += 2) {
+            if (new import_bignumber.BigNumber(children[i]).lt(children[i + 1])) {
+              parent.push(wallet.soliditySha3("0x" + children[i].replace("0x", "") + children[i + 1].replace("0x", "")));
+            } else {
+              parent.push(wallet.soliditySha3("0x" + children[i + 1].replace("0x", "") + children[i].replace("0x", "")));
+            }
+          }
+          if (children.length % 2 == 1) {
+            parent.push("0x" + children[children.length - 1].replace("0x", ""));
+          }
+          this.tree.push(parent);
+        }
+      }
+      static create(wallet, leaves) {
+        let tree = new this(wallet, leaves);
+        return tree;
+      }
+      toString() {
+        let arr = [];
+        for (let i = this.tree.length - 1; i >= 0; i--) {
+          arr.push(this.tree[i].join(","));
+        }
+        return arr.join(",");
+      }
+      getHexRoot() {
+        return this.tree[this.tree.length - 1][0];
+      }
+      getHexProof(leaf) {
+        let proof = [];
+        let index = this.tree[0].indexOf(leaf);
+        proof.push(this.tree[0][index % 2 == 0 ? index + 1 : index - 1]);
+        for (let i = 1; i < this.tree.length - 1; i++) {
+          index = Math.floor(index / 2);
+          proof.push(this.tree[i][index % 2 == 0 ? index + 1 : index - 1]);
+        }
+        return proof;
+      }
+    };
+    merkleTree_default = MerkleTree;
+  }
+});
+
 // src/utils.ts
 var utils_exports = {};
 __export(utils_exports, {
@@ -72,7 +126,6 @@ __export(utils_exports, {
   bytes32ToString: () => bytes32ToString,
   fromDecimals: () => fromDecimals,
   generateWhitelistTree: () => generateWhitelistTree,
-  getSha3HashBufferFunc: () => getSha3HashBufferFunc,
   getWhitelistTreeProof: () => getWhitelistTreeProof,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
@@ -99,7 +152,7 @@ function sleep(millisecond) {
   });
 }
 function numberToBytes32(value, prefix) {
-  let v = new import_bignumber.BigNumber(value).toString(16);
+  let v = new import_bignumber2.BigNumber(value).toString(16);
   v = v.replace("0x", "");
   v = padLeft(v, 64);
   if (prefix)
@@ -184,17 +237,17 @@ function toNumber(value) {
   if (typeof value == "number")
     return value;
   else if (typeof value == "string")
-    return new import_bignumber.BigNumber(value).toNumber();
+    return new import_bignumber2.BigNumber(value).toNumber();
   else
     return value.toNumber();
 }
 function toDecimals(value, decimals) {
   decimals = decimals || 18;
-  return new import_bignumber.BigNumber(value).shiftedBy(decimals);
+  return new import_bignumber2.BigNumber(value).shiftedBy(decimals);
 }
 function fromDecimals(value, decimals) {
   decimals = decimals || 18;
-  return new import_bignumber.BigNumber(value).shiftedBy(-decimals);
+  return new import_bignumber2.BigNumber(value).shiftedBy(-decimals);
 }
 function toString(value) {
   if (Array.isArray(value)) {
@@ -205,31 +258,12 @@ function toString(value) {
     return result;
   } else if (typeof value === "number")
     return value.toString(10);
-  else if (import_bignumber.BigNumber.isBigNumber(value))
+  else if (import_bignumber2.BigNumber.isBigNumber(value))
     return value.toFixed();
   else
     return value;
 }
-function importBufferModule() {
-  if (typeof window !== "undefined") {
-    return require("buffer").Buffer;
-  } else
-    return Buffer;
-}
-function importJsSha3Module() {
-  if (typeof window !== "undefined") {
-    return window["js-sha3"];
-  } else
-    return require("js-sha3");
-}
-function importMerkleTreeModule() {
-  if (typeof window !== "undefined") {
-    return window["MerkleTree"];
-  } else
-    return require("merkletreejs").MerkleTree;
-}
 function getSha3HashBufferFunc(wallet, abi) {
-  const import_buffer = importBufferModule();
   return (treeItem) => {
     let encodePackedInput = abi.map((abiItem) => {
       return {
@@ -237,16 +271,14 @@ function getSha3HashBufferFunc(wallet, abi) {
         v: treeItem[abiItem.name]
       };
     });
-    let hex = wallet.soliditySha3({ t: "address", v: treeItem.account }, ...encodePackedInput).slice(2);
-    return import_buffer.from(hex, "hex");
+    let hex = wallet.soliditySha3({ t: "address", v: treeItem.account }, ...encodePackedInput);
+    return hex;
   };
 }
 function generateWhitelistTree(wallet, data, abi) {
-  const import_jsSha3 = importJsSha3Module();
-  const import_merkleTree = importMerkleTreeModule();
   const hashFunc = getSha3HashBufferFunc(wallet, abi);
   const leaves = data.map((item) => hashFunc(item));
-  const merkleTree = new import_merkleTree(leaves, import_jsSha3.keccak256, { sortPairs: true });
+  const merkleTree = merkleTree_default.create(wallet, leaves);
   const merkleRoot = merkleTree.getHexRoot();
   return {
     root: merkleRoot,
@@ -254,8 +286,6 @@ function generateWhitelistTree(wallet, data, abi) {
   };
 }
 function getWhitelistTreeProof(wallet, inputRoot, rawData, abi) {
-  const import_jsSha3 = importJsSha3Module();
-  const import_merkleTree = importMerkleTreeModule();
   const hashFunc = getSha3HashBufferFunc(wallet, abi);
   let accountLeaf;
   let leaves = [];
@@ -268,18 +298,18 @@ function getWhitelistTreeProof(wallet, inputRoot, rawData, abi) {
   }
   if (!accountLeaf)
     return null;
-  const tree = new import_merkleTree(leaves, import_jsSha3.keccak256, { sortPairs: true });
+  const tree = merkleTree_default.create(wallet, leaves);
   const calculatedRoot = tree.getHexRoot();
   if (calculatedRoot != inputRoot)
     return null;
   const proof = tree.getHexProof(accountLeaf);
-  const valid = tree.verify(proof, accountLeaf, calculatedRoot);
-  return valid ? proof : null;
+  return proof;
 }
-var import_bignumber, Web3, nullAddress;
+var import_bignumber2, Web3, nullAddress;
 var init_utils = __esm({
   "src/utils.ts"() {
-    import_bignumber = __toModule(require("bignumber.js"));
+    import_bignumber2 = __toModule(require("bignumber.js"));
+    init_merkleTree();
     Web3 = Web3Lib();
     nullAddress = "0x0000000000000000000000000000000000000000";
   }
@@ -550,11 +580,11 @@ var require_erc20 = __commonJS({
 });
 
 // src/contracts/erc20.ts
-var import_contract, import_bignumber2, Abi, Bytecode, Erc20;
+var import_contract, import_bignumber3, Abi, Bytecode, Erc20;
 var init_erc20 = __esm({
   "src/contracts/erc20.ts"() {
     import_contract = __toModule(require_contract());
-    import_bignumber2 = __toModule(require("bignumber.js"));
+    import_bignumber3 = __toModule(require("bignumber.js"));
     init_utils();
     Abi = require_erc20().abi;
     Bytecode = require_erc20().bytecode;
@@ -574,7 +604,7 @@ var init_erc20 = __esm({
         return {
           owner: result.owner,
           spender: result.spender,
-          value: new import_bignumber2.BigNumber(result.value),
+          value: new import_bignumber3.BigNumber(result.value),
           _event: event
         };
       }
@@ -586,7 +616,7 @@ var init_erc20 = __esm({
         return {
           from: result.from,
           to: result.to,
-          value: new import_bignumber2.BigNumber(result.value),
+          value: new import_bignumber3.BigNumber(result.value),
           _event: event
         };
       }
@@ -627,7 +657,7 @@ var init_erc20 = __esm({
         return new Promise(async (resolve, reject) => {
           try {
             if (!this._decimals)
-              this._decimals = new import_bignumber2.BigNumber(await this.methods("decimals")).toNumber();
+              this._decimals = new import_bignumber3.BigNumber(await this.methods("decimals")).toNumber();
             resolve(this._decimals);
           } catch (err) {
             reject(err);
@@ -784,7 +814,7 @@ var require_kms = __commonJS({
 var require_wallet = __commonJS({
   "src/wallet.ts"(exports, module2) {
     var W3 = __toModule(require("web3"));
-    var import_bignumber4 = __toModule(require("bignumber.js"));
+    var import_bignumber5 = __toModule(require("bignumber.js"));
     init_erc20();
     var import_kms = __toModule(require_kms());
     var Web32 = initWeb3Lib();
@@ -818,7 +848,7 @@ var require_wallet = __commonJS({
       ;
       const WalletUtils = {
         fromWei(value) {
-          return new import_bignumber4.BigNumber(W3.default.utils.fromWei(value));
+          return new import_bignumber5.BigNumber(W3.default.utils.fromWei(value));
         }
       };
       _Wallet.DefaultNetworksMap = {
@@ -1861,9 +1891,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(self.address);
-              resolve(new import_bignumber4.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber5.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber4.BigNumber(0));
+              resolve(new import_bignumber5.BigNumber(0));
             }
           });
         }
@@ -1877,9 +1907,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(address);
-              resolve(new import_bignumber4.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber5.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber4.BigNumber(0));
+              resolve(new import_bignumber5.BigNumber(0));
             }
           });
         }
@@ -2228,14 +2258,14 @@ var require_wallet = __commonJS({
           });
         }
         getGasPrice() {
-          return (async () => new import_bignumber4.BigNumber(await this._web3.eth.getGasPrice()))();
+          return (async () => new import_bignumber5.BigNumber(await this._web3.eth.getGasPrice()))();
         }
         transactionCount() {
           return (async () => await this._web3.eth.getTransactionCount(this.address))();
         }
         async sendTransaction(transaction) {
-          transaction.value = new import_bignumber4.BigNumber(transaction.value).toFixed();
-          transaction.gasPrice = new import_bignumber4.BigNumber(transaction.gasPrice).toFixed();
+          transaction.value = new import_bignumber5.BigNumber(transaction.value).toFixed();
+          transaction.gasPrice = new import_bignumber5.BigNumber(transaction.gasPrice).toFixed();
           let currentProvider = this.provider;
           try {
             if (typeof window !== "undefined" && this.clientSideProvider) {
@@ -2288,8 +2318,8 @@ var require_wallet = __commonJS({
           return this._web3.eth.getTransactionReceipt(transactionHash);
         }
         call(transaction) {
-          transaction.value = new import_bignumber4.BigNumber(transaction.value).toFixed();
-          transaction.gasPrice = new import_bignumber4.BigNumber(transaction.gasPrice).toFixed();
+          transaction.value = new import_bignumber5.BigNumber(transaction.value).toFixed();
+          transaction.gasPrice = new import_bignumber5.BigNumber(transaction.gasPrice).toFixed();
           return this._web3.eth.call(transaction);
         }
         newContract(abi, address) {
@@ -2331,7 +2361,7 @@ var require_wallet = __commonJS({
 
 // src/index.ts
 __export(exports, {
-  BigNumber: () => import_bignumber3.BigNumber,
+  BigNumber: () => import_bignumber4.BigNumber,
   Contract: () => import_contract2.Contract,
   Erc20: () => Erc20,
   Event: () => import_wallet.Event,
@@ -2351,7 +2381,7 @@ __export(exports, {
 });
 var import_wallet = __toModule(require_wallet());
 var import_contract2 = __toModule(require_contract());
-var import_bignumber3 = __toModule(require("bignumber.js"));
+var import_bignumber4 = __toModule(require("bignumber.js"));
 init_erc20();
 init_utils();
 
