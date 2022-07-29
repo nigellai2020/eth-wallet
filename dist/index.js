@@ -9,15 +9,6 @@ define("web3", (require,exports)=>{
 define("bignumber.js", (require,exports)=>{
     exports['BigNumber'] = window["BigNumber"];
 });
-define("base64-js", ()=>{});
-define("ieee754", ()=>{});
-define("isarray", ()=>{});
-define("js-sha3", (require,exports)=>{
-  exports["js-sha3"] = window["js-sha3"];
-});
-define("merkletreejs", (require,exports)=>{
-  exports['MerkleTree'] = window["MerkleTree"];
-});
 define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
