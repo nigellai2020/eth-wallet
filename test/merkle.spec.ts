@@ -3,6 +3,7 @@ import {Wallet} from "../src";
 import {Utils} from "../src";
 import * as Ganache from "ganache";
 import * as assert from 'assert';
+import { TestWhitelistTree } from './contracts';
 
 suite('##Wallet Ganache', async function() {
     this.timeout(20000);
@@ -11,6 +12,7 @@ suite('##Wallet Ganache', async function() {
     let provider = Ganache.provider()
     let accounts: string[];
     const wallet = new Wallet(provider); 
+    let whitelistTree: TestWhitelistTree;
     const abi = [
         {
             type: 'uint256',
@@ -31,15 +33,31 @@ suite('##Wallet Ganache', async function() {
             })
         }    
     })
-    test('Create Tree', async function(){
+    test('Create tree and set tree root', async function(){
+        wallet.defaultAccount = accounts[0];
         tree = Utils.generateWhitelistTree(wallet, rawData, abi);
-        console.log('tree', tree);
+        whitelistTree = new TestWhitelistTree(wallet);
+        let address = await whitelistTree.deploy();
+        await whitelistTree.setMerkleRoot(tree.root);
     })
 
-    test('Get Tree Proof', async function(){
+    test('Account 0: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[0];
-        console.log('wallet.address', wallet.address)
         let proof = Utils.getWhitelistTreeProof(wallet, tree.root, rawData, abi);
-        console.log('proof', proof);
+        let valid = await whitelistTree.verifyMerkleProof({
+            allocation: rawData[0].amount,
+            proof: proof
+        })
+        assert.strictEqual(valid, true);
+    })
+
+    test('Account 1: Verify tree Proof', async function(){
+        wallet.defaultAccount = accounts[1];
+        let proof = Utils.getWhitelistTreeProof(wallet, tree.root, rawData, abi);
+        let valid = await whitelistTree.verifyMerkleProof({
+            allocation: rawData[1].amount,
+            proof: proof
+        })
+        assert.strictEqual(valid, true);
     })
 });
