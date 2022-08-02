@@ -155,10 +155,10 @@ function getSha3HashBufferFunc(wallet: Wallet, abi: IWhitelistTreeABIItem[]){
                 v: treeItem[abiItem.name]
             }
         })
-        let hex = wallet.soliditySha3(
-            { t: "address", v: treeItem.account },
+        let hex = wallet.soliditySha3.apply(wallet, [
+            { t: "address", v: treeItem.account }, 
             ...encodePackedInput
-        );
+        ])   
         return hex;
     };    
 }

@@ -37,6 +37,7 @@ class MerkleTree {
     }
     getHexProof(leaf: string) {
         let proof = [];
+        if (this.tree.length == 1) return proof;
         let index = this.tree[0].indexOf(leaf);
         proof.push(this.tree[0][index % 2 == 0 ? (index + 1) : (index - 1)]);
         for (let i = 1; i < this.tree.length - 1; i++) {

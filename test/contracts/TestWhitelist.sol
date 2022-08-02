@@ -11,7 +11,7 @@ contract TestWhitelistTree {
     function verifyMerkleProof(uint256 allocation, bytes32[] calldata proof) external view returns (bool) {
         return MerkleProof.verify(proof, whitelistTreeRoot, keccak256(abi.encodePacked(msg.sender, allocation)));
     }
-    function verifyMerkleProof2(uint256 allocation, string calldata ipfsCid, bytes32[] calldata proof) external view returns (bool) {
-        return MerkleProof.verify(proof, whitelistTreeRoot, keccak256(abi.encodePacked(msg.sender, allocation, ipfsCid)));
+    function verifyMerkleProof2(uint256 amount1, uint256 amount2, string calldata ipfsCid, bytes32[] calldata proof) external view returns (bool) {
+        return MerkleProof.verify(proof, whitelistTreeRoot, keccak256(abi.encodePacked(msg.sender, amount1, amount2, ipfsCid)));
     }
 }

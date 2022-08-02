@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "main": "lib/index.js",
     "bin": {
         "sol2ts": "tools/compile.ts"
@@ -27,7 +27,8 @@
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
+        "build:test-contracts": "ts-node tools/compile.ts ./test-contracts.json",
+        "test": "mocha --ui tdd --exit --require ts-node/register test/merkle.spec.ts",
         "postinstall": "mkdir -p tools/solcjs"
     }
 }
