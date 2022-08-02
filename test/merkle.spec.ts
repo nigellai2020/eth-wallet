@@ -7,7 +7,7 @@ import { TestWhitelistTree } from './contracts';
 
 suite('##Wallet Ganache', async function() {
     this.timeout(20000);
-    let rawData = [];
+    let rawData: Utils.IWhitelistTreeData[] = [];
     let tree;
     let provider = Ganache.provider()
     let accounts: string[];
@@ -21,6 +21,10 @@ suite('##Wallet Ganache', async function() {
         {
             type: 'uint256',
             name: 'amount2'
+        },
+        {
+            type: 'string',
+            name: 'ipfsCid'
         }
     ]
 
@@ -35,7 +39,7 @@ suite('##Wallet Ganache', async function() {
                 account: account,
                 amount: randomInt(1, 99999),
                 amount2: randomInt(1, 5000),
-                ipfsCid: ''  
+                ipfsCid: 'ABC'  
             })
         }    
     })
