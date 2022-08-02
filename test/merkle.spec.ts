@@ -17,6 +17,10 @@ suite('##Wallet Ganache', async function() {
         {
             type: 'uint256',
             name: 'amount'
+        },
+        {
+            type: 'uint256',
+            name: 'amount2'
         }
     ]
 
@@ -29,7 +33,9 @@ suite('##Wallet Ganache', async function() {
         for (let account of accounts) {
             rawData.push({
                 account: account,
-                amount: randomInt(1, 99999)       
+                amount: randomInt(1, 99999),
+                amount2: randomInt(1, 5000),
+                ipfsCid: ''  
             })
         }    
     })
@@ -44,8 +50,10 @@ suite('##Wallet Ganache', async function() {
     test('Account 0: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[0];
         let proof = Utils.getWhitelistTreeProof(wallet, tree.root, rawData, abi);
-        let valid = await whitelistTree.verifyMerkleProof({
-            allocation: rawData[0].amount,
+        let valid = await whitelistTree.verifyMerkleProof2({
+            amount1: rawData[0].amount,
+            amount2: rawData[0].amount2,
+            ipfsCid: rawData[0].ipfsCid,
             proof: proof
         })
         assert.strictEqual(valid, true);
@@ -54,8 +62,10 @@ suite('##Wallet Ganache', async function() {
     test('Account 1: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[1];
         let proof = Utils.getWhitelistTreeProof(wallet, tree.root, rawData, abi);
-        let valid = await whitelistTree.verifyMerkleProof({
-            allocation: rawData[1].amount,
+        let valid = await whitelistTree.verifyMerkleProof2({
+            amount1: rawData[1].amount,
+            amount2: rawData[1].amount2,
+            ipfsCid: rawData[1].ipfsCid,
             proof: proof
         })
         assert.strictEqual(valid, true);

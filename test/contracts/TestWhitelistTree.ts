@@ -2,7 +2,7 @@ import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Ev
 import Bin from "./TestWhitelistTree.json";
 
 export interface IVerifyMerkleProofParams {allocation:number|BigNumber;proof:string[]}
-export interface IVerifyMerkleProof2Params {allocation:number|BigNumber;ipfsCid:string;proof:string[]}
+export interface IVerifyMerkleProof2Params {amount1:number|BigNumber;amount2:number|BigNumber;ipfsCid:string;proof:string[]}
 export class TestWhitelistTree extends Contract{
     constructor(wallet: IWallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
@@ -31,7 +31,7 @@ export class TestWhitelistTree extends Contract{
             return result;
         }
         this.verifyMerkleProof = verifyMerkleProof_call
-        let verifyMerkleProof2Params = (params: IVerifyMerkleProof2Params) => [Utils.toString(params.allocation),params.ipfsCid,Utils.stringToBytes32(params.proof)];
+        let verifyMerkleProof2Params = (params: IVerifyMerkleProof2Params) => [Utils.toString(params.amount1),Utils.toString(params.amount2),params.ipfsCid,Utils.stringToBytes32(params.proof)];
         let verifyMerkleProof2_call = async (params: IVerifyMerkleProof2Params): Promise<boolean> => {
             let result = await this.call('verifyMerkleProof2',verifyMerkleProof2Params(params));
             return result;
