@@ -1,5 +1,10 @@
 #!/usr/bin/env ts-node
 
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';

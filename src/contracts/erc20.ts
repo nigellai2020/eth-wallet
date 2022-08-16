@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import {IWallet, Transaction, TransactionReceipt, Event} from '../wallet';
 import {Contract} from '../contract';
 import {BigNumber} from 'bignumber.js';

@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog, IBatchRequestObj} from "./wallet";
 import * as Utils from "./utils";
 

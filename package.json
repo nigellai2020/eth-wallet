@@ -1,6 +1,7 @@
 {
     "name": "@ijstech/eth-wallet",
     "version": "0.1.14",
+    "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {
         "sol2ts": "tools/compile.ts"
