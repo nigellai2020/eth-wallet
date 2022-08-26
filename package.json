@@ -29,7 +29,7 @@
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
         "build:test-contracts": "ts-node tools/compile.ts ./test-contracts.json",
-        "test": "mocha --ui tdd --exit --require ts-node/register test/merkle.spec.ts",
+        "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
         "postinstall": "mkdir -p tools/solcjs"
     }
 }
