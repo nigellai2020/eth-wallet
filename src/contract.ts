@@ -223,6 +223,9 @@ module Contract {
                         console.log(e.message);
                         tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
                     } else {
+                        if (e.message.includes("Returned error: execution reverted: ")) {
+                            throw e;
+                        }
                         try{
                             await method.call({from:this.wallet.address, ...options});
                         } catch(e) {
@@ -232,7 +235,7 @@ module Contract {
                                     msg = msg[0];
                                     if (msg.startsWith("0x08c379a")) {
                                         msg = this.wallet.decodeErrorMessage(msg);//('string', "0x"+msg.substring(10));
-                                        throw new Error(msg);
+                                        throw new Error("Returned error: execution reverted: " + msg);
                                     }
                                 }
                             }
