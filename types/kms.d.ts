@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 /// <reference types="node" />
 import * as AwsSDK from 'aws-sdk';
 import BN from 'bn.js';

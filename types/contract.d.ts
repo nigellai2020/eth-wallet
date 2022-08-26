@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import { IWallet, IContract, Transaction, TransactionReceipt, Event, IBatchRequestObj } from "./wallet";
 declare module Contract {
     interface EventType {
