@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import * as W3 from 'web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';

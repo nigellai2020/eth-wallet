@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
 export declare function sleep(millisecond: number): Promise<unknown>;
