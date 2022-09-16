@@ -5,12 +5,11 @@
 *-----------------------------------------------------------*/
 
 import * as W3 from 'web3';
-import {BlockTransactionObject} from 'web3-eth';
-import {rlp} from 'ethereumjs-util';
 const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
+import {IEIP712Data} from './types';
 let Web3Modal;
 let WalletConnectProvider;
 
@@ -1730,7 +1729,11 @@ module Wallet{
 			let _web3 = this._web3;
 			let address = this.address;
 			let self = this;
-			return new Promise(async function(resolve, reject){
+			let currentProvider = this.provider;
+			if (typeof window !== "undefined" && this.clientSideProvider) {
+				this.provider = this.clientSideProvider.provider;
+			}
+			let promise = new Promise<string>(async function(resolve, reject){
 				try{
 					let result;
 					if ((self._account && self._account.privateKey) || self.kms){
@@ -1753,7 +1756,45 @@ module Wallet{
 					reject(err);
 				}
 			})
+			promise.finally(() => {
+				this.provider = currentProvider;
+			})
+			return promise;
         };
+		signTypedData(data: IEIP712Data): Promise<string> {
+			let self = this;
+			let currentProvider = this.provider;
+			if (typeof window !== "undefined" && this.clientSideProvider) {
+				this.provider = this.clientSideProvider.provider;
+			}
+			let promise = new Promise<string>(async (resolve, reject) => {
+				try {
+					((<any>self._web3.currentProvider)).send({
+						jsonrpc: "2.0",
+						method: 'eth_signTypedData_v4',
+						params: [
+							self.defaultAccount,
+							JSON.stringify(data)
+						],
+						id: Date.now()
+					}, function (err: Error, result: any) {
+						if (err)
+							return reject(err);
+						if (result.error)
+							return reject(result.error);
+						let signature = result.result;
+						resolve(signature);
+					});
+		
+				} catch (e) {
+					reject(e);
+				}
+			});
+			promise.finally(() => {
+				this.provider = currentProvider;
+			})
+			return promise;
+		}		
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
 		};

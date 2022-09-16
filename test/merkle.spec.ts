@@ -1,13 +1,12 @@
 import 'mocha';
-import {Wallet} from "../src";
-import {Utils} from "../src";
+import {Wallet, Utils, Types} from "../src";
 import * as Ganache from "ganache";
 import * as assert from 'assert';
 import { TestWhitelistTree } from './contracts';
 
 suite('##Wallet Ganache', async function() {
     this.timeout(20000);
-    let rawData: Utils.IWhitelistTreeData[] = [];
+    let rawData: Types.IWhitelistTreeData[] = [];
     let tree;
     let provider = Ganache.provider()
     let accounts: string[];

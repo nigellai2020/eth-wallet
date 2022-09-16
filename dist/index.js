@@ -110,6 +110,23 @@ var init_merkleTree = __esm({
   }
 });
 
+// src/constants.ts
+var constants_exports = {};
+__export(constants_exports, {
+  EIP712DomainAbi: () => EIP712DomainAbi
+});
+var EIP712DomainAbi;
+var init_constants = __esm({
+  "src/constants.ts"() {
+    EIP712DomainAbi = [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" }
+    ];
+  }
+});
+
 // src/utils.ts
 var utils_exports = {};
 __export(utils_exports, {
@@ -117,6 +134,7 @@ __export(utils_exports, {
   addressToBytes32Right: () => addressToBytes32Right,
   bytes32ToAddress: () => bytes32ToAddress,
   bytes32ToString: () => bytes32ToString,
+  constructEIP712Data: () => constructEIP712Data,
   fromDecimals: () => fromDecimals,
   generateWhitelistTree: () => generateWhitelistTree,
   getWhitelistTreeProof: () => getWhitelistTreeProof,
@@ -301,11 +319,23 @@ function getWhitelistTreeProof(wallet, inputRoot, rawData, abi) {
   const proof = tree.getHexProof(accountLeaf);
   return proof;
 }
+function constructEIP712Data(domain, customTypes, primaryType, message) {
+  let data = {
+    types: __spreadValues({
+      EIP712Domain: EIP712DomainAbi
+    }, customTypes),
+    primaryType,
+    domain,
+    message
+  };
+  return data;
+}
 var import_bignumber2, Web3, nullAddress;
 var init_utils = __esm({
   "src/utils.ts"() {
     import_bignumber2 = __toModule(require("bignumber.js"));
     init_merkleTree();
+    init_constants();
     Web3 = Web3Lib();
     nullAddress = "0x0000000000000000000000000000000000000000";
   }
@@ -2210,7 +2240,11 @@ var require_wallet = __commonJS({
           let _web3 = this._web3;
           let address = this.address;
           let self = this;
-          return new Promise(async function(resolve, reject) {
+          let currentProvider = this.provider;
+          if (typeof window !== "undefined" && this.clientSideProvider) {
+            this.provider = this.clientSideProvider.provider;
+          }
+          let promise = new Promise(async function(resolve, reject) {
             try {
               let result;
               if (self._account && self._account.privateKey || self.kms) {
@@ -2229,6 +2263,43 @@ var require_wallet = __commonJS({
               reject(err);
             }
           });
+          promise.finally(() => {
+            this.provider = currentProvider;
+          });
+          return promise;
+        }
+        signTypedData(data) {
+          let self = this;
+          let currentProvider = this.provider;
+          if (typeof window !== "undefined" && this.clientSideProvider) {
+            this.provider = this.clientSideProvider.provider;
+          }
+          let promise = new Promise(async (resolve, reject) => {
+            try {
+              self._web3.currentProvider.send({
+                jsonrpc: "2.0",
+                method: "eth_signTypedData_v4",
+                params: [
+                  self.defaultAccount,
+                  JSON.stringify(data)
+                ],
+                id: Date.now()
+              }, function(err, result) {
+                if (err)
+                  return reject(err);
+                if (result.error)
+                  return reject(result.error);
+                let signature = result.result;
+                resolve(signature);
+              });
+            } catch (e) {
+              reject(e);
+            }
+          });
+          promise.finally(() => {
+            this.provider = currentProvider;
+          });
+          return promise;
         }
         token(tokenAddress, decimals) {
           return new Erc20(this, tokenAddress, decimals);
@@ -2373,6 +2444,7 @@ var require_wallet = __commonJS({
 // src/index.ts
 __export(exports, {
   BigNumber: () => import_bignumber4.BigNumber,
+  Constants: () => constants_exports,
   Contract: () => import_contract2.Contract,
   Contracts: () => contracts_exports,
   Erc20: () => Erc20,
@@ -2386,6 +2458,7 @@ __export(exports, {
   IWalletUtils: () => import_wallet.IWalletUtils,
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
+  Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => import_wallet.Wallet,
   WalletPlugin: () => import_wallet.WalletPlugin,
@@ -2875,6 +2948,13 @@ var ERC721 = class extends import_contract2.Contract {
     });
   }
 };
+
+// src/types.ts
+var types_exports = {};
+__markAsModule(types_exports);
+
+// src/index.ts
+init_constants();
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
 * Released under dual AGPLv3/commercial license

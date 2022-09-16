@@ -7,6 +7,8 @@
 import {BigNumber} from "bignumber.js";
 import { Wallet } from "./wallet";
 import MerkleTree from './merkleTree';
+import { EIP712TypeMap, IEIP712Data, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData } from "./types";
+import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib(); // tslint:disable-line
 
 function Web3Lib(){
@@ -143,16 +145,6 @@ export function toString(value:any){
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
 
-export interface IWhitelistTreeData {
-    account: string;
-    [key: string]: any;
-}
-
-export interface IWhitelistTreeABIItem {
-    name: string;
-    type: string;
-}
-
 function getSha3HashBufferFunc(wallet: Wallet, abi: IWhitelistTreeABIItem[]){
     return (treeItem: IWhitelistTreeData) => {
         let encodePackedInput = abi.map((abiItem) => {
@@ -196,4 +188,17 @@ export function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData
     if (calculatedRoot != inputRoot) return null;
     const proof = tree.getHexProof(accountLeaf);
     return proof;
+}
+
+export function constructEIP712Data(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: any) {
+    let data: IEIP712Data = {
+        types: {
+            EIP712Domain: EIP712DomainAbi,
+            ...customTypes
+        },
+        primaryType: primaryType,
+        domain: domain,
+        message: message
+    };
+    return data;
 }
