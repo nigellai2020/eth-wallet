@@ -1,13 +1,18 @@
-  /*---------------------------------------------------------------------------------------------
-  *  ISC License
-  *  Copyright (c) 2020 MetaMask
-  *  https://github.com/MetaMask/eth-sig-util/blob/main/LICENSE
-  *--------------------------------------------------------------------------------------------*/
-   /*---------------------------------------------------------------------------------------------
-  *  MIT License
-  *  Copyright (c) 2016 Nick Dodson. nickdodson.com
-  *  https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/util
-  *--------------------------------------------------------------------------------------------*/
+ /*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/ 
+/*---------------------------------------------------------------------------------------------
+*  ISC License
+*  Copyright (c) 2020 MetaMask
+*  https://github.com/MetaMask/eth-sig-util/blob/main/LICENSE
+*--------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+*  MIT License
+*  Copyright (c) 2016 Nick Dodson. nickdodson.com
+*  https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/util
+*--------------------------------------------------------------------------------------------*/
 
 import { MessageTypeProperty, MessageTypes, NestedBufferArray, NestedUint8Array, SignTypedDataVersion, ToBufferInputTypes, TypedMessage } from "./types";
 import { TYPED_MESSAGE_SCHEMA } from './constants';
