@@ -6,7 +6,7 @@
 import * as W3 from 'web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
-import { IEIP712Data } from './types';
+import { MessageTypes, TypedMessage } from './types';
 declare module Wallet {
     interface IWalletUtils {
         fromWei(value: any, unit?: string): string;
@@ -368,7 +368,7 @@ declare module Wallet {
         setBlockTime(time: number): Promise<any>;
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
-        signTypedData(data: IEIP712Data): Promise<string>;
+        signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;

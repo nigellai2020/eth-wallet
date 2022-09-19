@@ -7,7 +7,7 @@
 import {BigNumber} from "bignumber.js";
 import { Wallet } from "./wallet";
 import MerkleTree from './merkleTree';
-import { EIP712TypeMap, IEIP712Data, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData } from "./types";
+import { EIP712TypeMap, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib(); // tslint:disable-line
 
@@ -190,8 +190,8 @@ export function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData
     return proof;
 }
 
-export function constructEIP712Data(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: any) {
-    let data: IEIP712Data = {
+export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>) {
+    let data: TypedMessage<MessageTypes> = {
         types: {
             EIP712Domain: EIP712DomainAbi,
             ...customTypes

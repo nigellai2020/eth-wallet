@@ -9,7 +9,8 @@ const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
-import {IEIP712Data} from './types';
+import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
+import { signTypedDataWithPrivateKey } from './signTypedData';
 let Web3Modal;
 let WalletConnectProvider;
 
@@ -1761,38 +1762,52 @@ module Wallet{
 			})
 			return promise;
         };
-		signTypedData(data: IEIP712Data): Promise<string> {
+		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
 			let self = this;
 			let currentProvider = this.provider;
+			let promise;
 			if (typeof window !== "undefined" && this.clientSideProvider) {
 				this.provider = this.clientSideProvider.provider;
+				promise = new Promise<string>(async (resolve, reject) => {
+					try {
+						((<any>self._web3.currentProvider)).send({
+							jsonrpc: "2.0",
+							method: 'eth_signTypedData_v4',
+							params: [
+								self.defaultAccount,
+								JSON.stringify(data)
+							],
+							id: Date.now()
+						}, function (err: Error, result: any) {
+							if (err)
+								return reject(err);
+							if (result.error)
+								return reject(result.error);
+							let signature = result.result;
+							resolve(signature);
+						});		
+					} catch (e) {
+						reject(e);
+					}
+				});
+				promise.finally(() => {
+					this.provider = currentProvider;
+				})
 			}
-			let promise = new Promise<string>(async (resolve, reject) => {
-				try {
-					((<any>self._web3.currentProvider)).send({
-						jsonrpc: "2.0",
-						method: 'eth_signTypedData_v4',
-						params: [
-							self.defaultAccount,
-							JSON.stringify(data)
-						],
-						id: Date.now()
-					}, function (err: Error, result: any) {
-						if (err)
-							return reject(err);
-						if (result.error)
-							return reject(result.error);
-						let signature = result.result;
+			else {
+				promise = new Promise<string>(async (resolve, reject) => {
+					try {
+						let signature = signTypedDataWithPrivateKey({
+							privateKey: this._account.privateKey,
+							data: data,
+							version: SignTypedDataVersion.V4
+						});
 						resolve(signature);
-					});
-		
-				} catch (e) {
-					reject(e);
-				}
-			});
-			promise.finally(() => {
-				this.provider = currentProvider;
-			})
+					} catch (e) {
+						reject(e);
+					}
+				});
+			}
 			return promise;
 		}		
 		token(tokenAddress: string, decimals?: number): Erc20{

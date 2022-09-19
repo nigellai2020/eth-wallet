@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
-import { EIP712TypeMap, IEIP712Data, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData } from "./types";
+import { EIP712TypeMap, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData, MessageTypes, TypedMessage } from "./types";
 export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
 export declare function padLeft(string: string, chars: number, sign?: string): string;
@@ -29,5 +29,5 @@ export declare function generateWhitelistTree(wallet: Wallet, data: IWhitelistTr
     tree: string;
 };
 export declare function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): any[];
-export declare function constructEIP712Data(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: any): IEIP712Data;
+export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
 export {};
