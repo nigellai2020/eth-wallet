@@ -2760,7 +2760,7 @@ var require_wallet = __commonJS({
                   resolve(result.signature);
                 }
               } else {
-                result = await _web3.eth.sign(msg, address, null);
+                result = await _web3.eth.personal.sign(msg, address, null);
                 resolve(result);
               }
             } catch (err) {
