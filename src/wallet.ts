@@ -1748,8 +1748,8 @@ module Wallet{
 						}
 					}
 					else{
-						// result = await _web3.eth.personal.sign(msg, address, null);
-						result = await _web3.eth.sign(msg, address, null);
+						result = await _web3.eth.personal.sign(msg, address, null);
+						// result = await _web3.eth.sign(msg, address, null);
 						resolve(result);	
 					}
 				}	
