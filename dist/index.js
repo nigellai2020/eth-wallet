@@ -3,6 +3,7 @@ define("asn1.js", ()=>{});
 define("bn.js", ()=>{});
 define("ethereumjs-tx", ()=>{});
 define("ethereumjs-util", ()=>{});
+define("ethereum-cryptography/keccak", ()=>{});
 define("web3", (require,exports)=>{
     exports['web3'] = window["Web3"];
 });
