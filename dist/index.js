@@ -2472,7 +2472,10 @@ var require_wallet = __commonJS({
           });
         }
         getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
-          return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", returnTransactionObjects);
+          if (returnTransactionObjects) {
+            return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", true);
+          }
+          return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
         }
         getBlockNumber() {
           return this._web3.eth.getBlockNumber();

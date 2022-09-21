@@ -1411,7 +1411,10 @@ module Wallet{
 			})
         };
 		getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>{
-			return <any>this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', returnTransactionObjects);
+			if (returnTransactionObjects) {
+				return <any>this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', true);
+			}
+			return <any>this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', false);
 		};
 		getBlockNumber(): Promise<number>{
 			return this._web3.eth.getBlockNumber();
