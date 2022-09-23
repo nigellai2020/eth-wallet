@@ -1231,6 +1231,10 @@ function concatSig(v, r, s) {
   const vStr = stripHexPrefix(intToHex(vSig));
   return addHexPrefix(rStr.concat(sStr, vStr));
 }
+function recoverPublicKey(messageHash, signature) {
+  const sigParams = (0, import_ethereumjs_util.fromRpcSig)(signature);
+  return (0, import_ethereumjs_util.ecrecover)(messageHash, sigParams.v, sigParams.r, sigParams.s);
+}
 function signTypedDataWithPrivateKey({
   privateKey,
   data,
@@ -1240,6 +1244,16 @@ function signTypedDataWithPrivateKey({
   const messageHash = eip712Hash(data, version);
   const sig = (0, import_ethereumjs_util.ecsign)(messageHash, bufferPrivateKey);
   return concatSig(toBuffer(sig.v), sig.r, sig.s);
+}
+function recoverTypedSignature({
+  data,
+  signature,
+  version
+}) {
+  const messageHash = eip712Hash(data, version);
+  const publicKey = recoverPublicKey(messageHash, signature);
+  const sender = (0, import_ethereumjs_util.publicToAddress)(publicKey);
+  return bufferToHex(sender);
 }
 var import_bn, import_keccak, import_ethereumjs_util, stripHexPrefix, zeros, assertIsBuffer, setLength, setLengthRight, intToHex, intToBuffer, bufferToHex, addHexPrefix, toBuffer;
 var init_signTypedData = __esm({
@@ -2823,6 +2837,15 @@ var require_wallet = __commonJS({
             });
           }
           return promise;
+        }
+        recoverTypedSignatureV4(data, signature) {
+          let signer = recoverTypedSignature({
+            signature,
+            data,
+            version: SignTypedDataVersion.V4
+          });
+          signer = this._web3.utils.toChecksumAddress(signer);
+          return signer;
         }
         token(tokenAddress, decimals) {
           return new Erc20(this, tokenAddress, decimals);

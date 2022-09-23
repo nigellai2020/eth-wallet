@@ -1,8 +1,8 @@
- /*!-----------------------------------------------------------
+/*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
-*-----------------------------------------------------------*/ 
+*-----------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------
 *  ISC License
 *  Copyright (c) 2020 MetaMask
@@ -20,8 +20,11 @@ import BN from 'bn.js';
 import { keccak256 } from 'ethereum-cryptography/keccak';
 import {
     bufferToInt,
+    ecrecover,
     ecsign,
+    fromRpcSig,
     fromSigned,
+    publicToAddress,
     toUnsigned
 } from 'ethereumjs-util';
 
@@ -431,10 +434,10 @@ function arrToBufArr(arr: Uint8Array): Buffer
 function arrToBufArr(arr: NestedUint8Array): NestedBufferArray
 function arrToBufArr(arr: Uint8Array | NestedUint8Array): Buffer | NestedBufferArray
 function arrToBufArr(arr: Uint8Array | NestedUint8Array): Buffer | NestedBufferArray {
-  if (!Array.isArray(arr)) {
-    return Buffer.from(arr)
-  }
-  return arr.map((a) => arrToBufArr(a))
+    if (!Array.isArray(arr)) {
+        return Buffer.from(arr)
+    }
+    return arr.map((a) => arrToBufArr(a))
 }
 
 function encodeField(
@@ -649,6 +652,14 @@ function concatSig(v: Buffer, r: Buffer, s: Buffer): string {
     return addHexPrefix(rStr.concat(sStr, vStr));
 }
 
+function recoverPublicKey(
+    messageHash: Buffer,
+    signature: string,
+  ): Buffer {
+    const sigParams = fromRpcSig(signature);
+    return ecrecover(messageHash, sigParams.v, sigParams.r, sigParams.s);
+}
+
 export function signTypedDataWithPrivateKey<
     V extends SignTypedDataVersion,
     T extends MessageTypes,
@@ -675,4 +686,32 @@ export function signTypedDataWithPrivateKey<
     );
     const sig = ecsign(messageHash, bufferPrivateKey);
     return concatSig(toBuffer(sig.v), sig.r, sig.s);
+}
+
+export function recoverTypedSignature<
+    V extends SignTypedDataVersion,
+    T extends MessageTypes,
+    >({
+        data,
+        signature,
+        version,
+    }: {
+        data: TypedMessage<T>;
+        signature: string;
+        version: V;
+    }): string {
+    //   validateVersion(version);
+    //   if (isNullish(data)) {
+    //     throw new Error('Missing data parameter');
+    //   } else if (isNullish(signature)) {
+    //     throw new Error('Missing signature parameter');
+    //   }
+
+    const messageHash = eip712Hash(
+        data as TypedMessage<T>,
+        version as SignTypedDataVersion.V3 | SignTypedDataVersion.V4,
+    );
+    const publicKey = recoverPublicKey(messageHash, signature);
+    const sender = publicToAddress(publicKey);
+    return bufferToHex(sender);
 }
