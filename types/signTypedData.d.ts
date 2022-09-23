@@ -9,3 +9,8 @@ export declare function signTypedDataWithPrivateKey<V extends SignTypedDataVersi
     data: TypedMessage<T>;
     version: V;
 }): string;
+export declare function recoverTypedSignature<V extends SignTypedDataVersion, T extends MessageTypes>({ data, signature, version, }: {
+    data: TypedMessage<T>;
+    signature: string;
+    version: V;
+}): string;

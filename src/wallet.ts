@@ -10,7 +10,7 @@ import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
 import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
-import { signTypedDataWithPrivateKey } from './signTypedData';
+import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
 let Web3Modal;
 let WalletConnectProvider;
 
@@ -1812,7 +1812,16 @@ module Wallet{
 				});
 			}
 			return promise;
-		}		
+		}	
+		recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string {
+			let signer = recoverTypedSignature({
+				signature: signature,
+				data: data,
+				version: SignTypedDataVersion.V4
+			})
+			signer = this._web3.utils.toChecksumAddress(signer);
+			return signer;
+		}	
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
 		};

@@ -53,10 +53,12 @@ suite('##Wallet Ganache', async function() {
             player: accounts[0],
             requestId: 1
         })
-        let signer = await hashTypedData.getSigner({
+        let signerFromWallet = wallet2.recoverTypedSignatureV4(data, signature);
+        let signerFromContract = await hashTypedData.getSigner({
             paramsHash: paramsHash,
             signature: signature
         })
-        assert.strictEqual(signer, wallet2.address);
+        assert.strictEqual(signerFromWallet, wallet2.address);
+        assert.strictEqual(signerFromContract, wallet2.address);
     })
 });

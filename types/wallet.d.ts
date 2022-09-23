@@ -369,6 +369,7 @@ declare module Wallet {
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+        recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;
