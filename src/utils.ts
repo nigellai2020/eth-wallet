@@ -4,27 +4,27 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {BigNumber} from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
 import { MerkleTree } from './merkleTree';
 import { EIP712TypeMap, IEIP712Domain, IMerkleTreeAbiItem, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib(); // tslint:disable-line
 
-function Web3Lib(){
-	if (typeof window !== "undefined" && window["Web3"])
+function Web3Lib() {
+    if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
-	else
+    else
         return require("web3");
 };
-export function sleep(millisecond: number){
-    return new Promise(function(resolve){
-        setTimeout(function(){
+export function sleep(millisecond: number) {
+    return new Promise(function (resolve) {
+        setTimeout(function () {
             resolve(null);
-        },millisecond);
+        }, millisecond);
     });
 };
-export function numberToBytes32(value: number|BigNumber, prefix?:boolean) {
+export function numberToBytes32(value: number | BigNumber, prefix?: boolean) {
     let v = new BigNumber(value).toString(16)
     v = v.replace("0x", "");
     v = padLeft(v, 64);
@@ -32,54 +32,54 @@ export function numberToBytes32(value: number|BigNumber, prefix?:boolean) {
         v = '0x' + v
     return v;
 }
-export function padLeft(string: string, chars: number, sign?: string): string{
+export function padLeft(string: string, chars: number, sign?: string): string {
     return new Array(chars - string.length + 1).join(sign ? sign : "0") + string;
 }
-export function padRight(string: string, chars: number, sign?: string): string{
+export function padRight(string: string, chars: number, sign?: string): string {
     return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
 }
 
 type stringArray = string | _stringArray;
-interface _stringArray extends Array<stringArray>{}
+interface _stringArray extends Array<stringArray> { }
 
-export function stringToBytes32(value: string|stringArray): string|string[]{
-    if (Array.isArray(value)){
+export function stringToBytes32(value: string | stringArray): string | string[] {
+    if (Array.isArray(value)) {
         let result = [];
-        for (let i = 0; i < value.length; i ++){
+        for (let i = 0; i < value.length; i++) {
             result.push(stringToBytes32(value[i]));
         }
         return result;
     }
-    else{
+    else {
         if (value.length == 66 && value.startsWith('0x'))
             return value;
-        return Web3.utils.padRight(Web3.utils.asciiToHex(value),64)
+        return Web3.utils.padRight(Web3.utils.asciiToHex(value), 64)
     }
 }
-export function stringToBytes(value: string|stringArray, nByte?: number): string|string[]{
-    if (Array.isArray(value)){
+export function stringToBytes(value: string | stringArray, nByte?: number): string | string[] {
+    if (Array.isArray(value)) {
         let result = [];
-        for (let i = 0; i < value.length; i ++){
+        for (let i = 0; i < value.length; i++) {
             result.push(stringToBytes(value[i]));
         }
         return result;
     }
-    else{
-        if (nByte){
-            if (new RegExp(`^0x[0-9a-fA-F]{${2*nByte}}$`).test(value))
+    else {
+        if (nByte) {
+            if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
                 return value;
             else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
-                if (value.length >= ((nByte*2) + 2))
+                if (value.length >= ((nByte * 2) + 2))
                     return value;
                 else
-                    return "0x" + value.substring(2) + "00".repeat(nByte-((value.length-2)/2));
+                    return "0x" + value.substring(2) + "00".repeat(nByte - ((value.length - 2) / 2));
             } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
-                if (value.length >= (nByte*2))
+                if (value.length >= (nByte * 2))
                     return value;
-                else 
-                    return "0x" + value + "00".repeat(nByte-(value.length/2));
+                else
+                    return "0x" + value + "00".repeat(nByte - (value.length / 2));
             } else
-                return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte*2)
+                return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte * 2)
         } else {
             if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
                 return value;
@@ -90,7 +90,7 @@ export function stringToBytes(value: string|stringArray, nByte?: number): string
         }
     }
 }
-export function addressToBytes32(value: string, prefix?: boolean): string{
+export function addressToBytes32(value: string, prefix?: boolean): string {
     let v = value
     v = v.replace("0x", "");
     v = padLeft(v, 64);
@@ -98,13 +98,13 @@ export function addressToBytes32(value: string, prefix?: boolean): string{
         v = '0x' + v;
     return v;
 }
-export function bytes32ToAddress(value: string): string{
-    return '0x' + value.replace('0x000000000000000000000000','');
+export function bytes32ToAddress(value: string): string {
+    return '0x' + value.replace('0x000000000000000000000000', '');
 }
-export function bytes32ToString(value: string): string{
+export function bytes32ToString(value: string): string {
     return Web3.utils.hexToUtf8(value);
 }
-export function addressToBytes32Right(value: string, prefix?: boolean): string{
+export function addressToBytes32Right(value: string, prefix?: boolean): string {
     let v = value
     v = v.replace("0x", "");
     v = padRight(v, 64);
@@ -112,26 +112,26 @@ export function addressToBytes32Right(value: string, prefix?: boolean): string{
         v = '0x' + v;
     return v;
 }
-export function toNumber(value: string|number|BigNumber): number{
-    if (typeof(value) == 'number')
+export function toNumber(value: string | number | BigNumber): number {
+    if (typeof (value) == 'number')
         return value
-    else if (typeof(value) == 'string')
+    else if (typeof (value) == 'string')
         return new BigNumber(value).toNumber()
     else
         return value.toNumber()
 }
-export function toDecimals(value: BigNumber|number|string, decimals?: number): BigNumber{    
+export function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber {
     decimals = decimals || 18;
     return new BigNumber(value).shiftedBy(decimals);
 }
-export function fromDecimals(value: BigNumber|number|string, decimals?: number): BigNumber{
+export function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber {
     decimals = decimals || 18;
     return new BigNumber(value).shiftedBy(-decimals);
 }
-export function toString(value:any){
-    if (Array.isArray(value)){
+export function toString(value: any) {
+    if (Array.isArray(value)) {
         let result = [];
-        for (let i = 0; i < value.length; i ++){
+        for (let i = 0; i < value.length; i++) {
             result.push(toString(value[i]));
         }
         return result;
@@ -145,7 +145,7 @@ export function toString(value:any){
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
 
-function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]){
+export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]) {
     return (leafData: Record<string, any>) => {
         let encodePackedInput = abi.map((abiItem) => {
             return {
@@ -153,18 +153,33 @@ function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]){
                 v: leafData[abiItem.name]
             }
         })
-        let hex = wallet.soliditySha3.apply(wallet, encodePackedInput)   
+        let hex = wallet.soliditySha3.apply(wallet, encodePackedInput)
         return hex;
-    };    
+    };
 }
-export function generateMerkleTree(wallet: Wallet, leavesData: Record<string, any>[], abi: IMerkleTreeAbiItem[]){
+
+export function generateMerkleTree(
+    wallet: Wallet,
+    leavesData: Record<string, any>[],
+    abi: IMerkleTreeAbiItem[],
+    abiKeyName?: string
+) {
     const hashFunc = getSha3HashBufferFunc(wallet, abi);
-    const leaves = leavesData.map((item) => hashFunc(item));
-    const merkleTree = new MerkleTree(wallet, leaves, abi);
+    let leavesMap = {};
+    abiKeyName = abiKeyName || abi[0].name;
+    for (let leafData of leavesData) {
+        let key = leafData[abiKeyName];
+        leavesMap[key] = hashFunc(leafData);
+    }
+    const merkleTree = new MerkleTree(wallet, leavesMap, abi);
     return merkleTree;
 }
 
-export function getMerkleProof(wallet: Wallet, tree: MerkleTree, leafData: Record<string, any>) {
+export function getMerkleProof(
+    wallet: Wallet,
+    tree: MerkleTree,
+    leafData: Record<string, any>
+) {
     let abi = tree.getABI();
     const hashFunc = getSha3HashBufferFunc(wallet, abi);
     let leaf = hashFunc(leafData);
@@ -172,7 +187,20 @@ export function getMerkleProof(wallet: Wallet, tree: MerkleTree, leafData: Recor
     return proof;
 }
 
-export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>) {
+export function getMerkleProofByKey(
+    tree: MerkleTree,
+    key: string
+) {
+    const proof = tree.getHexProofByKey(key);
+    return proof;
+}
+
+export function constructTypedMessageData(
+    domain: IEIP712Domain,
+    customTypes: EIP712TypeMap,
+    primaryType: string,
+    message: Record<string, unknown>
+) {
     let data: TypedMessage<MessageTypes> = {
         types: {
             EIP712Domain: EIP712DomainAbi,

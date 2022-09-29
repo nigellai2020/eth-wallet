@@ -15,11 +15,17 @@ interface IMerkleNodeInfo {
 
 export class MerkleTree {
     private tree: string[][] = [];
+    private leavesMap: Record<string, string> = {};
     private abi: IMerkleTreeAbiItem[];
     private nodeInfoMap: Record<number, Record<string, IMerkleNodeInfo>> = {};
-    constructor(wallet: Wallet, leaves: string[], abi: IMerkleTreeAbiItem[]) {
+    constructor(
+        wallet: Wallet, 
+        leavesMap: Record<string, string>, 
+        abi: IMerkleTreeAbiItem[]
+    ) {
         this.abi = abi;
-        this.tree.push(leaves);
+        this.leavesMap = leavesMap;
+        this.tree.push(Object.values(leavesMap));
         while (this.tree[this.tree.length - 1].length > 1) {
             let layer = this.tree.length - 1;
             let children = this.tree[layer];
@@ -64,6 +70,13 @@ export class MerkleTree {
     }
     getHexRoot() {
         return this.tree[this.tree.length - 1][0];
+    }
+    getHexProofByKey(key: string) {
+        let proof = [];
+        let leaf = this.leavesMap[key];
+        if (!leaf) return proof;
+        proof = this.getHexProof(leaf);
+        return proof; 
     }
     getHexProof(leaf: string) {
         let proof = [];

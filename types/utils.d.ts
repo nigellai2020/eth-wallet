@@ -25,7 +25,9 @@ export declare function toDecimals(value: BigNumber | number | string, decimals?
 export declare function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function toString(value: any): any;
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
-export declare function generateMerkleTree(wallet: Wallet, leavesData: Record<string, any>[], abi: IMerkleTreeAbiItem[]): MerkleTree;
+export declare function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]): (leafData: Record<string, any>) => any;
+export declare function generateMerkleTree(wallet: Wallet, leavesData: Record<string, any>[], abi: IMerkleTreeAbiItem[], abiKeyName?: string): MerkleTree;
 export declare function getMerkleProof(wallet: Wallet, tree: MerkleTree, leafData: Record<string, any>): any[];
+export declare function getMerkleProofByKey(tree: MerkleTree, key: string): any[];
 export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
 export {};
