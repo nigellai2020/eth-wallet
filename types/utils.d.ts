@@ -5,7 +5,8 @@
 *-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
-import { EIP712TypeMap, IEIP712Domain, IWhitelistTreeABIItem, IWhitelistTreeData, MessageTypes, TypedMessage } from "./types";
+import { MerkleTree } from './merkleTree';
+import { EIP712TypeMap, IEIP712Domain, IMerkleTreeAbiItem, MessageTypes, TypedMessage } from "./types";
 export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
 export declare function padLeft(string: string, chars: number, sign?: string): string;
@@ -24,10 +25,7 @@ export declare function toDecimals(value: BigNumber | number | string, decimals?
 export declare function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function toString(value: any): any;
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
-export declare function generateWhitelistTree(wallet: Wallet, data: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): {
-    root: string;
-    tree: string;
-};
-export declare function getWhitelistTreeProof(wallet: Wallet, inputRoot: string, rawData: IWhitelistTreeData[], abi: IWhitelistTreeABIItem[]): any[];
+export declare function generateMerkleTree(wallet: Wallet, leavesData: Record<string, any>[], abi: IMerkleTreeAbiItem[]): MerkleTree;
+export declare function getMerkleProof(wallet: Wallet, tree: MerkleTree, leafData: Record<string, any>): any[];
 export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
 export {};

@@ -6,30 +6,54 @@
 
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
+import { IMerkleTreeAbiItem } from "./types";
 
-class MerkleTree {
+interface IMerkleNodeInfo {
+    parent: string;
+    sibling?: string;
+}
+
+export class MerkleTree {
     private tree: string[][] = [];
-    protected constructor(wallet: Wallet, leaves: string[]) {
+    private abi: IMerkleTreeAbiItem[];
+    private nodeInfoMap: Record<number, Record<string, IMerkleNodeInfo>> = {};
+    constructor(wallet: Wallet, leaves: string[], abi: IMerkleTreeAbiItem[]) {
+        this.abi = abi;
         this.tree.push(leaves);
         while (this.tree[this.tree.length - 1].length > 1) {
-            let children = this.tree[this.tree.length - 1];
+            let layer = this.tree.length - 1;
+            let children = this.tree[layer];
             let parent = [];
+            this.nodeInfoMap[layer] = {};
             for (let i = 0; i < children.length - 1; i += 2) {
-                if (new BigNumber(children[i]).lt(children[i + 1])) {
-                    parent.push(wallet.soliditySha3("0x" + children[i].replace("0x", "") + children[i + 1].replace("0x", "")));
+                let parentHash;
+                let firstChild = children[i];
+                let secondChild = children[i + 1];
+                if (new BigNumber(firstChild).lt(secondChild)) {
+                    parentHash = wallet.soliditySha3("0x" + firstChild.replace("0x", "") + secondChild.replace("0x", ""));            
                 } else {
-                    parent.push(wallet.soliditySha3("0x" + children[i + 1].replace("0x", "") + children[i].replace("0x", "")));
+                    parentHash = wallet.soliditySha3("0x" + secondChild.replace("0x", "") + firstChild.replace("0x", ""));
+                }
+                parent.push(parentHash);
+                this.nodeInfoMap[layer][firstChild] = {
+                    parent: parentHash,
+                    sibling: secondChild
+                }
+                this.nodeInfoMap[layer][secondChild] = {
+                    parent: parentHash,
+                    sibling: firstChild
                 }
             }
             if (children.length % 2 == 1) {
-                parent.push("0x" + children[children.length - 1].replace("0x", ""));
+                let child = children[children.length - 1];
+                let parentHash = "0x" + child.replace("0x", "");
+                parent.push(parentHash);
+                this.nodeInfoMap[layer][child] = {
+                    parent: parentHash
+                }
             }
             this.tree.push(parent);
         }
-    }
-    public static create(wallet: Wallet, leaves: string[]) {
-        let tree = new this(wallet, leaves);
-        return tree;      
     }
     toString(){
         let arr = [];
@@ -44,13 +68,22 @@ class MerkleTree {
     getHexProof(leaf: string) {
         let proof = [];
         if (this.tree.length == 1) return proof;
-        let index = this.tree[0].indexOf(leaf);
-        proof.push(this.tree[0][index % 2 == 0 ? (index + 1) : (index - 1)]);
+        let leafInfo = this.nodeInfoMap[0][leaf];
+        if (leafInfo.sibling) {
+            proof.push(leafInfo.sibling)
+        }
+        let parentHash = leafInfo.parent;
         for (let i = 1; i < this.tree.length - 1; i++) {
-            index = Math.floor(index / 2);
-            proof.push(this.tree[i][index % 2 == 0 ? (index + 1) : (index - 1)]);
+            if (parentHash == this.getHexRoot()) break;
+            let leafInfo = this.nodeInfoMap[i][parentHash];
+            if (leafInfo.sibling) {
+                proof.push(leafInfo.sibling)
+            }
+            parentHash = leafInfo.parent;
         }
         return proof;
-    }
+    } 
+    getABI() {
+        return this.abi;
+    }   
 }
-export default MerkleTree;

@@ -4,12 +4,14 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { Wallet } from "./wallet";
-declare class MerkleTree {
+import { IMerkleTreeAbiItem } from "./types";
+export declare class MerkleTree {
     private tree;
-    protected constructor(wallet: Wallet, leaves: string[]);
-    static create(wallet: Wallet, leaves: string[]): MerkleTree;
+    private abi;
+    private nodeInfoMap;
+    constructor(wallet: Wallet, leaves: string[], abi: IMerkleTreeAbiItem[]);
     toString(): string;
     getHexRoot(): string;
     getHexProof(leaf: string): any[];
+    getABI(): IMerkleTreeAbiItem[];
 }
-export default MerkleTree;
