@@ -48,7 +48,11 @@ suite('##Wallet Ganache', async function() {
     })
     test('Create tree and set tree root', async function(){
         wallet.defaultAccount = accounts[0];
-        tree = Utils.generateMerkleTree(wallet, rawData, abi, 'account');
+        tree = Utils.generateMerkleTree(wallet, {
+            leavesData: rawData, 
+            abi, 
+            abiKeyName: 'account'
+        });
         whitelistTree = new TestWhitelistTree(wallet);
         let address = await whitelistTree.deploy();
         let root = tree.getHexRoot();
@@ -57,7 +61,9 @@ suite('##Wallet Ganache', async function() {
 
     test('Account 0: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[0];
-        let proof = Utils.getMerkleProofByKey(tree, accounts[0]);
+        let proof = Utils.getMerkleProof(wallet, tree, {
+            key: accounts[0]
+        });
         let valid = await whitelistTree.verifyMerkleProof2({
             amount1: rawData[0].amount,
             amount2: rawData[0].amount2,
@@ -69,7 +75,9 @@ suite('##Wallet Ganache', async function() {
 
     test('Account 1: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[1];
-        let proof = Utils.getMerkleProofByKey(tree, accounts[1]);
+        let proof = Utils.getMerkleProof(wallet, tree, {
+            key: accounts[1]
+        });
         let valid = await whitelistTree.verifyMerkleProof2({
             amount1: rawData[1].amount,
             amount2: rawData[1].amount2,

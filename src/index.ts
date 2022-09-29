@@ -22,7 +22,12 @@ export {
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
 export {Erc20} from './contracts/erc20';
-export {MerkleTree} from './merkleTree';
+export {
+    MerkleTree, 
+    IMerkleTreeOptions, 
+    IGetMerkleProofOptions,
+    IGetMerkleLeafDataOptions
+} from './merkleTree';
 export * as Utils from './utils';
 export * as Contracts from './contracts';
 export * as Types from './types';

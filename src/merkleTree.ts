@@ -7,25 +7,49 @@
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
 import { IMerkleTreeAbiItem } from "./types";
+import { getSha3HashBufferFunc } from "./utils";
 
 interface IMerkleNodeInfo {
     parent: string;
     sibling?: string;
 }
 
+export interface IMerkleTreeOptions {
+    leavesData: Record<string, any>[];
+    abi: IMerkleTreeAbiItem[];
+    abiKeyName?: string;
+}
+
+export interface IGetMerkleProofOptions {
+    leafData?: Record<string, any>;
+    key?: string;
+}
+
+export interface IGetMerkleLeafDataOptions {
+    key?: string;
+    hash?: string;
+}
+
 export class MerkleTree {
     private tree: string[][] = [];
-    private leavesMap: Record<string, string> = {};
+    private leavesKeyHashMap: Record<string, string> = {};
+    private leavesHashDataMap: Record<string, Record<string, any>> = {};
     private abi: IMerkleTreeAbiItem[];
     private nodeInfoMap: Record<number, Record<string, IMerkleNodeInfo>> = {};
-    constructor(
-        wallet: Wallet, 
-        leavesMap: Record<string, string>, 
-        abi: IMerkleTreeAbiItem[]
-    ) {
-        this.abi = abi;
-        this.leavesMap = leavesMap;
-        this.tree.push(Object.values(leavesMap));
+    constructor(wallet: Wallet, options: IMerkleTreeOptions) {
+        this.abi = options.abi;
+        const hashFunc = getSha3HashBufferFunc(wallet, options.abi);
+        let abiKeyName = options.abiKeyName || options.abi[0].name;
+
+        let leaves = [];
+        for (let leafData of options.leavesData) {
+            let key = leafData[abiKeyName];
+            let dataHash = hashFunc(leafData);
+            this.leavesKeyHashMap[key] = dataHash;
+            this.leavesHashDataMap[dataHash] = leafData;
+            leaves.push(dataHash);
+        }
+        this.tree.push(leaves);
         while (this.tree[this.tree.length - 1].length > 1) {
             let layer = this.tree.length - 1;
             let children = this.tree[layer];
@@ -73,7 +97,7 @@ export class MerkleTree {
     }
     getHexProofByKey(key: string) {
         let proof = [];
-        let leaf = this.leavesMap[key];
+        let leaf = this.leavesKeyHashMap[key];
         if (!leaf) return proof;
         proof = this.getHexProof(leaf);
         return proof; 
@@ -98,5 +122,13 @@ export class MerkleTree {
     } 
     getABI() {
         return this.abi;
-    }   
+    } 
+    getLeafDataByKey(key: string) {
+        let leaf = this.leavesKeyHashMap[key];
+        if (!leaf) return null;
+        return this.getLeafData(leaf);
+    }  
+    getLeafData(leaf: string) {
+        return this.leavesHashDataMap[leaf];
+    }
 }

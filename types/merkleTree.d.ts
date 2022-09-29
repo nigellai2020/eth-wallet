@@ -5,15 +5,31 @@
 *-----------------------------------------------------------*/
 import { Wallet } from "./wallet";
 import { IMerkleTreeAbiItem } from "./types";
+export interface IMerkleTreeOptions {
+    leavesData: Record<string, any>[];
+    abi: IMerkleTreeAbiItem[];
+    abiKeyName?: string;
+}
+export interface IGetMerkleProofOptions {
+    leafData?: Record<string, any>;
+    key?: string;
+}
+export interface IGetMerkleLeafDataOptions {
+    key?: string;
+    hash?: string;
+}
 export declare class MerkleTree {
     private tree;
-    private leavesMap;
+    private leavesKeyHashMap;
+    private leavesHashDataMap;
     private abi;
     private nodeInfoMap;
-    constructor(wallet: Wallet, leavesMap: Record<string, string>, abi: IMerkleTreeAbiItem[]);
+    constructor(wallet: Wallet, options: IMerkleTreeOptions);
     toString(): string;
     getHexRoot(): string;
     getHexProofByKey(key: string): any[];
     getHexProof(leaf: string): any[];
     getABI(): IMerkleTreeAbiItem[];
+    getLeafDataByKey(key: string): Record<string, any>;
+    getLeafData(leaf: string): Record<string, any>;
 }

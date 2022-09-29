@@ -6,7 +6,7 @@
 
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
-import { MerkleTree } from './merkleTree';
+import { IGetMerkleLeafDataOptions, IGetMerkleProofOptions, IMerkleTreeOptions, MerkleTree } from './merkleTree';
 import { EIP712TypeMap, IEIP712Domain, IMerkleTreeAbiItem, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib(); // tslint:disable-line
@@ -159,40 +159,43 @@ export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[])
 }
 
 export function generateMerkleTree(
-    wallet: Wallet,
-    leavesData: Record<string, any>[],
-    abi: IMerkleTreeAbiItem[],
-    abiKeyName?: string
+    wallet: Wallet, 
+    options: IMerkleTreeOptions
 ) {
-    const hashFunc = getSha3HashBufferFunc(wallet, abi);
-    let leavesMap = {};
-    abiKeyName = abiKeyName || abi[0].name;
-    for (let leafData of leavesData) {
-        let key = leafData[abiKeyName];
-        leavesMap[key] = hashFunc(leafData);
-    }
-    const merkleTree = new MerkleTree(wallet, leavesMap, abi);
+    const merkleTree = new MerkleTree(wallet, options);
     return merkleTree;
 }
 
 export function getMerkleProof(
     wallet: Wallet,
     tree: MerkleTree,
-    leafData: Record<string, any>
+    options: IGetMerkleProofOptions
 ) {
-    let abi = tree.getABI();
-    const hashFunc = getSha3HashBufferFunc(wallet, abi);
-    let leaf = hashFunc(leafData);
-    const proof = tree.getHexProof(leaf);
+    let proof = [];
+    if (options.key) {
+        proof = tree.getHexProofByKey(options.key);
+    }
+    else if (options.leafData) {
+        let abi = tree.getABI();
+        const hashFunc = getSha3HashBufferFunc(wallet, abi);
+        let leaf = hashFunc(options.leafData);
+        proof = tree.getHexProof(leaf);
+    }
     return proof;
 }
 
-export function getMerkleProofByKey(
+export function getMerkleLeafData(
     tree: MerkleTree,
-    key: string
+    options: IGetMerkleLeafDataOptions
 ) {
-    const proof = tree.getHexProofByKey(key);
-    return proof;
+    let data: Record<string, any>;
+    if (options.key) {
+        data = tree.getLeafDataByKey(options.key);
+    }
+    else if (options.hash) {
+        data = tree.getLeafData(options.hash);
+    }
+    return data;
 }
 
 export function constructTypedMessageData(

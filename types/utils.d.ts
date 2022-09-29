@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
-import { MerkleTree } from './merkleTree';
+import { IGetMerkleLeafDataOptions, IGetMerkleProofOptions, IMerkleTreeOptions, MerkleTree } from './merkleTree';
 import { EIP712TypeMap, IEIP712Domain, IMerkleTreeAbiItem, MessageTypes, TypedMessage } from "./types";
 export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
@@ -26,8 +26,8 @@ export declare function fromDecimals(value: BigNumber | number | string, decimal
 export declare function toString(value: any): any;
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
 export declare function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]): (leafData: Record<string, any>) => any;
-export declare function generateMerkleTree(wallet: Wallet, leavesData: Record<string, any>[], abi: IMerkleTreeAbiItem[], abiKeyName?: string): MerkleTree;
-export declare function getMerkleProof(wallet: Wallet, tree: MerkleTree, leafData: Record<string, any>): any[];
-export declare function getMerkleProofByKey(tree: MerkleTree, key: string): any[];
+export declare function generateMerkleTree(wallet: Wallet, options: IMerkleTreeOptions): MerkleTree;
+export declare function getMerkleProof(wallet: Wallet, tree: MerkleTree, options: IGetMerkleProofOptions): any[];
+export declare function getMerkleLeafData(tree: MerkleTree, options: IGetMerkleLeafDataOptions): Record<string, any>;
 export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
 export {};
