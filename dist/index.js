@@ -56,33 +56,63 @@ var __toModule = (module2) => {
 };
 
 // src/merkleTree.ts
-var import_bignumber, MerkleTree, merkleTree_default;
+var import_bignumber, MerkleTree;
 var init_merkleTree = __esm({
   "src/merkleTree.ts"() {
     import_bignumber = __toModule(require("bignumber.js"));
+    init_utils();
     MerkleTree = class {
-      constructor(wallet, leaves) {
+      constructor(wallet, options) {
         this.tree = [];
+        this.leavesKeyHashMap = {};
+        this.leavesHashDataMap = {};
+        this.nodeInfoMap = {};
+        this.abi = options.abi;
+        const hashFunc = getSha3HashBufferFunc(wallet, options.abi);
+        let abiKeyName = options.abiKeyName || options.abi[0].name;
+        let leaves = [];
+        for (let leafData of options.leavesData) {
+          let key = leafData[abiKeyName];
+          let dataHash = hashFunc(leafData);
+          this.leavesKeyHashMap[key] = dataHash;
+          this.leavesHashDataMap[dataHash] = leafData;
+          leaves.push(dataHash);
+        }
         this.tree.push(leaves);
         while (this.tree[this.tree.length - 1].length > 1) {
-          let children = this.tree[this.tree.length - 1];
+          let layer = this.tree.length - 1;
+          let children = this.tree[layer];
           let parent = [];
+          this.nodeInfoMap[layer] = {};
           for (let i = 0; i < children.length - 1; i += 2) {
-            if (new import_bignumber.BigNumber(children[i]).lt(children[i + 1])) {
-              parent.push(wallet.soliditySha3("0x" + children[i].replace("0x", "") + children[i + 1].replace("0x", "")));
+            let parentHash;
+            let firstChild = children[i];
+            let secondChild = children[i + 1];
+            if (new import_bignumber.BigNumber(firstChild).lt(secondChild)) {
+              parentHash = wallet.soliditySha3("0x" + firstChild.replace("0x", "") + secondChild.replace("0x", ""));
             } else {
-              parent.push(wallet.soliditySha3("0x" + children[i + 1].replace("0x", "") + children[i].replace("0x", "")));
+              parentHash = wallet.soliditySha3("0x" + secondChild.replace("0x", "") + firstChild.replace("0x", ""));
             }
+            parent.push(parentHash);
+            this.nodeInfoMap[layer][firstChild] = {
+              parent: parentHash,
+              sibling: secondChild
+            };
+            this.nodeInfoMap[layer][secondChild] = {
+              parent: parentHash,
+              sibling: firstChild
+            };
           }
           if (children.length % 2 == 1) {
-            parent.push("0x" + children[children.length - 1].replace("0x", ""));
+            let child = children[children.length - 1];
+            let parentHash = "0x" + child.replace("0x", "");
+            parent.push(parentHash);
+            this.nodeInfoMap[layer][child] = {
+              parent: parentHash
+            };
           }
           this.tree.push(parent);
         }
-      }
-      static create(wallet, leaves) {
-        let tree = new this(wallet, leaves);
-        return tree;
       }
       toString() {
         let arr = [];
@@ -94,20 +124,47 @@ var init_merkleTree = __esm({
       getHexRoot() {
         return this.tree[this.tree.length - 1][0];
       }
+      getHexProofByKey(key) {
+        let proof = [];
+        let leaf = this.leavesKeyHashMap[key];
+        if (!leaf)
+          return proof;
+        proof = this.getHexProof(leaf);
+        return proof;
+      }
       getHexProof(leaf) {
         let proof = [];
         if (this.tree.length == 1)
           return proof;
-        let index = this.tree[0].indexOf(leaf);
-        proof.push(this.tree[0][index % 2 == 0 ? index + 1 : index - 1]);
+        let leafInfo = this.nodeInfoMap[0][leaf];
+        if (leafInfo.sibling) {
+          proof.push(leafInfo.sibling);
+        }
+        let parentHash = leafInfo.parent;
         for (let i = 1; i < this.tree.length - 1; i++) {
-          index = Math.floor(index / 2);
-          proof.push(this.tree[i][index % 2 == 0 ? index + 1 : index - 1]);
+          if (parentHash == this.getHexRoot())
+            break;
+          let leafInfo2 = this.nodeInfoMap[i][parentHash];
+          if (leafInfo2.sibling) {
+            proof.push(leafInfo2.sibling);
+          }
+          parentHash = leafInfo2.parent;
         }
         return proof;
       }
+      getABI() {
+        return this.abi;
+      }
+      getLeafDataByKey(key) {
+        let leaf = this.leavesKeyHashMap[key];
+        if (!leaf)
+          return null;
+        return this.getLeafData(leaf);
+      }
+      getLeafData(leaf) {
+        return this.leavesHashDataMap[leaf];
+      }
     };
-    merkleTree_default = MerkleTree;
   }
 });
 
@@ -161,8 +218,10 @@ __export(utils_exports, {
   bytes32ToString: () => bytes32ToString,
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
-  generateWhitelistTree: () => generateWhitelistTree,
-  getWhitelistTreeProof: () => getWhitelistTreeProof,
+  generateMerkleTree: () => generateMerkleTree,
+  getMerkleLeafData: () => getMerkleLeafData,
+  getMerkleProof: () => getMerkleProof,
+  getSha3HashBufferFunc: () => getSha3HashBufferFunc,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
@@ -300,49 +359,41 @@ function toString(value) {
     return value;
 }
 function getSha3HashBufferFunc(wallet, abi) {
-  return (treeItem) => {
+  return (leafData) => {
     let encodePackedInput = abi.map((abiItem) => {
       return {
         t: abiItem.type,
-        v: treeItem[abiItem.name]
+        v: leafData[abiItem.name]
       };
     });
-    let hex = wallet.soliditySha3.apply(wallet, [
-      { t: "address", v: treeItem.account },
-      ...encodePackedInput
-    ]);
+    let hex = wallet.soliditySha3.apply(wallet, encodePackedInput);
     return hex;
   };
 }
-function generateWhitelistTree(wallet, data, abi) {
-  const hashFunc = getSha3HashBufferFunc(wallet, abi);
-  const leaves = data.map((item) => hashFunc(item));
-  const merkleTree = merkleTree_default.create(wallet, leaves);
-  const merkleRoot = merkleTree.getHexRoot();
-  return {
-    root: merkleRoot,
-    tree: merkleTree.toString()
-  };
+function generateMerkleTree(wallet, options) {
+  const merkleTree = new MerkleTree(wallet, options);
+  return merkleTree;
 }
-function getWhitelistTreeProof(wallet, inputRoot, rawData, abi) {
-  const hashFunc = getSha3HashBufferFunc(wallet, abi);
-  let accountLeaf;
-  let leaves = [];
-  for (let item of rawData) {
-    let leaf = hashFunc(item);
-    if (wallet.address == item.account) {
-      accountLeaf = leaf;
-    }
-    leaves.push(leaf);
+function getMerkleProof(wallet, tree, options) {
+  let proof = [];
+  if (options.key) {
+    proof = tree.getHexProofByKey(options.key);
+  } else if (options.leafData) {
+    let abi = tree.getABI();
+    const hashFunc = getSha3HashBufferFunc(wallet, abi);
+    let leaf = hashFunc(options.leafData);
+    proof = tree.getHexProof(leaf);
   }
-  if (!accountLeaf)
-    return null;
-  const tree = merkleTree_default.create(wallet, leaves);
-  const calculatedRoot = tree.getHexRoot();
-  if (calculatedRoot != inputRoot)
-    return null;
-  const proof = tree.getHexProof(accountLeaf);
   return proof;
+}
+function getMerkleLeafData(tree, options) {
+  let data;
+  if (options.key) {
+    data = tree.getLeafDataByKey(options.key);
+  } else if (options.hash) {
+    data = tree.getLeafData(options.hash);
+  }
+  return data;
 }
 function constructTypedMessageData(domain, customTypes, primaryType, message) {
   let data = {
@@ -3002,6 +3053,7 @@ __export(exports, {
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,
+  MerkleTree: () => MerkleTree,
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
   Types: () => types_exports,
@@ -3014,6 +3066,7 @@ var import_wallet = __toModule(require_wallet());
 var import_contract2 = __toModule(require_contract());
 var import_bignumber4 = __toModule(require("bignumber.js"));
 init_erc20();
+init_merkleTree();
 init_utils();
 
 // src/contracts/index.ts

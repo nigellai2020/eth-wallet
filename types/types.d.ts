@@ -4,11 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 /// <reference types="node" />
-export interface IWhitelistTreeData {
-    account: string;
-    [key: string]: any;
-}
-export interface IWhitelistTreeABIItem {
+export interface IMerkleTreeAbiItem {
     name: string;
     type: string;
 }

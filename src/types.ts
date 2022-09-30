@@ -14,12 +14,7 @@
 *  https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/util
 *--------------------------------------------------------------------------------------------*/
 
-export interface IWhitelistTreeData {
-    account: string;
-    [key: string]: any;
-}
-
-export interface IWhitelistTreeABIItem {
+export interface IMerkleTreeAbiItem {
     name: string;
     type: string;
 }
