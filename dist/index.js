@@ -64,15 +64,22 @@ var init_merkleTree = __esm({
     MerkleTree = class {
       constructor(wallet, options) {
         this.tree = [];
+        this.leavesData = {};
         this.leavesKeyHashMap = {};
         this.leavesHashDataMap = {};
         this.nodeInfoMap = {};
         this.abi = options.abi;
         const hashFunc = getSha3HashBufferFunc(wallet, options.abi);
         let abiKeyName = options.abiKeyName || options.abi[0].name;
+        this.leavesData = options.leavesData;
         let leaves = [];
         for (let leafData of options.leavesData) {
-          let key = leafData[abiKeyName];
+          let key;
+          if (options.getCustomKey) {
+            key = options.getCustomKey(leafData);
+          } else {
+            key = leafData[abiKeyName];
+          }
           let dataHash = hashFunc(leafData);
           this.leavesKeyHashMap[key] = dataHash;
           this.leavesHashDataMap[dataHash] = leafData;
