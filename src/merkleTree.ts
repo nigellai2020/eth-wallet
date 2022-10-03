@@ -18,6 +18,7 @@ export interface IMerkleTreeOptions {
     leavesData: Record<string, any>[];
     abi: IMerkleTreeAbiItem[];
     abiKeyName?: string;
+    getCustomKey?: (leafData: Record<string, any>) => string;
 }
 
 export interface IGetMerkleProofOptions {
@@ -32,6 +33,7 @@ export interface IGetMerkleLeafDataOptions {
 
 export class MerkleTree {
     private tree: string[][] = [];
+    public leavesData: Record<string, any> = {};
     private leavesKeyHashMap: Record<string, string> = {};
     private leavesHashDataMap: Record<string, Record<string, any>> = {};
     private abi: IMerkleTreeAbiItem[];
@@ -40,10 +42,16 @@ export class MerkleTree {
         this.abi = options.abi;
         const hashFunc = getSha3HashBufferFunc(wallet, options.abi);
         let abiKeyName = options.abiKeyName || options.abi[0].name;
-
+        this.leavesData = options.leavesData;
         let leaves = [];
         for (let leafData of options.leavesData) {
-            let key = leafData[abiKeyName];
+            let key: string;
+            if (options.getCustomKey) {
+                key = options.getCustomKey(leafData);
+            }
+            else {
+                key = leafData[abiKeyName];
+            }
             let dataHash = hashFunc(leafData);
             this.leavesKeyHashMap[key] = dataHash;
             this.leavesHashDataMap[dataHash] = leafData;

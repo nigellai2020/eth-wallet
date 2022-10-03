@@ -9,6 +9,7 @@ export interface IMerkleTreeOptions {
     leavesData: Record<string, any>[];
     abi: IMerkleTreeAbiItem[];
     abiKeyName?: string;
+    getCustomKey?: (leafData: Record<string, any>) => string;
 }
 export interface IGetMerkleProofOptions {
     leafData?: Record<string, any>;
@@ -20,6 +21,7 @@ export interface IGetMerkleLeafDataOptions {
 }
 export declare class MerkleTree {
     private tree;
+    leavesData: Record<string, any>;
     private leavesKeyHashMap;
     private leavesHashDataMap;
     private abi;
