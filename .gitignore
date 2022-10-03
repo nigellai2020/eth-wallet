@@ -1,3 +1,4 @@
 package-lock.json
+tools/solcjs
 config.js
 node_modules

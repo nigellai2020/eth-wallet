@@ -1,4 +1,4 @@
-import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "../../src";
+import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";
 import Bin from "./HashTypedData.json";
 
 export interface IGetSignerParams {signature:string;paramsHash:string}

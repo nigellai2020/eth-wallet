@@ -3,7 +3,6 @@ import {Wallet} from "../src";
 import {Utils} from "../src";
 import * as Ganache from "ganache";
 import * as assert from 'assert';
-import { exit } from 'process';
 
 const Config = require('./config').wallet;
 

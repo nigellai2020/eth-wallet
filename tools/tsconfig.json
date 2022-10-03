@@ -1,0 +1,21 @@
+{ 
+    "compilerOptions": {
+        "baseUrl": ".",
+        "target": "es2017",
+        "module": "commonjs",        
+        "moduleResolution": "node",   
+        "esModuleInterop": true,        
+        "removeComments": false,         
+        "declaration": false,
+        "outDir": "bin" 
+    },
+    "include": [
+        "src"
+        , "src/codeGen.ts"    
+    ],
+    "exclude": [
+        "node_modules",
+        "example",
+        "test"
+    ]
+}

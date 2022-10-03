@@ -4,7 +4,7 @@
     "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {
-        "sol2ts": "tools/compile.ts"
+        "sol2ts": "tools/bin/compile.js"
     },
     "types": "types/index.d.ts",
     "dependencies": {
@@ -30,9 +30,9 @@
     },
     "scripts": {
         "build": "tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "build:test-contracts": "ts-node tools/compile.ts ./test-contracts.json && sh ./scripts/replaceTestContracts.sh",
+        "build:tools": "cd tools && rm -rf bin && tsc && cd ..",
+        "build:test": "rm -f test/contracts/*.ts && node tools/bin/compile.js test/contracts.json",
         "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
-        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts",
-        "postinstall": "mkdir -p tools/solcjs"
+        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts"
     }
 }

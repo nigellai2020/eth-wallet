@@ -1,0 +1,15 @@
+{    
+    "compilerOptions": {
+        "target": "ES2017",       
+        "module": "Node16", 
+        "moduleResolution": "Node",
+        "allowJs": false,
+        "esModuleInterop": true,        
+        "declaration": false,
+        "baseUrl": ".",        
+        "paths": {            
+            "@ijstech/eth-wallet": ["../src"]
+        }
+    },
+    "include": ["."]
+}
