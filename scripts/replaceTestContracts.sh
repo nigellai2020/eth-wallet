@@ -1,0 +1,1 @@
+sed -i -e 's/@ijstech\/eth-wallet/..\/..\/src/g' ./test/contracts/*.ts
