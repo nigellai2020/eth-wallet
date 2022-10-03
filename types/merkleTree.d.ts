@@ -32,6 +32,7 @@ export declare class MerkleTree {
     getHexProofsByKey(key: string): string[][];
     getHexProof(leaf: string): any[];
     getABI(): IMerkleTreeAbiItem[];
+    getLeavesByKey(key: string): string[];
     getLeavesDataByKey(key: string): Record<string, any>[];
     getLeafData(leaf: string): Record<string, any>;
 }

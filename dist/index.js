@@ -165,6 +165,9 @@ var init_merkleTree = __esm({
       getABI() {
         return this.abi;
       }
+      getLeavesByKey(key) {
+        return this.leavesKeyHashMap[key];
+      }
       getLeavesDataByKey(key) {
         let leaves = this.leavesKeyHashMap[key];
         if (!leaves || leaves.length == 0)

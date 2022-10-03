@@ -134,6 +134,9 @@ export class MerkleTree {
     getABI() {
         return this.abi;
     } 
+    getLeavesByKey(key: string) {
+        return this.leavesKeyHashMap[key];
+    }
     getLeavesDataByKey(key: string) {
         let leaves = this.leavesKeyHashMap[key];
         if (!leaves || leaves.length == 0) return null;
