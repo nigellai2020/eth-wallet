@@ -1,4 +1,4 @@
-import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-wallet";
+import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "../../src";
 import Bin from "./TestWhitelistTree.json";
 
 export interface IVerifyMerkleProofParams {allocation:number|BigNumber;proof:string[]}
