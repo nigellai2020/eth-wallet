@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity =0.6.11;
+pragma solidity 0.8.17;
 
-import './MerkleProof.sol';
+import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 
 contract TestWhitelistTree {
     bytes32 public whitelistTreeRoot;
