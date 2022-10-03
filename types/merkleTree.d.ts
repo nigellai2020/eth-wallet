@@ -29,9 +29,9 @@ export declare class MerkleTree {
     constructor(wallet: Wallet, options: IMerkleTreeOptions);
     toString(): string;
     getHexRoot(): string;
-    getHexProofByKey(key: string): any[];
+    getHexProofsByKey(key: string): string[][];
     getHexProof(leaf: string): any[];
     getABI(): IMerkleTreeAbiItem[];
-    getLeafDataByKey(key: string): Record<string, any>;
+    getLeavesDataByKey(key: string): Record<string, any>[];
     getLeafData(leaf: string): Record<string, any>;
 }

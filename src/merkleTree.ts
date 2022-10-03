@@ -34,7 +34,7 @@ export interface IGetMerkleLeafDataOptions {
 export class MerkleTree {
     private tree: string[][] = [];
     public leavesData: Record<string, any> = {};
-    private leavesKeyHashMap: Record<string, string> = {};
+    private leavesKeyHashMap: Record<string, string[]> = {};
     private leavesHashDataMap: Record<string, Record<string, any>> = {};
     private abi: IMerkleTreeAbiItem[];
     private nodeInfoMap: Record<number, Record<string, IMerkleNodeInfo>> = {};
@@ -53,7 +53,8 @@ export class MerkleTree {
                 key = leafData[abiKeyName];
             }
             let dataHash = hashFunc(leafData);
-            this.leavesKeyHashMap[key] = dataHash;
+            this.leavesKeyHashMap[key] = this.leavesKeyHashMap[key] || [];
+            this.leavesKeyHashMap[key].push(dataHash);
             this.leavesHashDataMap[dataHash] = leafData;
             leaves.push(dataHash);
         }
@@ -103,12 +104,14 @@ export class MerkleTree {
     getHexRoot() {
         return this.tree[this.tree.length - 1][0];
     }
-    getHexProofByKey(key: string) {
-        let proof = [];
-        let leaf = this.leavesKeyHashMap[key];
-        if (!leaf) return proof;
-        proof = this.getHexProof(leaf);
-        return proof; 
+    getHexProofsByKey(key: string) {
+        let proofs: string[][] = [];
+        let leaves = this.leavesKeyHashMap[key];
+        if (!leaves || leaves.length == 0) return proofs;
+        for (let leaf of leaves) {
+            proofs.push(this.getHexProof(leaf));
+        }
+        return proofs; 
     }
     getHexProof(leaf: string) {
         let proof = [];
@@ -131,10 +134,14 @@ export class MerkleTree {
     getABI() {
         return this.abi;
     } 
-    getLeafDataByKey(key: string) {
-        let leaf = this.leavesKeyHashMap[key];
-        if (!leaf) return null;
-        return this.getLeafData(leaf);
+    getLeavesDataByKey(key: string) {
+        let leaves = this.leavesKeyHashMap[key];
+        if (!leaves || leaves.length == 0) return null;
+        let leavesData: Record<string, any>[] = []
+        for (let leaf of leaves) {
+            leavesData.push(this.getLeafData(leaf));
+        }
+        return leavesData;
     }  
     getLeafData(leaf: string) {
         return this.leavesHashDataMap[leaf];
