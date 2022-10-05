@@ -4,11 +4,17 @@ import * as Ganache from "ganache";
 import * as assert from 'assert';
 import { TestWhitelistTree } from './contracts';
 
-suite('##Wallet Ganache', async function() {
+suite('##Wallet Merkle Proof', async function() {
     this.timeout(20000);
     let rawData: Record<string, any>[] = [];
     let tree: MerkleTree;
-    let provider = Ganache.provider()
+    let provider = Ganache.provider({
+        logging: {
+            logger: {
+                log: () => {} // don't do anything
+            }
+        }
+    })
     let accounts: string[];
     const wallet = new Wallet(provider); 
     let whitelistTree: TestWhitelistTree;
@@ -35,8 +41,7 @@ suite('##Wallet Ganache', async function() {
         return Math.floor(Math.random() * (max - min + 1) + min)
     }
     suiteSetup(async function(){
-        accounts = await wallet.accounts; 
-        console.log('accounts', accounts)
+        accounts = await wallet.accounts;         
         for (let account of accounts) {
             rawData.push({
                 account: account,

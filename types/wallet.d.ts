@@ -84,6 +84,7 @@ declare module Wallet {
         balanceOf(address: string): Promise<BigNumber>;
         chainId: number;
         createAccount(): IAccount;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
             topics: string[];
@@ -101,6 +102,7 @@ declare module Wallet {
         registerEvent(eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): any;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         signMessage(msg: string): Promise<string>;
@@ -342,6 +344,10 @@ declare module Wallet {
         sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
+        private getContract;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+        protected txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
         _methods(...args: any[]): Promise<{
             to: any;
             data: any;
@@ -360,6 +366,7 @@ declare module Wallet {
             [topics: string]: any;
         }, address: string, handler: any): void;
         private _abiHashDict;
+        private _abiContractDict;
         private _abiAddressDict;
         private _abiEventDict;
         getAbiEvents(abi: any[]): any;

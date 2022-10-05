@@ -542,7 +542,7 @@ function hashStruct(
 ): Buffer {
     // validateVersion(version, [SignTypedDataVersion.V3, SignTypedDataVersion.V4]);
     let encodedData = encodeData(primaryType, data, types, version);
-    console.log('setup hashStruct', encodedData.toString('hex'))
+    // console.log('setup hashStruct', encodedData.toString('hex'))
     return arrToBufArr(keccak256(encodedData));
 }
 
@@ -571,8 +571,8 @@ function encodeData(
         encodedTypes.push(type);
         encodedValues.push(value);
     }
-    console.log('setup encodedTypes', encodedTypes)
-    console.log('setup encodedValues', encodedValues)
+    // console.log('setup encodedTypes', encodedTypes)
+    // console.log('setup encodedValues', encodedValues)
     return rawEncode(encodedTypes, encodedValues);
 }
 
@@ -620,9 +620,9 @@ function eip712Hash<T extends MessageTypes>(
             ),
         );
     }
-    for (let part of parts) {
-        console.log('part', part.toString('hex'));
-    }
+    // for (let part of parts) {
+    //     console.log('part', part.toString('hex'));
+    // }
     return arrToBufArr(keccak256(Buffer.concat(parts)));
 }
 

@@ -4,9 +4,15 @@ import * as Ganache from "ganache";
 import * as assert from 'assert';
 import { HashTypedData } from './contracts';
 
-suite('##Wallet Ganache', async function() {
+suite('##Wallet Sign Typed Data', async function() {
     this.timeout(20000);
-    let provider = Ganache.provider()
+    let provider = Ganache.provider({
+        logging: {
+            logger: {
+                log: () => {} // don't do anything
+            }
+        }
+    })
     let accounts: string[];
     let wallet = new Wallet(provider); 
     let hashTypedData: HashTypedData;

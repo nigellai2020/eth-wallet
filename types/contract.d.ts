@@ -3,7 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import { IWallet, IContract, Transaction, TransactionReceipt, Event, IBatchRequestObj } from "./wallet";
+import { IWallet, TransactionReceipt, Event, IBatchRequestObj } from "./wallet";
 declare module Contract {
     interface EventType {
         name: string;
@@ -15,10 +15,7 @@ declare module Contract {
         _address: string;
         private _events;
         privateKey: string;
-        static contracts: {
-            [abiHash: string]: IContract;
-        };
-        private getContract;
+        private abiHash;
         constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
         at(address: string): Contract;
         set address(value: string);
@@ -32,7 +29,6 @@ declare module Contract {
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
         batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
         protected call(methodName: string, params?: any[], options?: any): Promise<any>;
-        protected txObj(methodName: string, params?: any[], options?: any): Promise<Transaction>;
         private _send;
         protected __deploy(params?: any[], options?: any): Promise<string>;
         protected send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
