@@ -134,9 +134,9 @@ var init_merkleTree = __esm({
       }
       getHexProofsByKey(key) {
         let proofs = [];
-        let leaves = this.leavesKeyHashMap[key];
-        if (!leaves || leaves.length == 0)
-          return proofs;
+        let leaves = this.leavesKeyHashMap[key] || [];
+        if (leaves.length == 0)
+          return [];
         for (let leaf of leaves) {
           proofs.push(this.getHexProof(leaf));
         }
@@ -166,12 +166,12 @@ var init_merkleTree = __esm({
         return this.abi;
       }
       getLeavesByKey(key) {
-        return this.leavesKeyHashMap[key];
+        return this.leavesKeyHashMap[key] || [];
       }
       getLeavesDataByKey(key) {
-        let leaves = this.leavesKeyHashMap[key];
-        if (!leaves || leaves.length == 0)
-          return null;
+        let leaves = this.leavesKeyHashMap[key] || [];
+        if (leaves.length == 0)
+          return [];
         let leavesData = [];
         for (let leaf of leaves) {
           leavesData.push(this.getLeafData(leaf));
