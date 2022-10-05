@@ -228,7 +228,8 @@ var init_merkleTree = __esm({
             key = leafData[abiKeyName];
           }
           let dataHash = hashFunc(leafData);
-          this.leavesKeyHashMap[key] = dataHash;
+          this.leavesKeyHashMap[key] = this.leavesKeyHashMap[key] || [];
+          this.leavesKeyHashMap[key].push(dataHash);
           this.leavesHashDataMap[dataHash] = leafData;
           leaves.push(dataHash);
         }
@@ -278,13 +279,15 @@ var init_merkleTree = __esm({
       getHexRoot() {
         return this.tree[this.tree.length - 1][0];
       }
-      getHexProofByKey(key) {
-        let proof = [];
-        let leaf = this.leavesKeyHashMap[key];
-        if (!leaf)
-          return proof;
-        proof = this.getHexProof(leaf);
-        return proof;
+      getHexProofsByKey(key) {
+        let proofs = [];
+        let leaves = this.leavesKeyHashMap[key] || [];
+        if (leaves.length == 0)
+          return [];
+        for (let leaf of leaves) {
+          proofs.push(this.getHexProof(leaf));
+        }
+        return proofs;
       }
       getHexProof(leaf) {
         let proof = [];
@@ -309,11 +312,18 @@ var init_merkleTree = __esm({
       getABI() {
         return this.abi;
       }
-      getLeafDataByKey(key) {
-        let leaf = this.leavesKeyHashMap[key];
-        if (!leaf)
-          return null;
-        return this.getLeafData(leaf);
+      getLeavesByKey(key) {
+        return this.leavesKeyHashMap[key] || [];
+      }
+      getLeavesDataByKey(key) {
+        let leaves = this.leavesKeyHashMap[key] || [];
+        if (leaves.length == 0)
+          return [];
+        let leavesData = [];
+        for (let leaf of leaves) {
+          leavesData.push(this.getLeafData(leaf));
+        }
+        return leavesData;
       }
       getLeafData(leaf) {
         return this.leavesHashDataMap[leaf];
@@ -373,8 +383,8 @@ __export(utils_exports, {
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
   generateMerkleTree: () => generateMerkleTree,
-  getMerkleLeafData: () => getMerkleLeafData,
-  getMerkleProof: () => getMerkleProof,
+  getMerkleLeavesData: () => getMerkleLeavesData,
+  getMerkleProofs: () => getMerkleProofs,
   getSha3HashBufferFunc: () => getSha3HashBufferFunc,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
@@ -528,24 +538,24 @@ function generateMerkleTree(wallet, options) {
   const merkleTree = new MerkleTree(wallet, options);
   return merkleTree;
 }
-function getMerkleProof(wallet, tree, options) {
-  let proof = [];
+function getMerkleProofs(wallet, tree, options) {
+  let proofs = [];
   if (options.key) {
-    proof = tree.getHexProofByKey(options.key);
+    proofs = tree.getHexProofsByKey(options.key);
   } else if (options.leafData) {
     let abi = tree.getABI();
     const hashFunc = getSha3HashBufferFunc(wallet, abi);
     let leaf = hashFunc(options.leafData);
-    proof = tree.getHexProof(leaf);
+    proofs.push(tree.getHexProof(leaf));
   }
-  return proof;
+  return proofs;
 }
-function getMerkleLeafData(tree, options) {
+function getMerkleLeavesData(tree, options) {
   let data;
   if (options.key) {
-    data = tree.getLeafDataByKey(options.key);
+    data = tree.getLeavesDataByKey(options.key);
   } else if (options.hash) {
-    data = tree.getLeafData(options.hash);
+    data.push(tree.getLeafData(options.hash));
   }
   return data;
 }
