@@ -4,10 +4,9 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, Log, EventLog, IBatchRequestObj} from "./wallet";
+import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, EventLog, IBatchRequestObj} from "./wallet";
 import * as Utils from "./utils";
 
-import {BigNumber} from "bignumber.js";
 // import * as W3 from 'web3';
 // const Web3 = require('web3'); // tslint:disable-line
 module Contract {
@@ -21,38 +20,17 @@ module Contract {
         public _address: string;
         private _events: any;
         public privateKey: string;
-
-        static contracts:{[abiHash:string]:IContract} = {};
-        private async getContract(): Promise<IContract>{
-            let contract;
-            if (this.address) {
-                contract = Contract.contracts[(await this.wallet.getChainId()) + ":" + this.address];
-                if (!contract) {
-                    contract = this.wallet.newContract(this._abi, this.address);
-                    Contract.contracts[(await this.wallet.getChainId()) + ":" + this.address] = contract;
-                }
-            }
-            else {
-            //     if (!contract) {
-            //         let hash = this.wallet.utils.sha3(JSON.stringify(this._abi));
-            //         contract = Contract.contracts[hash];
-            //         if (!contract) {
-                        contract = this.wallet.newContract(this._abi);
-            //             Contract.contracts[hash] = contract;
-            //         }
-            //     }
-            }
-            return contract;            
-        }
+        private abiHash: string;        
 
         constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any) {            
-            this.wallet = wallet;                        
+            this.wallet = wallet;
+            if (abi)
+                this.abiHash = this.wallet.registerAbi(abi);
             if (typeof(abi) == 'string')
                 this._abi = JSON.parse(abi)
             else
-                this._abi = abi
+                this._abi = abi            
             this._bytecode = bytecode
-            let self = this;
             if (address)
                 this._address = address;
         }    
@@ -147,119 +125,32 @@ module Contract {
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         };
         async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?:any){
-            let contract = await this.getContract();
-            if (!contract.methods[methodName]) return;
-            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
-            batchObj.promises.push(new Promise((resolve, reject) => {
-                batchObj.batch.add(method.call.request({from: this.wallet.address, ...options}, 
-                    (e,v) => {
-                        return resolve({
-                            key:key, 
-                            result:e ? null : v
-                        });
-                    }
-                ));
-            }));
+            //TODO: implement the batch call
+
+            // let contract = await this.getContract();
+            // if (!contract.methods[methodName]) return;
+            // let method = <IContractMethod>contract.methods[methodName].apply(this, params);
+            // batchObj.promises.push(new Promise((resolve, reject) => {
+            //     batchObj.batch.add(method.call.request({from: this.wallet.address, ...options}, 
+            //         (e,v) => {
+            //             return resolve({
+            //                 key:key, 
+            //                 result:e ? null : v
+            //             });
+            //         }
+            //     ));
+            // }));
         }        
         protected async call(methodName:string, params?:any[], options?:any): Promise<any>{
-            let contract = await this.getContract();
-            params = params || [];
-            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
-            return method.call({from:this.wallet.address, ...options});
-        }
-		protected async txObj(methodName:string, params?:any[], options?:any): Promise<Transaction>{
-            let contract = await this.getContract();
-            params = params || [];
-
-            let methodAbi = this._abi.find(e=>methodName ? e.name==methodName : e.type=="constructor");
-            if (methodAbi)
-            for (let i = 0; i < methodAbi.inputs.length; i ++){
-                if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
-                    params[i] = params[i] || '';
-                    if (methodAbi.inputs[i].type.indexOf('[]') > 0){
-                        let a = [];
-                        for (let k = 0; k < params[i].length; k ++){
-                            let s = params[i][k] || '';
-                            if (!params[i][k])
-                                a.push("0x");
-                            else
-                                a.push(s);
-                        }
-                        params[i] = a;
-                    }
-                    else if (!params[i])
-                        params[i] = "0x";
-                }
-                else if (methodAbi.inputs[i].type == 'address'){
-                    if (!params[i])
-                        params[i] = Utils.nullAddress;
-                }
-            }
-
-            let method: IContractMethod;
-            if (!methodName)
-                method = contract.deploy({data:this._bytecode, arguments:params});
-            else
-                method = contract.methods[methodName].apply(this, params);
-
-            let tx:any = {};
-            tx.from = this.wallet.address;
-            tx.to = this._address;
-            tx.data = method.encodeABI();
-            if (options && options.value) {
-                tx.value = options.value;
-            } else {
-                tx.value = 0;
-            }
-            if (options && (options.gas || options.gasLimit)) {
-                tx.gas = options.gas || options.gasLimit;
-            } else {
-                try {
-                    tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address ? this.address : undefined, value: (options&&options.value) || 0 });
-                    tx.gas = Math.min(await this.wallet.blockGasLimit(), Math.round(tx.gas * 1.5));
-
-                } catch (e) {
-                    if (e.message == "Returned error: out of gas"){ // amino
-                        console.log(e.message);
-                        tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
-                    } else {
-                        if (e.message.includes("Returned error: execution reverted: ")) {
-                            throw e;
-                        }
-                        try{
-                            await method.call({from:this.wallet.address, ...options});
-                        } catch(e) {
-                            if (e.message.includes("VM execution error.")) {
-                                var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
-                                if (msg && msg.length) {
-                                    msg = msg[0];
-                                    if (msg.startsWith("0x08c379a")) {
-                                        msg = this.wallet.decodeErrorMessage(msg);//('string', "0x"+msg.substring(10));
-                                        throw new Error("Returned error: execution reverted: " + msg);
-                                    }
-                                }
-                            }
-                        }
-                        throw e;
-                    }
-                }
-            }
-            if (!tx.gasPrice) {
-                tx.gasPrice = await this.wallet.getGasPrice();
-            }
-            if (options && options.nonce){
-                tx.nonce = options.nonce;
-            } else {
-                tx.nonce = await this.wallet.transactionCount();
-            }
-            return tx;
+            return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
         }
         private async _send(methodName:string, params?:any[], options?:any): Promise<TransactionReceipt>{
-            let tx = await this.txObj(methodName, params, options);
-            let receipt = await this.wallet.sendTransaction(tx);
-            return receipt;
+            params = params || [];         
+            if (!methodName)   
+                params.unshift(this._bytecode);
+            return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
         }
-        protected async __deploy(params?:any[], options?:any): Promise<string>{
+        protected async __deploy(params?:any[], options?:any): Promise<string>{                        
             let receipt = await this._send('', params, options);
             this.address = receipt.contractAddress;
             return this.address;
@@ -270,7 +161,7 @@ module Contract {
         }
 
         // backward compatability
-        protected _deploy(...params:any[]): Promise<string>{
+        protected _deploy(...params:any[]): Promise<string>{            
             return this.__deploy(params);
         }
         protected methods(methodName:string, ...params:any[]) {

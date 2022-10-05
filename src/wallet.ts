@@ -9,6 +9,7 @@ const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import {KMS} from './kms';
+import * as Utils from "./utils";
 import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
 import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
 let Web3Modal;
@@ -170,6 +171,7 @@ module Wallet{
 		balanceOf(address: string): Promise<BigNumber>;
 		chainId: number;
 		createAccount(): IAccount;
+		_call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event;
 		decodeEventData(data: Log, events?: any): Promise<Event>;
 		decodeLog(inputs: any, hexString: string, topics: any): any;
@@ -182,6 +184,7 @@ module Wallet{
 		provider: any;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
 		registerEvent(eventMap:{[topics:string]:any}, address: string, handler: any);
+		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
 		signMessage(msg: string): Promise<string>;
@@ -962,7 +965,7 @@ module Wallet{
 			if (this._account && this._account.privateKey && !this._account.address)
 				this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
 			this._networksMap = DefaultNetworksMap;
-		}
+		}		
 		private static readonly instance: Wallet = new Wallet();
 		static getInstance(): Wallet {
 		  return Wallet.instance;
@@ -1178,8 +1181,123 @@ module Wallet{
 		}
 		registerSendTxEvents(eventsOptions: ISendTxEventsOptions) {
 			this._sendTxEventHandler = eventsOptions;
-		}
+		};
+		private async getContract(abiHash: string): Promise<IContract>{
+            let contract: IContract;			
+			if (!this._abiContractDict[abiHash]){
+				contract = this.newContract(this._abiHashDict[abiHash]);
+				this._abiContractDict[abiHash] = contract;
+				return contract;
+			};
+			return this._abiContractDict[abiHash];    
+        }
+		async _call(abiHash: string, address: string, methodName: string, params?:any[], options?:any): Promise<any>{			
+			let contract:any = await this.getContract(abiHash);
+			contract.options.address = address;
+            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
+            let result = method.call({from:this.address, ...options});
+			return result;
+		};
+		protected async txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<Transaction>{
+            let contract:any = await this.getContract(abiHash);
+            params = params || [];
+			let bytecode: string;
+			if (!methodName){
+				bytecode = params.shift();
+				contract.options.address = undefined;
+			}
+			else
+				contract.options.address = address;
 
+			let abi = this._abiHashDict[abiHash];
+            let methodAbi = abi.find((e:any)=>methodName ? e.name==methodName : e.type=="constructor");
+            if (methodAbi)
+            for (let i = 0; i < methodAbi.inputs.length; i ++){
+                if (methodAbi.inputs[i].type.indexOf('bytes') == 0){
+                    params[i] = params[i] || '';
+                    if (methodAbi.inputs[i].type.indexOf('[]') > 0){
+                        let a = [];
+                        for (let k = 0; k < params[i].length; k ++){
+                            let s = params[i][k] || '';
+                            if (!params[i][k])
+                                a.push("0x");
+                            else
+                                a.push(s);
+                        }
+                        params[i] = a;
+                    }
+                    else if (!params[i])
+                        params[i] = "0x";
+                }
+                else if (methodAbi.inputs[i].type == 'address'){
+                    if (!params[i])
+                        params[i] = Utils.nullAddress;
+                }
+            }
+
+            let method: IContractMethod;
+            if (!methodName)
+                method = contract.deploy({data:bytecode, arguments:params});
+            else
+                method = contract.methods[methodName].apply(this, params);
+
+            let tx:any = {};
+            tx.from = this.address;
+            tx.to = address || undefined;
+            tx.data = method.encodeABI();
+            if (options && options.value) {
+                tx.value = options.value;
+            } else {
+                tx.value = 0;
+            }
+            if (options && (options.gas || options.gasLimit)) {
+                tx.gas = options.gas || options.gasLimit;
+            } else {
+                try {
+                    tx.gas = await method.estimateGas({ from: this.address, to: address ? address : undefined, value: (options&&options.value) || 0 });
+                    tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
+
+                } catch (e) {
+                    if (e.message == "Returned error: out of gas"){ // amino
+                        console.log(e.message);
+                        tx.gas = Math.round(await this.blockGasLimit() * 0.5);
+                    } else {
+                        if (e.message.includes("Returned error: execution reverted: ")) {
+                            throw e;
+                        }
+                        try{
+                            await method.call({from:this.address, ...options});
+                        } catch(e) {
+                            if (e.message.includes("VM execution error.")) {
+                                var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
+                                if (msg && msg.length) {
+                                    msg = msg[0];
+                                    if (msg.startsWith("0x08c379a")) {
+                                        msg = this.decodeErrorMessage(msg);//('string', "0x"+msg.substring(10));
+                                        throw new Error("Returned error: execution reverted: " + msg);
+                                    }
+                                }
+                            }
+                        }
+                        throw e;
+                    }
+                }
+            }
+            if (!tx.gasPrice) {
+                tx.gasPrice = await this.getGasPrice();
+            }
+            if (options && options.nonce){
+                tx.nonce = options.nonce;
+            } else {
+                tx.nonce = await this.transactionCount();
+            }
+            return tx;
+        }
+		async _send(abiHash: string, address: string, methodName: string, params?:any[], options?:any): Promise<TransactionReceipt>{			
+			let tx = await this.txObj(abiHash, address, methodName, params, options);
+            let receipt = await this.sendTransaction(tx);
+            return receipt;
+		}
 		async _methods(...args){
 			let _web3 = this._web3;        	
 			let result: any;
@@ -1539,6 +1657,7 @@ module Wallet{
 		};
         // rollback
 		private _abiHashDict: IDictionary = {};
+		private _abiContractDict: IDictionary = {};
 		private _abiAddressDict: IDictionary = {};
 		private _abiEventDict: IDictionary = {};
         getAbiEvents(abi: any[]): any {
@@ -1583,14 +1702,17 @@ module Wallet{
 			}
 		};
 		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string{
-			let hash = '';
-			let eventMap;
+			let hash = '';			
 			if (typeof(abi) == 'string'){
 				hash = this._web3.utils.sha3(abi);
 				abi = JSON.parse(abi);
 			}else{
 				hash = this._web3.utils.sha3(JSON.stringify(abi));
 			}
+			if (!address && !handler && this._abiHashDict[hash])
+				return hash;
+
+			let eventMap: any;
 			eventMap = this.getAbiEvents(<any[]>abi);
 			for (let topic in eventMap){
 				this._eventTopicAbi[topic] = eventMap[topic];

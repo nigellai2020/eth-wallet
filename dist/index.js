@@ -55,6 +55,153 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// src/contract.ts
+var require_contract = __commonJS({
+  "src/contract.ts"(exports, module2) {
+    var Contract3;
+    (function(_Contract) {
+      class Contract4 {
+        constructor(wallet, address, abi, bytecode) {
+          this.wallet = wallet;
+          if (abi)
+            this.abiHash = this.wallet.registerAbi(abi);
+          if (typeof abi == "string")
+            this._abi = JSON.parse(abi);
+          else
+            this._abi = abi;
+          this._bytecode = bytecode;
+          if (address)
+            this._address = address;
+        }
+        at(address) {
+          this._address = address;
+          return this;
+        }
+        set address(value) {
+          this._address = value;
+        }
+        get address() {
+          return this._address || "";
+        }
+        decodeEvents(receipt) {
+          let events = this.getAbiEvents();
+          let result = [];
+          for (let name in receipt.events) {
+            let events2 = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
+            events2.forEach((e) => {
+              let data = e.raw;
+              let event = events2[data.topics[0]];
+              result.push(Object.assign({ _name: name, _address: this.address }, this.wallet.decodeLog(event.inputs, data.data, data.topics.slice(1))));
+            });
+          }
+          return result;
+        }
+        parseEvents(receipt, eventName) {
+          let eventAbis = this.getAbiEvents();
+          let topic0 = this.getAbiTopics([eventName])[0];
+          let result = [];
+          if (receipt.events) {
+            for (let name in receipt.events) {
+              let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
+              events.forEach((event) => {
+                if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
+                  result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
+                }
+              });
+            }
+          } else if (receipt.logs) {
+            for (let i = 0; i < receipt.logs.length; i++) {
+              let log = receipt.logs[i];
+              if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
+                result.push(this.wallet.decode(eventAbis[topic0], log));
+              }
+            }
+          }
+          return result;
+        }
+        get events() {
+          let result = [];
+          for (let i = 0; i < this._abi.length; i++) {
+            if (this._abi[i].type == "event")
+              result.push(this._abi[i]);
+          }
+          return result;
+        }
+        getAbiEvents() {
+          if (!this._events) {
+            this._events = {};
+            let events = this._abi.filter((e) => e.type == "event");
+            for (let i = 0; i < events.length; i++) {
+              let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+              this._events[topic] = events[i];
+            }
+          }
+          return this._events;
+        }
+        getAbiTopics(eventNames) {
+          if (!eventNames || eventNames.length == 0)
+            eventNames = null;
+          let result = [];
+          let events = this.getAbiEvents();
+          for (let topic in events) {
+            if (!eventNames || eventNames.includes(events[topic].name)) {
+              result.push(topic);
+            }
+          }
+          if (result.length == 0 && eventNames && eventNames.length > 0)
+            return ["NULL"];
+          return [result];
+        }
+        registerEvents(handler) {
+          if (this._address)
+            this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
+        }
+        scanEvents(fromBlock, toBlock, eventNames) {
+          let topics = this.getAbiTopics(eventNames);
+          let events = this.getAbiEvents();
+          return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        }
+        async batchCall(batchObj, key, methodName, params, options) {
+        }
+        async call(methodName, params, options) {
+          return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
+        }
+        async _send(methodName, params, options) {
+          params = params || [];
+          if (!methodName)
+            params.unshift(this._bytecode);
+          return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
+        }
+        async __deploy(params, options) {
+          let receipt = await this._send("", params, options);
+          this.address = receipt.contractAddress;
+          return this.address;
+        }
+        send(methodName, params, options) {
+          let receipt = this._send(methodName, params, options);
+          return receipt;
+        }
+        _deploy(...params) {
+          return this.__deploy(params);
+        }
+        methods(methodName, ...params) {
+          let method = this._abi.find((e) => e.name == methodName);
+          if (method.stateMutability == "view" || method.stateMutability == "pure") {
+            return this.call(methodName, params);
+          } else if (method.stateMutability == "payable") {
+            let value = params.pop();
+            return this.call(methodName, params, { value });
+          } else {
+            return this.send(methodName, params);
+          }
+        }
+      }
+      _Contract.Contract = Contract4;
+    })(Contract3 || (Contract3 = {}));
+    module2.exports = Contract3;
+  }
+});
+
 // src/merkleTree.ts
 var import_bignumber, MerkleTree;
 var init_merkleTree = __esm({
@@ -431,263 +578,6 @@ var init_utils = __esm({
     init_constants();
     Web3 = Web3Lib();
     nullAddress = "0x0000000000000000000000000000000000000000";
-  }
-});
-
-// src/contract.ts
-var require_contract = __commonJS({
-  "src/contract.ts"(exports, module2) {
-    init_utils();
-    var Contract3;
-    (function(_Contract) {
-      const _Contract2 = class {
-        async getContract() {
-          let contract;
-          if (this.address) {
-            contract = _Contract2.contracts[await this.wallet.getChainId() + ":" + this.address];
-            if (!contract) {
-              contract = this.wallet.newContract(this._abi, this.address);
-              _Contract2.contracts[await this.wallet.getChainId() + ":" + this.address] = contract;
-            }
-          } else {
-            contract = this.wallet.newContract(this._abi);
-          }
-          return contract;
-        }
-        constructor(wallet, address, abi, bytecode) {
-          this.wallet = wallet;
-          if (typeof abi == "string")
-            this._abi = JSON.parse(abi);
-          else
-            this._abi = abi;
-          this._bytecode = bytecode;
-          let self = this;
-          if (address)
-            this._address = address;
-        }
-        at(address) {
-          this._address = address;
-          return this;
-        }
-        set address(value) {
-          this._address = value;
-        }
-        get address() {
-          return this._address || "";
-        }
-        decodeEvents(receipt) {
-          let events = this.getAbiEvents();
-          let result = [];
-          for (let name in receipt.events) {
-            let events2 = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
-            events2.forEach((e) => {
-              let data = e.raw;
-              let event = events2[data.topics[0]];
-              result.push(Object.assign({ _name: name, _address: this.address }, this.wallet.decodeLog(event.inputs, data.data, data.topics.slice(1))));
-            });
-          }
-          return result;
-        }
-        parseEvents(receipt, eventName) {
-          let eventAbis = this.getAbiEvents();
-          let topic0 = this.getAbiTopics([eventName])[0];
-          let result = [];
-          if (receipt.events) {
-            for (let name in receipt.events) {
-              let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
-              events.forEach((event) => {
-                if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
-                  result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
-                }
-              });
-            }
-          } else if (receipt.logs) {
-            for (let i = 0; i < receipt.logs.length; i++) {
-              let log = receipt.logs[i];
-              if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
-                result.push(this.wallet.decode(eventAbis[topic0], log));
-              }
-            }
-          }
-          return result;
-        }
-        get events() {
-          let result = [];
-          for (let i = 0; i < this._abi.length; i++) {
-            if (this._abi[i].type == "event")
-              result.push(this._abi[i]);
-          }
-          return result;
-        }
-        getAbiEvents() {
-          if (!this._events) {
-            this._events = {};
-            let events = this._abi.filter((e) => e.type == "event");
-            for (let i = 0; i < events.length; i++) {
-              let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-              this._events[topic] = events[i];
-            }
-          }
-          return this._events;
-        }
-        getAbiTopics(eventNames) {
-          if (!eventNames || eventNames.length == 0)
-            eventNames = null;
-          let result = [];
-          let events = this.getAbiEvents();
-          for (let topic in events) {
-            if (!eventNames || eventNames.includes(events[topic].name)) {
-              result.push(topic);
-            }
-          }
-          if (result.length == 0 && eventNames && eventNames.length > 0)
-            return ["NULL"];
-          return [result];
-        }
-        registerEvents(handler) {
-          if (this._address)
-            this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
-        }
-        scanEvents(fromBlock, toBlock, eventNames) {
-          let topics = this.getAbiTopics(eventNames);
-          let events = this.getAbiEvents();
-          return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
-        }
-        async batchCall(batchObj, key, methodName, params, options) {
-          let contract = await this.getContract();
-          if (!contract.methods[methodName])
-            return;
-          let method = contract.methods[methodName].apply(this, params);
-          batchObj.promises.push(new Promise((resolve, reject) => {
-            batchObj.batch.add(method.call.request(__spreadValues({ from: this.wallet.address }, options), (e, v) => {
-              return resolve({
-                key,
-                result: e ? null : v
-              });
-            }));
-          }));
-        }
-        async call(methodName, params, options) {
-          let contract = await this.getContract();
-          params = params || [];
-          let method = contract.methods[methodName].apply(this, params);
-          return method.call(__spreadValues({ from: this.wallet.address }, options));
-        }
-        async txObj(methodName, params, options) {
-          let contract = await this.getContract();
-          params = params || [];
-          let methodAbi = this._abi.find((e) => methodName ? e.name == methodName : e.type == "constructor");
-          if (methodAbi)
-            for (let i = 0; i < methodAbi.inputs.length; i++) {
-              if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-                params[i] = params[i] || "";
-                if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-                  let a = [];
-                  for (let k = 0; k < params[i].length; k++) {
-                    let s = params[i][k] || "";
-                    if (!params[i][k])
-                      a.push("0x");
-                    else
-                      a.push(s);
-                  }
-                  params[i] = a;
-                } else if (!params[i])
-                  params[i] = "0x";
-              } else if (methodAbi.inputs[i].type == "address") {
-                if (!params[i])
-                  params[i] = nullAddress;
-              }
-            }
-          let method;
-          if (!methodName)
-            method = contract.deploy({ data: this._bytecode, arguments: params });
-          else
-            method = contract.methods[methodName].apply(this, params);
-          let tx = {};
-          tx.from = this.wallet.address;
-          tx.to = this._address;
-          tx.data = method.encodeABI();
-          if (options && options.value) {
-            tx.value = options.value;
-          } else {
-            tx.value = 0;
-          }
-          if (options && (options.gas || options.gasLimit)) {
-            tx.gas = options.gas || options.gasLimit;
-          } else {
-            try {
-              tx.gas = await method.estimateGas({ from: this.wallet.address, to: this.address ? this.address : void 0, value: options && options.value || 0 });
-              tx.gas = Math.min(await this.wallet.blockGasLimit(), Math.round(tx.gas * 1.5));
-            } catch (e) {
-              if (e.message == "Returned error: out of gas") {
-                console.log(e.message);
-                tx.gas = Math.round(await this.wallet.blockGasLimit() * 0.5);
-              } else {
-                if (e.message.includes("Returned error: execution reverted: ")) {
-                  throw e;
-                }
-                try {
-                  await method.call(__spreadValues({ from: this.wallet.address }, options));
-                } catch (e2) {
-                  if (e2.message.includes("VM execution error.")) {
-                    var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
-                    if (msg && msg.length) {
-                      msg = msg[0];
-                      if (msg.startsWith("0x08c379a")) {
-                        msg = this.wallet.decodeErrorMessage(msg);
-                        throw new Error("Returned error: execution reverted: " + msg);
-                      }
-                    }
-                  }
-                }
-                throw e;
-              }
-            }
-          }
-          if (!tx.gasPrice) {
-            tx.gasPrice = await this.wallet.getGasPrice();
-          }
-          if (options && options.nonce) {
-            tx.nonce = options.nonce;
-          } else {
-            tx.nonce = await this.wallet.transactionCount();
-          }
-          return tx;
-        }
-        async _send(methodName, params, options) {
-          let tx = await this.txObj(methodName, params, options);
-          let receipt = await this.wallet.sendTransaction(tx);
-          return receipt;
-        }
-        async __deploy(params, options) {
-          let receipt = await this._send("", params, options);
-          this.address = receipt.contractAddress;
-          return this.address;
-        }
-        send(methodName, params, options) {
-          let receipt = this._send(methodName, params, options);
-          return receipt;
-        }
-        _deploy(...params) {
-          return this.__deploy(params);
-        }
-        methods(methodName, ...params) {
-          let method = this._abi.find((e) => e.name == methodName);
-          if (method.stateMutability == "view" || method.stateMutability == "pure") {
-            return this.call(methodName, params);
-          } else if (method.stateMutability == "payable") {
-            let value = params.pop();
-            return this.call(methodName, params, { value });
-          } else {
-            return this.send(methodName, params);
-          }
-        }
-      };
-      let Contract4 = _Contract2;
-      Contract4.contracts = {};
-      _Contract.Contract = Contract4;
-    })(Contract3 || (Contract3 = {}));
-    module2.exports = Contract3;
   }
 });
 
@@ -1239,7 +1129,6 @@ function hashType(primaryType, types) {
 }
 function hashStruct(primaryType, data, types, version) {
   let encodedData = encodeData(primaryType, data, types, version);
-  console.log("setup hashStruct", encodedData.toString("hex"));
   return arrToBufArr((0, import_keccak.keccak256)(encodedData));
 }
 function encodeData(primaryType, data, types, version) {
@@ -1253,8 +1142,6 @@ function encodeData(primaryType, data, types, version) {
     encodedTypes.push(type);
     encodedValues.push(value);
   }
-  console.log("setup encodedTypes", encodedTypes);
-  console.log("setup encodedValues", encodedValues);
   return rawEncode(encodedTypes, encodedValues);
 }
 function sanitizeData(data) {
@@ -1275,9 +1162,6 @@ function eip712Hash(typedData, version) {
   parts.push(hashStruct("EIP712Domain", sanitizedData.domain, sanitizedData.types, version));
   if (sanitizedData.primaryType !== "EIP712Domain") {
     parts.push(hashStruct(sanitizedData.primaryType, sanitizedData.message, sanitizedData.types, version));
-  }
-  for (let part of parts) {
-    console.log("part", part.toString("hex"));
   }
   return arrToBufArr((0, import_keccak.keccak256)(Buffer.concat(parts)));
 }
@@ -1431,6 +1315,7 @@ var require_wallet = __commonJS({
     var import_bignumber5 = __toModule(require("bignumber.js"));
     init_erc20();
     var import_kms = __toModule(require_kms());
+    init_utils();
     init_types();
     init_signTypedData();
     var Web32 = initWeb3Lib();
@@ -2120,6 +2005,7 @@ var require_wallet = __commonJS({
           this._contracts = {};
           this._networksMap = {};
           this._abiHashDict = {};
+          this._abiContractDict = {};
           this._abiAddressDict = {};
           this._abiEventDict = {};
           this._provider = provider;
@@ -2346,6 +2232,116 @@ var require_wallet = __commonJS({
         }
         registerSendTxEvents(eventsOptions) {
           this._sendTxEventHandler = eventsOptions;
+        }
+        async getContract(abiHash) {
+          let contract;
+          if (!this._abiContractDict[abiHash]) {
+            contract = this.newContract(this._abiHashDict[abiHash]);
+            this._abiContractDict[abiHash] = contract;
+            return contract;
+          }
+          ;
+          return this._abiContractDict[abiHash];
+        }
+        async _call(abiHash, address, methodName, params, options) {
+          let contract = await this.getContract(abiHash);
+          contract.options.address = address;
+          let method = contract.methods[methodName].apply(this, params);
+          let result = method.call(__spreadValues({ from: this.address }, options));
+          return result;
+        }
+        async txObj(abiHash, address, methodName, params, options) {
+          let contract = await this.getContract(abiHash);
+          params = params || [];
+          let bytecode;
+          if (!methodName) {
+            bytecode = params.shift();
+            contract.options.address = void 0;
+          } else
+            contract.options.address = address;
+          let abi = this._abiHashDict[abiHash];
+          let methodAbi = abi.find((e) => methodName ? e.name == methodName : e.type == "constructor");
+          if (methodAbi)
+            for (let i = 0; i < methodAbi.inputs.length; i++) {
+              if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
+                params[i] = params[i] || "";
+                if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
+                  let a = [];
+                  for (let k = 0; k < params[i].length; k++) {
+                    let s = params[i][k] || "";
+                    if (!params[i][k])
+                      a.push("0x");
+                    else
+                      a.push(s);
+                  }
+                  params[i] = a;
+                } else if (!params[i])
+                  params[i] = "0x";
+              } else if (methodAbi.inputs[i].type == "address") {
+                if (!params[i])
+                  params[i] = nullAddress;
+              }
+            }
+          let method;
+          if (!methodName)
+            method = contract.deploy({ data: bytecode, arguments: params });
+          else
+            method = contract.methods[methodName].apply(this, params);
+          let tx = {};
+          tx.from = this.address;
+          tx.to = address || void 0;
+          tx.data = method.encodeABI();
+          if (options && options.value) {
+            tx.value = options.value;
+          } else {
+            tx.value = 0;
+          }
+          if (options && (options.gas || options.gasLimit)) {
+            tx.gas = options.gas || options.gasLimit;
+          } else {
+            try {
+              tx.gas = await method.estimateGas({ from: this.address, to: address ? address : void 0, value: options && options.value || 0 });
+              tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
+            } catch (e) {
+              if (e.message == "Returned error: out of gas") {
+                console.log(e.message);
+                tx.gas = Math.round(await this.blockGasLimit() * 0.5);
+              } else {
+                if (e.message.includes("Returned error: execution reverted: ")) {
+                  throw e;
+                }
+                try {
+                  await method.call(__spreadValues({ from: this.address }, options));
+                } catch (e2) {
+                  if (e2.message.includes("VM execution error.")) {
+                    var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
+                    if (msg && msg.length) {
+                      msg = msg[0];
+                      if (msg.startsWith("0x08c379a")) {
+                        msg = this.decodeErrorMessage(msg);
+                        throw new Error("Returned error: execution reverted: " + msg);
+                      }
+                    }
+                  }
+                }
+                throw e;
+              }
+            }
+          }
+          if (!tx.gasPrice) {
+            tx.gasPrice = await this.getGasPrice();
+          }
+          if (options && options.nonce) {
+            tx.nonce = options.nonce;
+          } else {
+            tx.nonce = await this.transactionCount();
+          }
+          return tx;
+        }
+        async _send(abiHash, address, methodName, params, options) {
+          let tx = await this.txObj(abiHash, address, methodName, params, options);
+          let receipt = await this.sendTransaction(tx);
+          return receipt;
         }
         async _methods(...args) {
           let _web3 = this._web3;
@@ -2722,13 +2718,15 @@ var require_wallet = __commonJS({
         }
         registerAbi(abi, address, handler) {
           let hash = "";
-          let eventMap;
           if (typeof abi == "string") {
             hash = this._web3.utils.sha3(abi);
             abi = JSON.parse(abi);
           } else {
             hash = this._web3.utils.sha3(JSON.stringify(abi));
           }
+          if (!address && !handler && this._abiHashDict[hash])
+            return hash;
+          let eventMap;
           eventMap = this.getAbiEvents(abi);
           for (let topic in eventMap) {
             this._eventTopicAbi[topic] = eventMap[topic];

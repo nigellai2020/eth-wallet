@@ -8,7 +8,13 @@ const Config = require('./config').wallet;
 
 suite('##Wallet Ganache', async function() {
     this.timeout(20000);
-    let provider = Ganache.provider()
+    let provider = Ganache.provider({
+        logging: {
+            logger: {
+                log: () => {} // don't do anything
+            }
+        }
+    })
     let erc20Address = '';
     let accounts: string[];
     const wallet = new Wallet(provider); 
