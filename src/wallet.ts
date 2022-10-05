@@ -33,15 +33,82 @@ function initWeb3ModalLib(callback: () => void){
 			callback();
 		})		
 	}
-}
-
-module Wallet{    
+};
+module Wallet{    	
+	export function toString(value: any) {
+		if (Array.isArray(value)) {
+			let result = [];
+			for (let i = 0; i < value.length; i++) {
+				result.push(toString(value[i]));
+			}
+			return result;
+		}
+		else if (typeof value === "number")
+			return value.toString(10);
+		else if (BigNumber.isBigNumber(value))
+			return value.toFixed();
+		else
+			return value;
+	};
+	export function stringToBytes32(value: string | stringArray): string | string[] {
+		if (Array.isArray(value)) {
+			let result = [];
+			for (let i = 0; i < value.length; i++) {
+				result.push(stringToBytes32(value[i]));
+			}
+			return result;
+		}
+		else {
+			if (value.length == 66 && value.startsWith('0x'))
+				return value;
+			return Web3.utils.padRight(Web3.utils.asciiToHex(value), 64)
+		}
+	};
+	export function stringToBytes(value: string | stringArray, nByte?: number): string | string[] {
+		if (Array.isArray(value)) {
+			let result = [];
+			for (let i = 0; i < value.length; i++) {
+				result.push(stringToBytes(value[i]));
+			}
+			return result;
+		}
+		else {
+			if (nByte) {
+				if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
+					return value;
+				else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
+					if (value.length >= ((nByte * 2) + 2))
+						return value;
+					else
+						return "0x" + value.substring(2) + "00".repeat(nByte - ((value.length - 2) / 2));
+				} else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
+					if (value.length >= (nByte * 2))
+						return value;
+					else
+						return "0x" + value + "00".repeat(nByte - (value.length / 2));
+				} else
+					return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte * 2)
+			} else {
+				if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+					return value;
+				else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+					return "0x" + value;
+				else
+					return Web3.utils.asciiToHex(value)
+			}
+		}
+	};
+	export type stringArray = string | _stringArray;
+	export interface _stringArray extends Array<stringArray> { };
 	export interface IWalletUtils{
 		fromWei(value: any, unit?: string): string;
 		hexToUtf8(value: string): string;
+		sha3(value: string): string;
+		stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+		stringToBytes32(value: string | stringArray): string | string[];
+		toString(value: any): string;
 		toUtf8(value: any): string;		
 		toWei(value: string, unit?: string): string;
-		sha3(string): string;
 	};
 	export interface IWalletTransaction {
 		hash: string;
@@ -854,7 +921,7 @@ module Wallet{
 	export interface ISendTxEventsOptions {
 		transactionHash?: (error: Error, receipt?: string) => void;
 		confirmation?: (receipt: any) => void;
-	}
+	};	
     export class Wallet implements IWallet{
 		private _web3: W3.default;		
         private _account: IAccount;
@@ -870,10 +937,21 @@ module Wallet{
 		public chainId: number;   
 		public clientSideProvider: ClientSideProvider;  
 		private _infuraId: string;
+		private _utils: IWalletUtils;
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			this._provider = provider;			
 			this._web3 = new Web3(provider);
+			this._utils = {
+				fromWei: this._web3.utils.fromWei,
+				hexToUtf8: this._web3.utils.hexToUtf8,
+				sha3: this._web3.utils.sha3,
+				toUtf8: this._web3.utils.toUtf8,
+				toWei: this._web3.utils.toWei,
+				toString: toString,
+				stringToBytes: stringToBytes,
+				stringToBytes32: stringToBytes32
+			}
 			if (Array.isArray(account)){
 				this._accounts = account;
 				this._account = account[0];
@@ -1835,7 +1913,7 @@ module Wallet{
 			}
 		};
         get utils(): IWalletUtils{
-            return this._web3.utils;
+            return this._utils;
         };
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>{
 			let _web3 = this._web3;

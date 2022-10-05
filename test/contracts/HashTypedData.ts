@@ -1,4 +1,4 @@
-import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "../../src";
+import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-contract";
 import Bin from "./HashTypedData.json";
 
 export interface IGetSignerParams {signature:string;paramsHash:string}
@@ -26,13 +26,13 @@ export class HashTypedData extends Contract{
             return new BigNumber(result);
         }
         this.getChainId = getChainId_call
-        let getSignerParams = (params: IGetSignerParams) => [Utils.stringToBytes(params.signature),Utils.stringToBytes32(params.paramsHash)];
+        let getSignerParams = (params: IGetSignerParams) => [this.wallet.utils.stringToBytes(params.signature),this.wallet.utils.stringToBytes32(params.paramsHash)];
         let getSigner_call = async (params: IGetSignerParams): Promise<string> => {
             let result = await this.call('getSigner',getSignerParams(params));
             return result;
         }
         this.getSigner = getSigner_call
-        let hashUnstakeParamsParams = (params: IHashUnstakeParamsParams) => [Utils.toString(params.requestId),params.player,Utils.toString(params.amount)];
+        let hashUnstakeParamsParams = (params: IHashUnstakeParamsParams) => [this.wallet.utils.toString(params.requestId),params.player,this.wallet.utils.toString(params.amount)];
         let hashUnstakeParams_call = async (params: IHashUnstakeParamsParams): Promise<string> => {
             let result = await this.call('hashUnstakeParams',hashUnstakeParamsParams(params));
             return result;
