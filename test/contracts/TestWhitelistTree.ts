@@ -1,4 +1,4 @@
-import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "../../src";
+import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-contract";
 import Bin from "./TestWhitelistTree.json";
 
 export interface IVerifyMerkleProofParams {allocation:number|BigNumber;proof:string[]}
@@ -25,13 +25,13 @@ export class TestWhitelistTree extends Contract{
         (): Promise<string>;
     }
     private assign(){
-        let verifyMerkleProofParams = (params: IVerifyMerkleProofParams) => [Utils.toString(params.allocation),Utils.stringToBytes32(params.proof)];
+        let verifyMerkleProofParams = (params: IVerifyMerkleProofParams) => [this.wallet.utils.toString(params.allocation),this.wallet.utils.stringToBytes32(params.proof)];
         let verifyMerkleProof_call = async (params: IVerifyMerkleProofParams): Promise<boolean> => {
             let result = await this.call('verifyMerkleProof',verifyMerkleProofParams(params));
             return result;
         }
         this.verifyMerkleProof = verifyMerkleProof_call
-        let verifyMerkleProof2Params = (params: IVerifyMerkleProof2Params) => [Utils.toString(params.amount1),Utils.toString(params.amount2),params.ipfsCid,Utils.stringToBytes32(params.proof)];
+        let verifyMerkleProof2Params = (params: IVerifyMerkleProof2Params) => [this.wallet.utils.toString(params.amount1),this.wallet.utils.toString(params.amount2),params.ipfsCid,this.wallet.utils.stringToBytes32(params.proof)];
         let verifyMerkleProof2_call = async (params: IVerifyMerkleProof2Params): Promise<boolean> => {
             let result = await this.call('verifyMerkleProof2',verifyMerkleProof2Params(params));
             return result;
@@ -43,11 +43,11 @@ export class TestWhitelistTree extends Contract{
         }
         this.whitelistTreeRoot = whitelistTreeRoot_call
         let setMerkleRoot_send = async (merkleRoot:string): Promise<TransactionReceipt> => {
-            let result = await this.send('setMerkleRoot',[Utils.stringToBytes32(merkleRoot)]);
+            let result = await this.send('setMerkleRoot',[this.wallet.utils.stringToBytes32(merkleRoot)]);
             return result;
         }
         let setMerkleRoot_call = async (merkleRoot:string): Promise<void> => {
-            let result = await this.call('setMerkleRoot',[Utils.stringToBytes32(merkleRoot)]);
+            let result = await this.call('setMerkleRoot',[this.wallet.utils.stringToBytes32(merkleRoot)]);
             return;
         }
         this.setMerkleRoot = Object.assign(setMerkleRoot_send, {

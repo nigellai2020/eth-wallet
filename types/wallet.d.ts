@@ -8,12 +8,21 @@ import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { MessageTypes, TypedMessage } from './types';
 declare module Wallet {
+    function toString(value: any): any;
+    function stringToBytes32(value: string | stringArray): string | string[];
+    function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    type stringArray = string | _stringArray;
+    interface _stringArray extends Array<stringArray> {
+    }
     interface IWalletUtils {
         fromWei(value: any, unit?: string): string;
         hexToUtf8(value: string): string;
+        sha3(value: string): string;
+        stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+        stringToBytes32(value: string | stringArray): string | string[];
+        toString(value: any): string;
         toUtf8(value: any): string;
         toWei(value: string, unit?: string): string;
-        sha3(string: any): string;
     }
     interface IWalletTransaction {
         hash: string;
@@ -303,6 +312,7 @@ declare module Wallet {
         chainId: number;
         clientSideProvider: ClientSideProvider;
         private _infuraId;
+        private _utils;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): Wallet;

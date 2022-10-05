@@ -1448,6 +1448,73 @@ var require_wallet = __commonJS({
     }
     var Wallet2;
     (function(_Wallet) {
+      function toString2(value) {
+        if (Array.isArray(value)) {
+          let result = [];
+          for (let i = 0; i < value.length; i++) {
+            result.push(toString2(value[i]));
+          }
+          return result;
+        } else if (typeof value === "number")
+          return value.toString(10);
+        else if (import_bignumber5.BigNumber.isBigNumber(value))
+          return value.toFixed();
+        else
+          return value;
+      }
+      _Wallet.toString = toString2;
+      ;
+      function stringToBytes322(value) {
+        if (Array.isArray(value)) {
+          let result = [];
+          for (let i = 0; i < value.length; i++) {
+            result.push(stringToBytes322(value[i]));
+          }
+          return result;
+        } else {
+          if (value.length == 66 && value.startsWith("0x"))
+            return value;
+          return Web32.utils.padRight(Web32.utils.asciiToHex(value), 64);
+        }
+      }
+      _Wallet.stringToBytes32 = stringToBytes322;
+      ;
+      function stringToBytes2(value, nByte) {
+        if (Array.isArray(value)) {
+          let result = [];
+          for (let i = 0; i < value.length; i++) {
+            result.push(stringToBytes2(value[i]));
+          }
+          return result;
+        } else {
+          if (nByte) {
+            if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
+              return value;
+            else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
+              if (value.length >= nByte * 2 + 2)
+                return value;
+              else
+                return "0x" + value.substring(2) + "00".repeat(nByte - (value.length - 2) / 2);
+            } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
+              if (value.length >= nByte * 2)
+                return value;
+              else
+                return "0x" + value + "00".repeat(nByte - value.length / 2);
+            } else
+              return Web32.utils.padRight(Web32.utils.asciiToHex(value), nByte * 2);
+          } else {
+            if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+              return value;
+            else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+              return "0x" + value;
+            else
+              return Web32.utils.asciiToHex(value);
+          }
+        }
+      }
+      _Wallet.stringToBytes = stringToBytes2;
+      ;
+      ;
       ;
       ;
       ;
@@ -2034,6 +2101,7 @@ var require_wallet = __commonJS({
         return null;
       }
       _Wallet.createClientSideProvider = createClientSideProvider;
+      ;
       const _Wallet2 = class {
         constructor(provider, account) {
           this._eventTopicAbi = {};
@@ -2046,6 +2114,16 @@ var require_wallet = __commonJS({
           this._abiEventDict = {};
           this._provider = provider;
           this._web3 = new Web32(provider);
+          this._utils = {
+            fromWei: this._web3.utils.fromWei,
+            hexToUtf8: this._web3.utils.hexToUtf8,
+            sha3: this._web3.utils.sha3,
+            toUtf8: this._web3.utils.toUtf8,
+            toWei: this._web3.utils.toWei,
+            toString: toString2,
+            stringToBytes: stringToBytes2,
+            stringToBytes32: stringToBytes322
+          };
           if (Array.isArray(account)) {
             this._accounts = account;
             this._account = account[0];
@@ -2918,7 +2996,7 @@ var require_wallet = __commonJS({
           };
         }
         get utils() {
-          return this._web3.utils;
+          return this._utils;
         }
         verifyMessage(account, msg, signature) {
           let _web3 = this._web3;
