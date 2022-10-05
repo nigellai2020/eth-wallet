@@ -138,7 +138,6 @@ suite('##Wallet Ganache', async function() {
     })    
 })
 suite('##Wallet', function() {
-    return;
     this.timeout(20000);
     const wallet = new Wallet(Config.provider,  [
         {
