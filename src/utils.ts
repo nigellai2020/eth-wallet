@@ -146,7 +146,7 @@ export function toString(value: any) {
 export const nullAddress = "0x0000000000000000000000000000000000000000";
 
 export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]) {
-    return (leafData: Record<string, any>) => {
+    return (leafData: Record<string, any>): string => {
         let encodePackedInput = abi.map((abiItem) => {
             return {
                 t: abiItem.type,
@@ -166,34 +166,34 @@ export function generateMerkleTree(
     return merkleTree;
 }
 
-export function getMerkleProof(
+export function getMerkleProofs(
     wallet: Wallet,
     tree: MerkleTree,
     options: IGetMerkleProofOptions
 ) {
-    let proof = [];
+    let proofs: string[][] = [];
     if (options.key) {
-        proof = tree.getHexProofByKey(options.key);
+        proofs = tree.getHexProofsByKey(options.key);
     }
     else if (options.leafData) {
         let abi = tree.getABI();
         const hashFunc = getSha3HashBufferFunc(wallet, abi);
         let leaf = hashFunc(options.leafData);
-        proof = tree.getHexProof(leaf);
+        proofs.push(tree.getHexProof(leaf));
     }
-    return proof;
+    return proofs;
 }
 
-export function getMerkleLeafData(
+export function getMerkleLeavesData(
     tree: MerkleTree,
     options: IGetMerkleLeafDataOptions
 ) {
-    let data: Record<string, any>;
+    let data: Record<string, any>[];
     if (options.key) {
-        data = tree.getLeafDataByKey(options.key);
+        data = tree.getLeavesDataByKey(options.key);
     }
     else if (options.hash) {
-        data = tree.getLeafData(options.hash);
+        data.push(tree.getLeafData(options.hash));
     }
     return data;
 }

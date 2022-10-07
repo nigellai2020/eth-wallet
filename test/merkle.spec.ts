@@ -66,28 +66,28 @@ suite('##Wallet Merkle Proof', async function() {
 
     test('Account 0: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[0];
-        let proof = Utils.getMerkleProof(wallet, tree, {
+        let proofs = Utils.getMerkleProofs(wallet, tree, {
             key: accounts[0]
         });
         let valid = await whitelistTree.verifyMerkleProof2({
             amount1: rawData[0].amount,
             amount2: rawData[0].amount2,
             ipfsCid: rawData[0].ipfsCid,
-            proof: proof
+            proof: proofs[0]
         })
         assert.strictEqual(valid, true);
     })
 
     test('Account 1: Verify tree Proof', async function(){
         wallet.defaultAccount = accounts[1];
-        let proof = Utils.getMerkleProof(wallet, tree, {
+        let proofs = Utils.getMerkleProofs(wallet, tree, {
             key: accounts[1]
         });
         let valid = await whitelistTree.verifyMerkleProof2({
             amount1: rawData[1].amount,
             amount2: rawData[1].amount2,
             ipfsCid: rawData[1].ipfsCid,
-            proof: proof
+            proof: proofs[0]
         })
         assert.strictEqual(valid, true);
     })
