@@ -231,10 +231,10 @@ declare module Wallet {
         iconUrls?: string[];
     }
     interface IClientSideProviderEvents {
-        onAccountChanged?: (account: string) => void;
-        onChainChanged?: (chainId: string) => void;
-        onConnect?: (connectInfo: any) => void;
-        onDisconnect?: (error: any) => void;
+        onAccountChanged?: (account: string) => Promise<void>;
+        onChainChanged?: (chainId: string) => Promise<void>;
+        onConnect?: (connectInfo: any) => Promise<void>;
+        onDisconnect?: (error: any) => Promise<void>;
     }
     type NetworksMapType = {
         [chainId: number]: INetwork;
@@ -269,10 +269,10 @@ declare module Wallet {
         protected _isConnected: boolean;
         provider: any;
         readonly walletPlugin: WalletPlugin;
-        onAccountChanged: (account: string) => void;
-        onChainChanged: (chainId: string) => void;
-        onConnect: (connectInfo: any) => void;
-        onDisconnect: (error: any) => void;
+        onAccountChanged: (account: string) => Promise<void>;
+        onChainChanged: (chainId: string) => Promise<void>;
+        onConnect: (connectInfo: any) => Promise<void>;
+        onDisconnect: (error: any) => Promise<void>;
         constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get installed(): boolean;
         initEvents(): void;
@@ -280,11 +280,11 @@ declare module Wallet {
         disconnect(): Promise<void>;
         get isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
     }
     class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>): Promise<boolean>;
     }
     class Web3ModalProvider extends ClientSideProvider {
         private web3Modal;
@@ -320,7 +320,7 @@ declare module Wallet {
         static getInstance(): Wallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>): Promise<any>;
         setDefaultProvider(): void;
         connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<ClientSideProvider>;
         disconnect(): Promise<void>;

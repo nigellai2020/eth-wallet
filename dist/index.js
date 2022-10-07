@@ -1443,6 +1443,17 @@ var require_wallet = __commonJS({
             symbol: "ETH"
           }
         },
+        5: {
+          chainId: 5,
+          chainName: "Goerli test network",
+          rpcUrls: ["https://goerli.infura.io/v3/{INFURA_ID}"],
+          blockExplorerUrls: ["https://goerli.etherscan.io"],
+          nativeCurrency: {
+            decimals: 18,
+            name: "GoerliETH",
+            symbol: "GoerliETH"
+          }
+        },
         42: {
           chainId: 42,
           chainName: "Kovan Test Network",
@@ -1671,7 +1682,7 @@ var require_wallet = __commonJS({
         initEvents() {
           let self = this;
           if (this.installed) {
-            this.provider.on("accountsChanged", (accounts) => {
+            this.provider.on("accountsChanged", async (accounts) => {
               let accountAddress;
               let hasAccounts = accounts && accounts.length > 0;
               if (hasAccounts) {
@@ -1683,9 +1694,9 @@ var require_wallet = __commonJS({
               }
               this._isConnected = hasAccounts;
               if (self.onAccountChanged)
-                self.onAccountChanged(accountAddress);
+                await self.onAccountChanged(accountAddress);
             });
-            this.provider.on("chainChanged", (chainId) => {
+            this.provider.on("chainChanged", async (chainId) => {
               self.wallet.chainId = parseInt(chainId);
               if (this._options && this._options.callWithDefaultProvider) {
                 if (this._options.infuraId)
@@ -1693,15 +1704,15 @@ var require_wallet = __commonJS({
                 self.wallet.setDefaultProvider();
               }
               if (self.onChainChanged)
-                self.onChainChanged(chainId);
+                await self.onChainChanged(chainId);
             });
-            this.provider.on("connect", (connectInfo) => {
+            this.provider.on("connect", async (connectInfo) => {
               if (self.onConnect)
-                self.onConnect(connectInfo);
+                await self.onConnect(connectInfo);
             });
-            this.provider.on("disconnect", (error) => {
+            this.provider.on("disconnect", async (error) => {
               if (self.onDisconnect)
-                self.onDisconnect(error);
+                await self.onDisconnect(error);
             });
           }
           ;
@@ -1719,7 +1730,7 @@ var require_wallet = __commonJS({
           let self = this;
           try {
             if (this.installed) {
-              await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
+              await this.provider.request({ method: "eth_requestAccounts" }).then(async (accounts) => {
                 let accountAddress;
                 let hasAccounts = accounts && accounts.length > 0;
                 if (hasAccounts) {
@@ -1731,7 +1742,7 @@ var require_wallet = __commonJS({
                 }
                 this._isConnected = hasAccounts;
                 if (self.onAccountChanged)
-                  self.onAccountChanged(accountAddress);
+                  await self.onAccountChanged(accountAddress);
               });
             }
           } catch (error) {
@@ -1941,7 +1952,7 @@ var require_wallet = __commonJS({
           this.initEvents();
           let self = this;
           try {
-            await this.wallet.web3.eth.getAccounts((err, accounts) => {
+            await this.wallet.web3.eth.getAccounts(async (err, accounts) => {
               let accountAddress;
               let hasAccounts = accounts && accounts.length > 0;
               if (hasAccounts) {
@@ -1953,7 +1964,7 @@ var require_wallet = __commonJS({
               }
               this._isConnected = hasAccounts;
               if (self.onAccountChanged)
-                self.onAccountChanged(accountAddress);
+                await self.onAccountChanged(accountAddress);
             });
           } catch (error) {
             console.error(error);
@@ -2037,7 +2048,7 @@ var require_wallet = __commonJS({
           } else {
             this.chainId = chainId;
             this.setDefaultProvider();
-            onChainChanged("0x" + chainId.toString(16));
+            await onChainChanged("0x" + chainId.toString(16));
           }
           return result;
         }
@@ -2056,12 +2067,13 @@ var require_wallet = __commonJS({
         async connect(walletPlugin, events, providerOptions) {
           this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
           if (this.clientSideProvider) {
-            await this.clientSideProvider.connect();
             if (providerOptions && providerOptions.callWithDefaultProvider) {
               if (providerOptions.infuraId)
                 this._infuraId = providerOptions.infuraId;
               this.setDefaultProvider();
-            } else {
+            }
+            await this.clientSideProvider.connect();
+            if (!providerOptions || !providerOptions.callWithDefaultProvider) {
               this.provider = this.clientSideProvider.provider;
             }
           } else {

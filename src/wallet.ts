@@ -319,10 +319,10 @@ module Wallet{
 		iconUrls?: string[]; // Currently ignored.
 	}
 	export interface IClientSideProviderEvents {
-		onAccountChanged?: (account: string)=>void; 
-		onChainChanged?: (chainId: string)=>void;
-		onConnect?: (connectInfo: any)=>void;
-		onDisconnect?: (error: any)=>void;
+		onAccountChanged?: (account: string) => Promise<void>; 
+		onChainChanged?: (chainId: string) => Promise<void>; 
+		onConnect?: (connectInfo: any) => Promise<void>; 
+		onDisconnect?: (error: any) => Promise<void>; 
 	}
 	export type NetworksMapType = { [chainId: number]: INetwork }
 	export const DefaultNetworksMap: NetworksMapType = {
@@ -359,6 +359,17 @@ module Wallet{
 				symbol: 'ETH'
 			}
 		},
+		5: {
+			chainId: 5,
+			chainName: "Goerli test network",
+			rpcUrls: ['https://goerli.infura.io/v3/{INFURA_ID}'],
+			blockExplorerUrls: ['https://goerli.etherscan.io'],
+			nativeCurrency: {
+				decimals: 18,
+				name: 'GoerliETH',
+				symbol: 'GoerliETH'
+			}
+		},		
 		42: {
 			chainId: 42,
 			chainName: "Kovan Test Network",
@@ -589,10 +600,10 @@ module Wallet{
 		protected _isConnected: boolean = false;
 		public provider: any;
 		public readonly walletPlugin: WalletPlugin;
-		public onAccountChanged: (account: string) => void;
-		public onChainChanged: (chainId: string) => void;
-		public onConnect: (connectInfo: any) => void;
-		public onDisconnect: (error: any) => void;
+		public onAccountChanged: (account: string) => Promise<void>;
+		public onChainChanged: (chainId: string) => Promise<void>;
+		public onConnect: (connectInfo: any) => Promise<void>;
+		public onDisconnect: (error: any) => Promise<void>;
 
 		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			this.wallet = wallet;
@@ -606,7 +617,7 @@ module Wallet{
 		initEvents() {
 			let self = this;
 			if (this.installed) {
-				this.provider.on('accountsChanged', (accounts) => {
+				this.provider.on('accountsChanged', async (accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -618,24 +629,24 @@ module Wallet{
 					}
 					this._isConnected = hasAccounts;
 					if (self.onAccountChanged)
-						self.onAccountChanged(accountAddress);
+						await self.onAccountChanged(accountAddress);
 				});
-				this.provider.on('chainChanged', (chainId) => {
+				this.provider.on('chainChanged', async (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
 					if (this._options && this._options.callWithDefaultProvider) {
 						if (this._options.infuraId) this.wallet.infuraId = this._options.infuraId;
 						self.wallet.setDefaultProvider();
 					}
 					if (self.onChainChanged)
-						self.onChainChanged(chainId);
+						await self.onChainChanged(chainId);
 				});
-				this.provider.on('connect', (connectInfo) => {
+				this.provider.on('connect', async (connectInfo) => {
 					if (self.onConnect)
-						self.onConnect(connectInfo);
+						await self.onConnect(connectInfo);
 				});
-				this.provider.on('disconnect', (error) => {
+				this.provider.on('disconnect', async (error) => {
 					if (self.onDisconnect)
-						self.onDisconnect(error);
+						await self.onDisconnect(error);
 				});
 			};
 		}
@@ -653,7 +664,7 @@ module Wallet{
 			let self = this;
 			try {
 				if (this.installed) {
-					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
+					await this.provider.request({ method: 'eth_requestAccounts' }).then(async (accounts) => {
 						let accountAddress;
 						let hasAccounts = accounts && accounts.length > 0;
 						if (hasAccounts) {
@@ -665,7 +676,7 @@ module Wallet{
 						}
 						this._isConnected = hasAccounts;
 						if (self.onAccountChanged)
-							self.onAccountChanged(accountAddress);
+							await self.onAccountChanged(accountAddress);
 					});
 				}
 			} catch (error) {
@@ -703,7 +714,7 @@ module Wallet{
 				}
 			})
 		}
-		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>): Promise<boolean> {
 			let self = this;
 			if (onChainChanged) {
 				this.onChainChanged = onChainChanged;
@@ -784,7 +795,7 @@ module Wallet{
 		}
 	}
 	export class BinanceChainWalletProvider extends ClientSideProvider {
-		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>): Promise<boolean> {
 			let self = this;
 			if (onChainChanged) {
 				this.onChainChanged = onChainChanged;
@@ -877,7 +888,7 @@ module Wallet{
 			this.initEvents();
 			let self = this;
 			try {
-				await this.wallet.web3.eth.getAccounts((err, accounts) => {
+				await this.wallet.web3.eth.getAccounts(async (err, accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -889,7 +900,7 @@ module Wallet{
 					}
 					this._isConnected = hasAccounts;
 					if (self.onAccountChanged)
-						self.onAccountChanged(accountAddress);
+						await self.onAccountChanged(accountAddress);
 				});
 			} catch (error) {
 				console.error(error);
@@ -977,7 +988,7 @@ module Wallet{
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
 		}
-		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
+		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => Promise<void>) {
 			let result;
 			if (this.clientSideProvider) {
 				result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
@@ -985,7 +996,7 @@ module Wallet{
 			else {
 				this.chainId = chainId;
 				this.setDefaultProvider();
-				onChainChanged('0x' + chainId.toString(16));
+				await onChainChanged('0x' + chainId.toString(16));
 			}
 			return result;
 		}
@@ -1001,15 +1012,15 @@ module Wallet{
 		}
 		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
 			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
-			if (this.clientSideProvider) {
-				await this.clientSideProvider.connect();
+			if (this.clientSideProvider) {		
 				if (providerOptions && providerOptions.callWithDefaultProvider) {
 					if (providerOptions.infuraId) this._infuraId = providerOptions.infuraId;
 					this.setDefaultProvider();
-				}
-				else {
+				}				
+				await this.clientSideProvider.connect();
+				if (!providerOptions || !providerOptions.callWithDefaultProvider) {
 					this.provider = this.clientSideProvider.provider;
-				}
+				}	
 			}
 			else {
 				this.setDefaultProvider();
