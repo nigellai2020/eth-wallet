@@ -642,7 +642,7 @@ module Wallet{
 		async connect() {
 			this.provider = WalletPluginConfig[this.walletPlugin].provider();
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
-			// this.wallet.web3.setProvider(this.provider);
+			this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
