@@ -17,7 +17,7 @@ async function readFile(fileName) {
 
 async function build() {
   let result = await require('esbuild').build({
-    entryPoints: ['src/index.ts'],
+    entryPoints: ['src/plugin.ts'],
     outdir: 'dist',
     bundle: true,
     minify: false,
@@ -27,7 +27,7 @@ async function build() {
     ],
     plugins: [],
   }).catch(() => process.exit(1));
-  let content = await readFile('dist/index.js');
+  let content = await readFile('dist/plugin.js');
   content = `define("aws-sdk", ()=>{});
 define("asn1.js", ()=>{});
 define("bn.js", ()=>{});
@@ -44,6 +44,7 @@ define("@ijstech/eth-wallet",(require, exports)=>{
 ${content}
 });`
 
-  Fs.writeFileSync('dist/index.js', content);
+  Fs.writeFileSync('dist/plugin.js', content);
+  Fs.renameSync('dist/plugin.js', 'dist/index.js');
 };
 build();

@@ -14,7 +14,8 @@
 *  https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/util
 *--------------------------------------------------------------------------------------------*/
 
-import { MessageTypeProperty, MessageTypes, NestedBufferArray, NestedUint8Array, SignTypedDataVersion, ToBufferInputTypes, TypedMessage } from "./types";
+import { MessageTypeProperty, MessageTypes, SignTypedDataVersion, TypedMessage } from "./types";
+import {NestedBufferArray, NestedUint8Array, ToBufferInputTypes} from './nodeTypes';
 import { TYPED_MESSAGE_SCHEMA } from './constants';
 import BN from 'bn.js';
 import { keccak256 } from 'ethereum-cryptography/keccak';

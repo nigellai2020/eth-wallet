@@ -6,7 +6,6 @@
 import * as W3 from 'web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
-import { MessageTypes, TypedMessage } from './types';
 declare module Wallet {
     function toString(value: any): any;
     function stringToBytes32(value: string | stringArray): string | string[];
@@ -300,16 +299,15 @@ declare module Wallet {
         confirmation?: (receipt: any) => void;
     }
     class Wallet implements IWallet {
-        private _web3;
-        private _account;
+        protected _web3: W3.default;
+        protected _account: IAccount;
         private _accounts;
-        private _kms;
         private _provider;
         private _eventTopicAbi;
         private _eventHandler;
-        private _sendTxEventHandler;
-        private _contracts;
-        private _blockGasLimit;
+        protected _sendTxEventHandler: ISendTxEventsOptions;
+        protected _contracts: {};
+        protected _blockGasLimit: number;
         private _networksMap;
         chainId: number;
         clientSideProvider: ClientSideProvider;
@@ -359,8 +357,6 @@ declare module Wallet {
         getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
-        initKMS(value?: IKMS): Promise<void>;
-        private get kms();
         set privateKey(value: string);
         registerEvent(eventMap: {
             [topics: string]: any;
@@ -385,8 +381,6 @@ declare module Wallet {
         setBlockTime(time: number): Promise<any>;
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
-        signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
-        recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;

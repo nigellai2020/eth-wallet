@@ -3,7 +3,8 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, WalletPlugin, WalletPluginConfig, IBatchRequestObj, INetwork } from './wallet';
+export { IWallet, IWalletUtils, IAccount, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, WalletPlugin, WalletPluginConfig, IBatchRequestObj, INetwork } from './wallet';
+export { NodeWallet as Wallet } from './nodeWallet';
 export { Contract } from './contract';
 export { BigNumber } from "bignumber.js";
 export { Erc20 } from './contracts/erc20';

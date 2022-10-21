@@ -5,9 +5,7 @@
 *-----------------------------------------------------------*/
 
 import { BigNumber } from "bignumber.js";
-import { Wallet } from "./wallet";
-import { IGetMerkleLeafDataOptions, IGetMerkleProofOptions, IMerkleTreeOptions, MerkleTree } from './merkleTree';
-import { EIP712TypeMap, IEIP712Domain, IMerkleTreeAbiItem, MessageTypes, TypedMessage } from "./types";
+import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib(); // tslint:disable-line
 
@@ -144,59 +142,6 @@ export function toString(value: any) {
         return value;
 }
 export const nullAddress = "0x0000000000000000000000000000000000000000";
-
-export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]) {
-    return (leafData: Record<string, any>): string => {
-        let encodePackedInput = abi.map((abiItem) => {
-            return {
-                t: abiItem.type,
-                v: leafData[abiItem.name]
-            }
-        })
-        let hex = wallet.soliditySha3.apply(wallet, encodePackedInput)
-        return hex;
-    };
-}
-
-export function generateMerkleTree(
-    wallet: Wallet, 
-    options: IMerkleTreeOptions
-) {
-    const merkleTree = new MerkleTree(wallet, options);
-    return merkleTree;
-}
-
-export function getMerkleProofs(
-    wallet: Wallet,
-    tree: MerkleTree,
-    options: IGetMerkleProofOptions
-) {
-    let proofs: string[][] = [];
-    if (options.key) {
-        proofs = tree.getHexProofsByKey(options.key);
-    }
-    else if (options.leafData) {
-        let abi = tree.getABI();
-        const hashFunc = getSha3HashBufferFunc(wallet, abi);
-        let leaf = hashFunc(options.leafData);
-        proofs.push(tree.getHexProof(leaf));
-    }
-    return proofs;
-}
-
-export function getMerkleLeavesData(
-    tree: MerkleTree,
-    options: IGetMerkleLeafDataOptions
-) {
-    let data: Record<string, any>[];
-    if (options.key) {
-        data = tree.getLeavesDataByKey(options.key);
-    }
-    else if (options.hash) {
-        data.push(tree.getLeafData(options.hash));
-    }
-    return data;
-}
 
 export function constructTypedMessageData(
     domain: IEIP712Domain,

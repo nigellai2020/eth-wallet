@@ -1,0 +1,26 @@
+{ 
+    "compilerOptions": {
+        "baseUrl": ".",
+        "target": "es2017",
+        "module": "amd",        
+        "moduleResolution": "node",   
+        "esModuleInterop": true,          
+        "removeComments": false,     
+        "emitDeclarationOnly": true,    
+        "declaration": true,
+        "outFile": "pluginTypes/index.js",
+    },
+    "include": [
+        "src/plugin.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "src/index.ts",
+        "src/nodeWallets.ts",
+        "src/nodeTypes.ts",
+        "src/nodeUtils.ts",
+        "src/signTypedData.ts",
+        "example",
+        "test"
+    ]
+}

@@ -1,4 +1,6 @@
-import { IWallet, Contract, TransactionReceipt, BigNumber, Event } from "../../";
+import { IWallet, TransactionReceipt, Event } from "../../wallet";
+import { Contract } from '../../contract';
+import { BigNumber } from "bignumber.js";
 export interface IBalanceOfParams {
     account: string;
     id: number | BigNumber;

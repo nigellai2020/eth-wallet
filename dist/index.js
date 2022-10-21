@@ -58,9 +58,9 @@ var __toModule = (module2) => {
 // src/contract.ts
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
-    var Contract3;
+    var Contract6;
     (function(_Contract) {
-      class Contract4 {
+      class Contract7 {
         constructor(wallet, address, abi, bytecode) {
           this.wallet = wallet;
           if (abi)
@@ -196,139 +196,9 @@ var require_contract = __commonJS({
           }
         }
       }
-      _Contract.Contract = Contract4;
-    })(Contract3 || (Contract3 = {}));
-    module2.exports = Contract3;
-  }
-});
-
-// src/merkleTree.ts
-var import_bignumber, MerkleTree;
-var init_merkleTree = __esm({
-  "src/merkleTree.ts"() {
-    import_bignumber = __toModule(require("bignumber.js"));
-    init_utils();
-    MerkleTree = class {
-      constructor(wallet, options) {
-        this.tree = [];
-        this.leavesData = {};
-        this.leavesKeyHashMap = {};
-        this.leavesHashDataMap = {};
-        this.nodeInfoMap = {};
-        this.abi = options.abi;
-        const hashFunc = getSha3HashBufferFunc(wallet, options.abi);
-        let abiKeyName = options.abiKeyName || options.abi[0].name;
-        this.leavesData = options.leavesData;
-        let leaves = [];
-        for (let leafData of options.leavesData) {
-          let key;
-          if (options.getCustomKey) {
-            key = options.getCustomKey(leafData);
-          } else {
-            key = leafData[abiKeyName];
-          }
-          let dataHash = hashFunc(leafData);
-          this.leavesKeyHashMap[key] = this.leavesKeyHashMap[key] || [];
-          this.leavesKeyHashMap[key].push(dataHash);
-          this.leavesHashDataMap[dataHash] = leafData;
-          leaves.push(dataHash);
-        }
-        this.tree.push(leaves);
-        while (this.tree[this.tree.length - 1].length > 1) {
-          let layer = this.tree.length - 1;
-          let children = this.tree[layer];
-          let parent = [];
-          this.nodeInfoMap[layer] = {};
-          for (let i = 0; i < children.length - 1; i += 2) {
-            let parentHash;
-            let firstChild = children[i];
-            let secondChild = children[i + 1];
-            if (new import_bignumber.BigNumber(firstChild).lt(secondChild)) {
-              parentHash = wallet.soliditySha3("0x" + firstChild.replace("0x", "") + secondChild.replace("0x", ""));
-            } else {
-              parentHash = wallet.soliditySha3("0x" + secondChild.replace("0x", "") + firstChild.replace("0x", ""));
-            }
-            parent.push(parentHash);
-            this.nodeInfoMap[layer][firstChild] = {
-              parent: parentHash,
-              sibling: secondChild
-            };
-            this.nodeInfoMap[layer][secondChild] = {
-              parent: parentHash,
-              sibling: firstChild
-            };
-          }
-          if (children.length % 2 == 1) {
-            let child = children[children.length - 1];
-            let parentHash = "0x" + child.replace("0x", "");
-            parent.push(parentHash);
-            this.nodeInfoMap[layer][child] = {
-              parent: parentHash
-            };
-          }
-          this.tree.push(parent);
-        }
-      }
-      toString() {
-        let arr = [];
-        for (let i = this.tree.length - 1; i >= 0; i--) {
-          arr.push(this.tree[i].join(","));
-        }
-        return arr.join(",");
-      }
-      getHexRoot() {
-        return this.tree[this.tree.length - 1][0];
-      }
-      getHexProofsByKey(key) {
-        let proofs = [];
-        let leaves = this.leavesKeyHashMap[key] || [];
-        if (leaves.length == 0)
-          return [];
-        for (let leaf of leaves) {
-          proofs.push(this.getHexProof(leaf));
-        }
-        return proofs;
-      }
-      getHexProof(leaf) {
-        let proof = [];
-        if (this.tree.length == 1)
-          return proof;
-        let leafInfo = this.nodeInfoMap[0][leaf];
-        if (leafInfo.sibling) {
-          proof.push(leafInfo.sibling);
-        }
-        let parentHash = leafInfo.parent;
-        for (let i = 1; i < this.tree.length - 1; i++) {
-          if (parentHash == this.getHexRoot())
-            break;
-          let leafInfo2 = this.nodeInfoMap[i][parentHash];
-          if (leafInfo2.sibling) {
-            proof.push(leafInfo2.sibling);
-          }
-          parentHash = leafInfo2.parent;
-        }
-        return proof;
-      }
-      getABI() {
-        return this.abi;
-      }
-      getLeavesByKey(key) {
-        return this.leavesKeyHashMap[key] || [];
-      }
-      getLeavesDataByKey(key) {
-        let leaves = this.leavesKeyHashMap[key] || [];
-        if (leaves.length == 0)
-          return [];
-        let leavesData = [];
-        for (let leaf of leaves) {
-          leavesData.push(this.getLeafData(leaf));
-        }
-        return leavesData;
-      }
-      getLeafData(leaf) {
-        return this.leavesHashDataMap[leaf];
-      }
-    };
+      _Contract.Contract = Contract7;
+    })(Contract6 || (Contract6 = {}));
+    module2.exports = Contract6;
   }
 });
 
@@ -382,10 +252,6 @@ __export(utils_exports, {
   bytes32ToString: () => bytes32ToString,
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
-  generateMerkleTree: () => generateMerkleTree,
-  getMerkleLeavesData: () => getMerkleLeavesData,
-  getMerkleProofs: () => getMerkleProofs,
-  getSha3HashBufferFunc: () => getSha3HashBufferFunc,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
@@ -411,7 +277,7 @@ function sleep(millisecond) {
   });
 }
 function numberToBytes32(value, prefix) {
-  let v = new import_bignumber2.BigNumber(value).toString(16);
+  let v = new import_bignumber.BigNumber(value).toString(16);
   v = v.replace("0x", "");
   v = padLeft(v, 64);
   if (prefix)
@@ -496,17 +362,17 @@ function toNumber(value) {
   if (typeof value == "number")
     return value;
   else if (typeof value == "string")
-    return new import_bignumber2.BigNumber(value).toNumber();
+    return new import_bignumber.BigNumber(value).toNumber();
   else
     return value.toNumber();
 }
 function toDecimals(value, decimals) {
   decimals = decimals || 18;
-  return new import_bignumber2.BigNumber(value).shiftedBy(decimals);
+  return new import_bignumber.BigNumber(value).shiftedBy(decimals);
 }
 function fromDecimals(value, decimals) {
   decimals = decimals || 18;
-  return new import_bignumber2.BigNumber(value).shiftedBy(-decimals);
+  return new import_bignumber.BigNumber(value).shiftedBy(-decimals);
 }
 function toString(value) {
   if (Array.isArray(value)) {
@@ -517,47 +383,10 @@ function toString(value) {
     return result;
   } else if (typeof value === "number")
     return value.toString(10);
-  else if (import_bignumber2.BigNumber.isBigNumber(value))
+  else if (import_bignumber.BigNumber.isBigNumber(value))
     return value.toFixed();
   else
     return value;
-}
-function getSha3HashBufferFunc(wallet, abi) {
-  return (leafData) => {
-    let encodePackedInput = abi.map((abiItem) => {
-      return {
-        t: abiItem.type,
-        v: leafData[abiItem.name]
-      };
-    });
-    let hex = wallet.soliditySha3.apply(wallet, encodePackedInput);
-    return hex;
-  };
-}
-function generateMerkleTree(wallet, options) {
-  const merkleTree = new MerkleTree(wallet, options);
-  return merkleTree;
-}
-function getMerkleProofs(wallet, tree, options) {
-  let proofs = [];
-  if (options.key) {
-    proofs = tree.getHexProofsByKey(options.key);
-  } else if (options.leafData) {
-    let abi = tree.getABI();
-    const hashFunc = getSha3HashBufferFunc(wallet, abi);
-    let leaf = hashFunc(options.leafData);
-    proofs.push(tree.getHexProof(leaf));
-  }
-  return proofs;
-}
-function getMerkleLeavesData(tree, options) {
-  let data;
-  if (options.key) {
-    data = tree.getLeavesDataByKey(options.key);
-  } else if (options.hash) {
-    data.push(tree.getLeafData(options.hash));
-  }
-  return data;
 }
 function constructTypedMessageData(domain, customTypes, primaryType, message) {
   let data = {
@@ -570,11 +399,10 @@ function constructTypedMessageData(domain, customTypes, primaryType, message) {
   };
   return data;
 }
-var import_bignumber2, Web3, nullAddress;
+var import_bignumber, Web3, nullAddress;
 var init_utils = __esm({
   "src/utils.ts"() {
-    import_bignumber2 = __toModule(require("bignumber.js"));
-    init_merkleTree();
+    import_bignumber = __toModule(require("bignumber.js"));
     init_constants();
     Web3 = Web3Lib();
     nullAddress = "0x0000000000000000000000000000000000000000";
@@ -592,11 +420,11 @@ var require_erc20 = __commonJS({
 });
 
 // src/contracts/erc20.ts
-var import_contract, import_bignumber3, Abi, Bytecode, Erc20;
+var import_contract, import_bignumber2, Abi, Bytecode, Erc20;
 var init_erc20 = __esm({
   "src/contracts/erc20.ts"() {
     import_contract = __toModule(require_contract());
-    import_bignumber3 = __toModule(require("bignumber.js"));
+    import_bignumber2 = __toModule(require("bignumber.js"));
     init_utils();
     Abi = require_erc20().abi;
     Bytecode = require_erc20().bytecode;
@@ -616,7 +444,7 @@ var init_erc20 = __esm({
         return {
           owner: result.owner,
           spender: result.spender,
-          value: new import_bignumber3.BigNumber(result.value),
+          value: new import_bignumber2.BigNumber(result.value),
           _event: event
         };
       }
@@ -628,7 +456,7 @@ var init_erc20 = __esm({
         return {
           from: result.from,
           to: result.to,
-          value: new import_bignumber3.BigNumber(result.value),
+          value: new import_bignumber2.BigNumber(result.value),
           _event: event
         };
       }
@@ -669,7 +497,7 @@ var init_erc20 = __esm({
         return new Promise(async (resolve, reject) => {
           try {
             if (!this._decimals)
-              this._decimals = new import_bignumber3.BigNumber(await this.methods("decimals")).toNumber();
+              this._decimals = new import_bignumber2.BigNumber(await this.methods("decimals")).toNumber();
             resolve(this._decimals);
           } catch (err) {
             reject(err);
@@ -710,614 +538,13 @@ var init_erc20 = __esm({
   }
 });
 
-// src/kms.ts
-var require_kms = __commonJS({
-  "src/kms.ts"(exports, module2) {
-    var AwsSDK = __toModule(require("aws-sdk"));
-    var asn1 = __toModule(require("asn1.js"));
-    var import_bn2 = __toModule(require("bn.js"));
-    var ethutil = __toModule(require("ethereumjs-util"));
-    var import_ethereumjs_tx = __toModule(require("ethereumjs-tx"));
-    var KMS;
-    (function(_KMS) {
-      const EcdsaSigAsnParse = asn1 && asn1.define ? asn1.define("EcdsaSig", function() {
-        this.seq().obj(this.key("r").int(), this.key("s").int());
-      }) : void 0;
-      const EcdsaPubKey = asn1 && asn1.define ? asn1.define("EcdsaPubKey", function() {
-        this.seq().obj(this.key("algo").seq().obj(this.key("a").objid(), this.key("b").objid()), this.key("pubKey").bitstr());
-      }) : void 0;
-      function recoverPubKeyFromSig(msg, r, s, v) {
-        let rBuffer = r.toBuffer();
-        let sBuffer = s.toBuffer();
-        let pubKey = ethutil.ecrecover(msg, v, rBuffer, sBuffer);
-        let addrBuf = ethutil.pubToAddress(pubKey);
-        let recoveredEthAddr = ethutil.bufferToHex(addrBuf);
-        return recoveredEthAddr;
-      }
-      class KMS3 {
-        constructor(options) {
-          this._options = options;
-          this._sdk = new AwsSDK.KMS(options);
-        }
-        getEthereumAddress(publicKey) {
-          let res = EcdsaPubKey.decode(publicKey, "der");
-          let pubKeyBuffer = res.pubKey.data;
-          pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length);
-          let buf = ethutil.keccak256(pubKeyBuffer);
-          return "0x" + buf.slice(-20).toString("hex");
-        }
-        async sign(msgHash) {
-          const params = {
-            KeyId: this._options.keyId,
-            Message: msgHash,
-            SigningAlgorithm: "ECDSA_SHA_256",
-            MessageType: "DIGEST"
-          };
-          return await this._sdk.sign(params).promise();
-        }
-        async signMessage(chainId, message) {
-          let hash = ethutil.hashPersonalMessage(ethutil.toBuffer(message));
-          let sig = await this.findEthereumSig(hash);
-          let address = await this.getAddress();
-          let recoveredPubAddr = this.findRightKey(hash, sig.r, sig.s, address);
-          let r = sig.r.toBuffer();
-          let s = sig.s.toBuffer();
-          let v = new import_bn2.default(recoveredPubAddr.v + (chainId > 1 ? 8 + chainId * 2 : 0)).toBuffer();
-          return "0x" + Buffer.concat([r, s, v]).toString("hex");
-        }
-        async findEthereumSig(plaintext) {
-          let signature = await this.sign(plaintext);
-          if (signature.Signature == void 0) {
-            throw new Error("Signature is undefined.");
-          }
-          let decoded = EcdsaSigAsnParse.decode(signature.Signature, "der");
-          let r = decoded.r;
-          let s = decoded.s;
-          let secp256k1N = new import_bn2.default("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
-          let secp256k1halfN = secp256k1N.div(new import_bn2.default(2));
-          if (s.gt(secp256k1halfN)) {
-            s = secp256k1N.sub(s);
-          }
-          return { r, s };
-        }
-        findRightKey(msg, r, s, expectedEthAddr) {
-          let v = 27;
-          let pubKey = recoverPubKeyFromSig(msg, r, s, v);
-          if (pubKey != expectedEthAddr) {
-            v = 28;
-            pubKey = recoverPubKeyFromSig(msg, r, s, v);
-          }
-          return { pubKey, v };
-        }
-        async getPublicKey() {
-          return this._sdk.getPublicKey({
-            KeyId: this._options.keyId
-          }).promise();
-        }
-        async getAddress() {
-          if (!this._address) {
-            let pubKey = await this.getPublicKey();
-            this._address = this.getEthereumAddress(pubKey.PublicKey);
-          }
-          return this._address;
-        }
-        async signTransaction(chainId, txData) {
-          const tx = new import_ethereumjs_tx.Transaction(txData, {
-            chain: chainId
-          });
-          let txHash = tx.hash(false);
-          let sig = await this.findEthereumSig(txHash);
-          let address = await this.getAddress();
-          let recoveredPubAddr = this.findRightKey(txHash, sig.r, sig.s, address);
-          tx.r = sig.r.toBuffer();
-          tx.s = sig.s.toBuffer();
-          tx.v = new import_bn2.default(recoveredPubAddr.v + (chainId > 1 ? 8 + chainId * 2 : 0)).toBuffer();
-          const serializedTx = tx.serialize().toString("hex");
-          return "0x" + serializedTx;
-        }
-      }
-      _KMS.KMS = KMS3;
-    })(KMS || (KMS = {}));
-    module2.exports = KMS;
-  }
-});
-
-// src/types.ts
-var types_exports = {};
-__export(types_exports, {
-  SignTypedDataVersion: () => SignTypedDataVersion
-});
-var SignTypedDataVersion;
-var init_types = __esm({
-  "src/types.ts"() {
-    (function(SignTypedDataVersion2) {
-      SignTypedDataVersion2["V1"] = "V1";
-      SignTypedDataVersion2["V3"] = "V3";
-      SignTypedDataVersion2["V4"] = "V4";
-    })(SignTypedDataVersion || (SignTypedDataVersion = {}));
-  }
-});
-
-// src/signTypedData.ts
-function encodeType(primaryType, types) {
-  let result = "";
-  const unsortedDeps = findTypeDependencies(primaryType, types);
-  unsortedDeps.delete(primaryType);
-  const deps = [primaryType, ...Array.from(unsortedDeps).sort()];
-  for (const type of deps) {
-    const children = types[type];
-    if (!children) {
-      throw new Error(`No type definition specified: ${type}`);
-    }
-    result += `${type}(${types[type].map(({ name, type: t }) => `${t} ${name}`).join(",")})`;
-  }
-  return result;
-}
-function isArray(type) {
-  return type.lastIndexOf("]") === type.length - 1;
-}
-function isHexString(value, length) {
-  if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/))
-    return false;
-  if (typeof length !== "undefined" && length > 0 && value.length !== 2 + 2 * length)
-    return false;
-  return true;
-}
-function parseTypeArray(type) {
-  const tmp = type.match(/(.*)\[(.*?)\]$/u);
-  if (tmp) {
-    return tmp[2] === "" ? "dynamic" : parseInt(tmp[2], 10);
-  }
-  return null;
-}
-function elementaryName(name) {
-  if (name.startsWith("int[")) {
-    return `int256${name.slice(3)}`;
-  } else if (name === "int") {
-    return "int256";
-  } else if (name.startsWith("uint[")) {
-    return `uint256${name.slice(4)}`;
-  } else if (name === "uint") {
-    return "uint256";
-  } else if (name.startsWith("fixed[")) {
-    return `fixed128x128${name.slice(5)}`;
-  } else if (name === "fixed") {
-    return "fixed128x128";
-  } else if (name.startsWith("ufixed[")) {
-    return `ufixed128x128${name.slice(6)}`;
-  } else if (name === "ufixed") {
-    return "ufixed128x128";
-  }
-  return name;
-}
-function isDynamic(type) {
-  return type === "string" || type === "bytes" || parseTypeArray(type) === "dynamic";
-}
-function isHexPrefixed(str) {
-  if (typeof str !== "string") {
-    throw new Error(`[isHexPrefixed] input must be type 'string', received type ${typeof str}`);
-  }
-  return str[0] === "0" && str[1] === "x";
-}
-function parseNumber(arg) {
-  const type = typeof arg;
-  if (type === "string") {
-    if (isHexPrefixed(arg)) {
-      return new import_bn.default(stripHexPrefix(arg), 16);
-    }
-    return new import_bn.default(arg, 10);
-  } else if (type === "number") {
-    return new import_bn.default(arg);
-  } else if (arg.toArray) {
-    return arg;
-  }
-  throw new Error("Argument is not a number");
-}
-function parseTypeN(type) {
-  return parseInt(/^\D+(\d+)$/u.exec(type)[1], 10);
-}
-function parseTypeNxM(type) {
-  const tmp = /^\D+(\d+)x(\d+)$/u.exec(type);
-  return [parseInt(tmp[1], 10), parseInt(tmp[2], 10)];
-}
-function padToEven(value) {
-  let a = value;
-  if (typeof a !== "string") {
-    throw new Error(`[padToEven] value must be type 'string', received ${typeof a}`);
-  }
-  if (a.length % 2)
-    a = `0${a}`;
-  return a;
-}
-function normalize(input) {
-  if (!input) {
-    return void 0;
-  }
-  if (typeof input === "number") {
-    if (input < 0) {
-      return "0x";
-    }
-    const buffer = toBuffer(input);
-    input = bufferToHex(buffer);
-  }
-  if (typeof input !== "string") {
-    let msg = "eth-sig-util.normalize() requires hex string or integer input.";
-    msg += ` received ${typeof input}: ${input}`;
-    throw new Error(msg);
-  }
-  return addHexPrefix(input.toLowerCase());
-}
-function encodeSingle(type, arg) {
-  let size, num, ret, i;
-  if (type === "address") {
-    return encodeSingle("uint160", parseNumber(arg));
-  } else if (type === "bool") {
-    return encodeSingle("uint8", arg ? 1 : 0);
-  } else if (type === "string") {
-    return encodeSingle("bytes", Buffer.from(arg, "utf8"));
-  } else if (isArray(type)) {
-    if (typeof arg.length === "undefined") {
-      throw new Error("Not an array?");
-    }
-    size = parseTypeArray(type);
-    if (size !== "dynamic" && size !== 0 && arg.length > size) {
-      throw new Error(`Elements exceed array size: ${size}`);
-    }
-    ret = [];
-    type = type.slice(0, type.lastIndexOf("["));
-    if (typeof arg === "string") {
-      arg = JSON.parse(arg);
-    }
-    for (i in arg) {
-      if (Object.prototype.hasOwnProperty.call(arg, i)) {
-        ret.push(encodeSingle(type, arg[i]));
-      }
-    }
-    if (size === "dynamic") {
-      const length = encodeSingle("uint256", arg.length);
-      ret.unshift(length);
-    }
-    return Buffer.concat(ret);
-  } else if (type === "bytes") {
-    arg = Buffer.from(arg);
-    ret = Buffer.concat([encodeSingle("uint256", arg.length), arg]);
-    if (arg.length % 32 !== 0) {
-      ret = Buffer.concat([ret, zeros(32 - arg.length % 32)]);
-    }
-    return ret;
-  } else if (type.startsWith("bytes")) {
-    size = parseTypeN(type);
-    if (size < 1 || size > 32) {
-      throw new Error(`Invalid bytes<N> width: ${size}`);
-    }
-    if (typeof arg === "number") {
-      arg = normalize(arg);
-    }
-    return setLengthRight(toBuffer(arg), 32);
-  } else if (type.startsWith("uint")) {
-    size = parseTypeN(type);
-    if (size % 8 || size < 8 || size > 256) {
-      throw new Error(`Invalid uint<N> width: ${size}`);
-    }
-    num = parseNumber(arg);
-    if (num.bitLength() > size) {
-      throw new Error(`Supplied uint exceeds width: ${size} vs ${num.bitLength()}`);
-    }
-    if (num < 0) {
-      throw new Error("Supplied uint is negative");
-    }
-    return num.toArrayLike(Buffer, "be", 32);
-  } else if (type.startsWith("int")) {
-    size = parseTypeN(type);
-    if (size % 8 || size < 8 || size > 256) {
-      throw new Error(`Invalid int<N> width: ${size}`);
-    }
-    num = parseNumber(arg);
-    if (num.bitLength() > size) {
-      throw new Error(`Supplied int exceeds width: ${size} vs ${num.bitLength()}`);
-    }
-    return num.toTwos(256).toArrayLike(Buffer, "be", 32);
-  } else if (type.startsWith("ufixed")) {
-    size = parseTypeNxM(type);
-    num = parseNumber(arg);
-    if (num < 0) {
-      throw new Error("Supplied ufixed is negative");
-    }
-    return encodeSingle("uint256", num.mul(new import_bn.default(2).pow(new import_bn.default(size[1]))));
-  } else if (type.startsWith("fixed")) {
-    size = parseTypeNxM(type);
-    return encodeSingle("int256", parseNumber(arg).mul(new import_bn.default(2).pow(new import_bn.default(size[1]))));
-  }
-  throw new Error(`Unsupported or invalid type: ${type}`);
-}
-function rawEncode(types, values) {
-  const output = [];
-  const data = [];
-  let headLength = 0;
-  types.forEach(function(type) {
-    if (isArray(type)) {
-      const size = parseTypeArray(type);
-      if (size !== "dynamic") {
-        headLength += 32 * size;
-      } else {
-        headLength += 32;
-      }
-    } else {
-      headLength += 32;
-    }
-  });
-  for (let i = 0; i < types.length; i++) {
-    const type = elementaryName(types[i]);
-    const value = values[i];
-    const cur = encodeSingle(type, value);
-    if (isDynamic(type)) {
-      output.push(encodeSingle("uint256", headLength));
-      data.push(cur);
-      headLength += cur.length;
-    } else {
-      output.push(cur);
-    }
-  }
-  return Buffer.concat(output.concat(data));
-}
-function numberToBuffer(num) {
-  const hexVal = num.toString(16);
-  const prepend = hexVal.length % 2 ? "0" : "";
-  return Buffer.from(prepend + hexVal, "hex");
-}
-function arrToBufArr(arr) {
-  if (!Array.isArray(arr)) {
-    return Buffer.from(arr);
-  }
-  return arr.map((a) => arrToBufArr(a));
-}
-function encodeField(types, name, type, value, version) {
-  if (types[type] !== void 0) {
-    return [
-      "bytes32",
-      version === SignTypedDataVersion.V4 && value == null ? "0x0000000000000000000000000000000000000000000000000000000000000000" : arrToBufArr((0, import_keccak.keccak256)(encodeData(type, value, types, version)))
-    ];
-  }
-  if (value === void 0) {
-    throw new Error(`missing value for field ${name} of type ${type}`);
-  }
-  if (type === "bytes") {
-    if (typeof value === "number") {
-      value = numberToBuffer(value);
-    } else if (isHexString(value)) {
-      value = numberToBuffer(parseInt(value, 16));
-    } else {
-      value = Buffer.from(value, "utf8");
-    }
-    return ["bytes32", arrToBufArr((0, import_keccak.keccak256)(value))];
-  }
-  if (type === "string") {
-    if (typeof value === "number") {
-      value = numberToBuffer(value);
-    } else {
-      value = Buffer.from(value != null ? value : "", "utf8");
-    }
-    return ["bytes32", arrToBufArr((0, import_keccak.keccak256)(value))];
-  }
-  if (type.lastIndexOf("]") === type.length - 1) {
-    if (version === SignTypedDataVersion.V3) {
-      throw new Error("Arrays are unimplemented in encodeData; use V4 extension");
-    }
-    const parsedType = type.slice(0, type.lastIndexOf("["));
-    const typeValuePairs = value.map((item) => encodeField(types, name, parsedType, item, version));
-    return [
-      "bytes32",
-      arrToBufArr((0, import_keccak.keccak256)(rawEncode(typeValuePairs.map(([t]) => t), typeValuePairs.map(([, v]) => v))))
-    ];
-  }
-  return [type, value];
-}
-function findTypeDependencies(primaryType, types, results = new Set()) {
-  [primaryType] = primaryType.match(/^\w*/u);
-  if (results.has(primaryType) || types[primaryType] === void 0) {
-    return results;
-  }
-  results.add(primaryType);
-  for (const field of types[primaryType]) {
-    findTypeDependencies(field.type, types, results);
-  }
-  return results;
-}
-function hashType(primaryType, types) {
-  const encodedHashType = Buffer.from(encodeType(primaryType, types), "utf-8");
-  return arrToBufArr((0, import_keccak.keccak256)(encodedHashType));
-}
-function hashStruct(primaryType, data, types, version) {
-  let encodedData = encodeData(primaryType, data, types, version);
-  return arrToBufArr((0, import_keccak.keccak256)(encodedData));
-}
-function encodeData(primaryType, data, types, version) {
-  const encodedTypes = ["bytes32"];
-  const encodedValues = [hashType(primaryType, types)];
-  for (const field of types[primaryType]) {
-    if (version === SignTypedDataVersion.V3 && data[field.name] === void 0) {
-      continue;
-    }
-    const [type, value] = encodeField(types, field.name, field.type, data[field.name], version);
-    encodedTypes.push(type);
-    encodedValues.push(value);
-  }
-  return rawEncode(encodedTypes, encodedValues);
-}
-function sanitizeData(data) {
-  const sanitizedData = {};
-  for (const key in TYPED_MESSAGE_SCHEMA.properties) {
-    if (data[key]) {
-      sanitizedData[key] = data[key];
-    }
-  }
-  if ("types" in sanitizedData) {
-    sanitizedData.types = __spreadValues({ EIP712Domain: [] }, sanitizedData.types);
-  }
-  return sanitizedData;
-}
-function eip712Hash(typedData, version) {
-  const sanitizedData = sanitizeData(typedData);
-  const parts = [Buffer.from("1901", "hex")];
-  parts.push(hashStruct("EIP712Domain", sanitizedData.domain, sanitizedData.types, version));
-  if (sanitizedData.primaryType !== "EIP712Domain") {
-    parts.push(hashStruct(sanitizedData.primaryType, sanitizedData.message, sanitizedData.types, version));
-  }
-  return arrToBufArr((0, import_keccak.keccak256)(Buffer.concat(parts)));
-}
-function padWithZeroes(hexString, targetLength) {
-  if (hexString !== "" && !/^[a-f0-9]+$/iu.test(hexString)) {
-    throw new Error(`Expected an unprefixed hex string. Received: ${hexString}`);
-  }
-  if (targetLength < 0) {
-    throw new Error(`Expected a non-negative integer target length. Received: ${targetLength}`);
-  }
-  return String.prototype.padStart.call(hexString, targetLength, "0");
-}
-function concatSig(v, r, s) {
-  const rSig = (0, import_ethereumjs_util.fromSigned)(r);
-  const sSig = (0, import_ethereumjs_util.fromSigned)(s);
-  const vSig = (0, import_ethereumjs_util.bufferToInt)(v);
-  const rStr = padWithZeroes((0, import_ethereumjs_util.toUnsigned)(rSig).toString("hex"), 64);
-  const sStr = padWithZeroes((0, import_ethereumjs_util.toUnsigned)(sSig).toString("hex"), 64);
-  const vStr = stripHexPrefix(intToHex(vSig));
-  return addHexPrefix(rStr.concat(sStr, vStr));
-}
-function recoverPublicKey(messageHash, signature) {
-  const sigParams = (0, import_ethereumjs_util.fromRpcSig)(signature);
-  return (0, import_ethereumjs_util.ecrecover)(messageHash, sigParams.v, sigParams.r, sigParams.s);
-}
-function signTypedDataWithPrivateKey({
-  privateKey,
-  data,
-  version
-}) {
-  const bufferPrivateKey = Buffer.from(privateKey.replace("0x", ""), "hex");
-  const messageHash = eip712Hash(data, version);
-  const sig = (0, import_ethereumjs_util.ecsign)(messageHash, bufferPrivateKey);
-  return concatSig(toBuffer(sig.v), sig.r, sig.s);
-}
-function recoverTypedSignature({
-  data,
-  signature,
-  version
-}) {
-  const messageHash = eip712Hash(data, version);
-  const publicKey = recoverPublicKey(messageHash, signature);
-  const sender = (0, import_ethereumjs_util.publicToAddress)(publicKey);
-  return bufferToHex(sender);
-}
-var import_bn, import_keccak, import_ethereumjs_util, stripHexPrefix, zeros, assertIsBuffer, setLength, setLengthRight, intToHex, intToBuffer, bufferToHex, addHexPrefix, toBuffer;
-var init_signTypedData = __esm({
-  "src/signTypedData.ts"() {
-    init_types();
-    init_constants();
-    import_bn = __toModule(require("bn.js"));
-    import_keccak = __toModule(require("ethereum-cryptography/keccak"));
-    import_ethereumjs_util = __toModule(require("ethereumjs-util"));
-    stripHexPrefix = (str) => {
-      if (typeof str !== "string")
-        throw new Error(`[stripHexPrefix] input must be type 'string', received ${typeof str}`);
-      return isHexPrefixed(str) ? str.slice(2) : str;
-    };
-    zeros = function(bytes) {
-      return Buffer.allocUnsafe(bytes).fill(0);
-    };
-    assertIsBuffer = function(input) {
-      if (!Buffer.isBuffer(input)) {
-        const msg = `This method only supports Buffer but input was: ${input}`;
-        throw new Error(msg);
-      }
-    };
-    setLength = function(msg, length, right) {
-      const buf = zeros(length);
-      if (right) {
-        if (msg.length < length) {
-          msg.copy(buf);
-          return buf;
-        }
-        return msg.slice(0, length);
-      } else {
-        if (msg.length < length) {
-          msg.copy(buf, length - msg.length);
-          return buf;
-        }
-        return msg.slice(-length);
-      }
-    };
-    setLengthRight = function(msg, length) {
-      assertIsBuffer(msg);
-      return setLength(msg, length, true);
-    };
-    intToHex = function(i) {
-      if (!Number.isSafeInteger(i) || i < 0) {
-        throw new Error(`Received an invalid integer type: ${i}`);
-      }
-      return `0x${i.toString(16)}`;
-    };
-    intToBuffer = function(i) {
-      const hex = intToHex(i);
-      return Buffer.from(padToEven(hex.slice(2)), "hex");
-    };
-    bufferToHex = function(buf) {
-      buf = toBuffer(buf);
-      return "0x" + buf.toString("hex");
-    };
-    addHexPrefix = function(str) {
-      if (typeof str !== "string") {
-        return str;
-      }
-      return isHexPrefixed(str) ? str : "0x" + str;
-    };
-    toBuffer = function(v) {
-      if (v === null || v === void 0) {
-        return Buffer.allocUnsafe(0);
-      }
-      if (Buffer.isBuffer(v)) {
-        return Buffer.from(v);
-      }
-      if (Array.isArray(v) || v instanceof Uint8Array) {
-        return Buffer.from(v);
-      }
-      if (typeof v === "string") {
-        if (!isHexString(v)) {
-          throw new Error(`Cannot convert string to buffer. toBuffer only supports 0x-prefixed hex strings and this string was given: ${v}`);
-        }
-        return Buffer.from(padToEven(stripHexPrefix(v)), "hex");
-      }
-      if (typeof v === "number") {
-        return intToBuffer(v);
-      }
-      if (typeof v === "bigint") {
-        if (v < BigInt(0)) {
-          throw new Error(`Cannot convert negative bigint to buffer. Given: ${v}`);
-        }
-        let n = v.toString(16);
-        if (n.length % 2)
-          n = "0" + n;
-        return Buffer.from(n, "hex");
-      }
-      if (v.toArray) {
-        return Buffer.from(v.toArray());
-      }
-      if (v.toBuffer) {
-        return Buffer.from(v.toBuffer());
-      }
-      throw new Error("invalid type");
-    };
-  }
-});
-
 // src/wallet.ts
 var require_wallet = __commonJS({
   "src/wallet.ts"(exports, module2) {
     var W3 = __toModule(require("web3"));
-    var import_bignumber5 = __toModule(require("bignumber.js"));
+    var import_bignumber7 = __toModule(require("bignumber.js"));
     init_erc20();
-    var import_kms = __toModule(require_kms());
     init_utils();
-    init_types();
-    init_signTypedData();
     var Web32 = initWeb3Lib();
     var Web3Modal;
     var WalletConnectProvider;
@@ -1352,7 +579,7 @@ var require_wallet = __commonJS({
           return result;
         } else if (typeof value === "number")
           return value.toString(10);
-        else if (import_bignumber5.BigNumber.isBigNumber(value))
+        else if (import_bignumber7.BigNumber.isBigNumber(value))
           return value.toFixed();
         else
           return value;
@@ -1416,7 +643,7 @@ var require_wallet = __commonJS({
       ;
       const WalletUtils = {
         fromWei(value) {
-          return new import_bignumber5.BigNumber(W3.default.utils.fromWei(value));
+          return new import_bignumber7.BigNumber(W3.default.utils.fromWei(value));
         }
       };
       _Wallet.DefaultNetworksMap = {
@@ -2106,8 +1333,6 @@ var require_wallet = __commonJS({
             if (!this._account.address)
               this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
             return this._account.address;
-          } else if (this._kms && this._account) {
-            return this._account.address;
           } else if (this._web3.selectedAddress) {
             return this._web3.selectedAddress;
           } else if (this._web3.eth.defaultAccount) {
@@ -2125,7 +1350,6 @@ var require_wallet = __commonJS({
           };
         }
         set account(value) {
-          this._kms = null;
           this._web3.eth.defaultAccount = "";
           this._account = value;
         }
@@ -2215,10 +1439,6 @@ var require_wallet = __commonJS({
               to: tx.to
             }, privateKey ? privateKey : this._account.privateKey);
             return signedTx.rawTransaction;
-          } else if (this._account && this._account.kms) {
-            let chainId = await this.getChainId();
-            let txHash = await this.kms.signTransaction(chainId, tx);
-            return txHash;
           } else {
             let t = await _web3.eth.signTransaction({
               from: this.address,
@@ -2531,24 +1751,6 @@ var require_wallet = __commonJS({
               if (methodName == "deploy")
                 return result.contractAddress;
               return result;
-            } else if (this._account && this._account.kms) {
-              let nonce = await _web3.eth.getTransactionCount(this.address);
-              let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-              let tx = {
-                from: this.address,
-                nonce,
-                gasPrice: price,
-                gasLimit: gas,
-                gas,
-                to: address,
-                data: method.encodeABI()
-              };
-              let chainId = await this.getChainId();
-              let txHash = await this.kms.signTransaction(chainId, tx);
-              result = await _web3.eth.sendSignedTransaction(txHash);
-              if (methodName == "deploy")
-                return result.contractAddress;
-              return result;
             } else {
               contract.options.address = address;
               let nonce = await _web3.eth.getTransactionCount(this.address);
@@ -2594,9 +1796,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(self.address);
-              resolve(new import_bignumber5.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber7.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber5.BigNumber(0));
+              resolve(new import_bignumber7.BigNumber(0));
             }
           });
         }
@@ -2610,9 +1812,9 @@ var require_wallet = __commonJS({
               if (network && network.nativeCurrency && network.nativeCurrency.decimals)
                 decimals = network.nativeCurrency.decimals;
               let result = await _web3.eth.getBalance(address);
-              resolve(new import_bignumber5.BigNumber(result).div(10 ** decimals));
+              resolve(new import_bignumber7.BigNumber(result).div(10 ** decimals));
             } catch (err) {
-              resolve(new import_bignumber5.BigNumber(0));
+              resolve(new import_bignumber7.BigNumber(0));
             }
           });
         }
@@ -2644,24 +1846,8 @@ var require_wallet = __commonJS({
           else
             return block.timestamp;
         }
-        async initKMS(value) {
-          value = value || this._account.kms;
-          if (value) {
-            this._kms = new import_kms.KMS(value);
-            this._account = {
-              address: await this._kms.getAddress(),
-              kms: value
-            };
-          }
-        }
-        get kms() {
-          if (this._account && !this._kms && this._account.kms)
-            this._kms = new import_kms.KMS(this._account.kms);
-          return this._kms;
-        }
         set privateKey(value) {
           if (value) {
-            this._kms = null;
             this._web3.eth.defaultAccount = "";
           }
           this._account = {
@@ -2820,7 +2006,7 @@ var require_wallet = __commonJS({
             try {
               let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
               let result;
-              if (self._account && self._account.privateKey || self.kms) {
+              if (self._account && self._account.privateKey) {
                 let nonce = await _web3.eth.getTransactionCount(address);
                 let gas = await _web3.eth.estimateGas({
                   from: address,
@@ -2838,14 +2024,8 @@ var require_wallet = __commonJS({
                   to,
                   value
                 };
-                if (self.kms) {
-                  let chainId = await self.getChainId();
-                  let txHash = await self.kms.signTransaction(chainId, tx);
-                  result = await _web3.eth.sendSignedTransaction(txHash);
-                } else {
-                  let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-                  result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-                }
+                let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
+                result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
                 resolve(result);
               } else {
                 result = await _web3.eth.sendTransaction({ from: address, to, value: _web3.utils.toWei(amount.toString()).toString() });
@@ -2914,10 +2094,7 @@ var require_wallet = __commonJS({
           let promise = new Promise(async function(resolve, reject) {
             try {
               let result;
-              if (self.kms) {
-                result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg));
-                resolve(result);
-              } else if (self._account && self._account.privateKey) {
+              if (self._account && self._account.privateKey) {
                 result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
                 resolve(result.signature);
               } else if (typeof window !== "undefined" && self.clientSideProvider) {
@@ -2935,62 +2112,6 @@ var require_wallet = __commonJS({
             this.provider = currentProvider;
           });
           return promise;
-        }
-        signTypedDataV4(data) {
-          let self = this;
-          let currentProvider = this.provider;
-          let promise;
-          if (typeof window !== "undefined" && this.clientSideProvider) {
-            this.provider = this.clientSideProvider.provider;
-            promise = new Promise(async (resolve, reject) => {
-              try {
-                self._web3.currentProvider.send({
-                  jsonrpc: "2.0",
-                  method: "eth_signTypedData_v4",
-                  params: [
-                    self.defaultAccount,
-                    JSON.stringify(data)
-                  ],
-                  id: Date.now()
-                }, function(err, result) {
-                  if (err)
-                    return reject(err);
-                  if (result.error)
-                    return reject(result.error);
-                  let signature = result.result;
-                  resolve(signature);
-                });
-              } catch (e) {
-                reject(e);
-              }
-            });
-            promise.finally(() => {
-              this.provider = currentProvider;
-            });
-          } else {
-            promise = new Promise(async (resolve, reject) => {
-              try {
-                let signature = signTypedDataWithPrivateKey({
-                  privateKey: this._account.privateKey,
-                  data,
-                  version: SignTypedDataVersion.V4
-                });
-                resolve(signature);
-              } catch (e) {
-                reject(e);
-              }
-            });
-          }
-          return promise;
-        }
-        recoverTypedSignatureV4(data, signature) {
-          let signer = recoverTypedSignature({
-            signature,
-            data,
-            version: SignTypedDataVersion.V4
-          });
-          signer = this._web3.utils.toChecksumAddress(signer);
-          return signer;
         }
         token(tokenAddress, decimals) {
           return new Erc20(this, tokenAddress, decimals);
@@ -3031,14 +2152,14 @@ var require_wallet = __commonJS({
           });
         }
         getGasPrice() {
-          return (async () => new import_bignumber5.BigNumber(await this._web3.eth.getGasPrice()))();
+          return (async () => new import_bignumber7.BigNumber(await this._web3.eth.getGasPrice()))();
         }
         transactionCount() {
           return (async () => await this._web3.eth.getTransactionCount(this.address))();
         }
         async sendTransaction(transaction) {
-          transaction.value = new import_bignumber5.BigNumber(transaction.value).toFixed();
-          transaction.gasPrice = new import_bignumber5.BigNumber(transaction.gasPrice).toFixed();
+          transaction.value = new import_bignumber7.BigNumber(transaction.value).toFixed();
+          transaction.gasPrice = new import_bignumber7.BigNumber(transaction.gasPrice).toFixed();
           let currentProvider = this.provider;
           try {
             if (typeof window !== "undefined" && this.clientSideProvider) {
@@ -3047,10 +2168,6 @@ var require_wallet = __commonJS({
             if (this._account && this._account.privateKey) {
               let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
               return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-            } else if (this._account && this._account.kms) {
-              let chainId = await this.getChainId();
-              let signedTx = await this.kms.signTransaction(chainId, transaction);
-              return await this._web3.eth.sendSignedTransaction(signedTx);
             } else {
               let promiEvent = this._web3.eth.sendTransaction(transaction);
               promiEvent.on("error", (error) => {
@@ -3091,8 +2208,8 @@ var require_wallet = __commonJS({
           return this._web3.eth.getTransactionReceipt(transactionHash);
         }
         call(transaction) {
-          transaction.value = new import_bignumber5.BigNumber(transaction.value).toFixed();
-          transaction.gasPrice = new import_bignumber5.BigNumber(transaction.gasPrice).toFixed();
+          transaction.value = new import_bignumber7.BigNumber(transaction.value).toFixed();
+          transaction.gasPrice = new import_bignumber7.BigNumber(transaction.gasPrice).toFixed();
           return this._web3.eth.call(transaction);
         }
         newContract(abi, address) {
@@ -3132,11 +2249,11 @@ var require_wallet = __commonJS({
   }
 });
 
-// src/index.ts
+// src/plugin.ts
 __export(exports, {
-  BigNumber: () => import_bignumber4.BigNumber,
+  BigNumber: () => import_bignumber6.BigNumber,
   Constants: () => constants_exports,
-  Contract: () => import_contract2.Contract,
+  Contract: () => import_contract5.Contract,
   Contracts: () => contracts_exports,
   Erc20: () => Erc20,
   Event: () => import_wallet.Event,
@@ -3147,20 +2264,17 @@ __export(exports, {
   ISendTxEventsOptions: () => import_wallet.ISendTxEventsOptions,
   IWallet: () => import_wallet.IWallet,
   IWalletUtils: () => import_wallet.IWalletUtils,
-  MerkleTree: () => MerkleTree,
   Transaction: () => import_wallet.Transaction,
   TransactionReceipt: () => import_wallet.TransactionReceipt,
-  Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => import_wallet.Wallet,
   WalletPlugin: () => import_wallet.WalletPlugin,
   WalletPluginConfig: () => import_wallet.WalletPluginConfig
 });
 var import_wallet = __toModule(require_wallet());
-var import_contract2 = __toModule(require_contract());
-var import_bignumber4 = __toModule(require("bignumber.js"));
+var import_contract5 = __toModule(require_contract());
+var import_bignumber6 = __toModule(require("bignumber.js"));
 init_erc20();
-init_merkleTree();
 init_utils();
 
 // src/contracts/index.ts
@@ -3170,6 +2284,11 @@ __export(contracts_exports, {
   ERC20: () => ERC20,
   ERC721: () => ERC721
 });
+
+// src/contracts/ERC1155/ERC1155.ts
+init_utils();
+var import_contract2 = __toModule(require_contract());
+var import_bignumber3 = __toModule(require("bignumber.js"));
 
 // src/contracts/ERC1155/ERC1155.json.ts
 var ERC1155_json_default = {
@@ -3221,8 +2340,8 @@ var ERC1155 = class extends import_contract2.Contract {
       operator: result.operator,
       from: result.from,
       to: result.to,
-      ids: result.ids.map((e) => new import_bignumber4.BigNumber(e)),
-      values: result.values.map((e) => new import_bignumber4.BigNumber(e)),
+      ids: result.ids.map((e) => new import_bignumber3.BigNumber(e)),
+      values: result.values.map((e) => new import_bignumber3.BigNumber(e)),
       _event: event
     };
   }
@@ -3235,8 +2354,8 @@ var ERC1155 = class extends import_contract2.Contract {
       operator: result.operator,
       from: result.from,
       to: result.to,
-      id: new import_bignumber4.BigNumber(result.id),
-      value: new import_bignumber4.BigNumber(result.value),
+      id: new import_bignumber3.BigNumber(result.id),
+      value: new import_bignumber3.BigNumber(result.value),
       _event: event
     };
   }
@@ -3247,21 +2366,21 @@ var ERC1155 = class extends import_contract2.Contract {
     let result = event.data;
     return {
       value: result.value,
-      id: new import_bignumber4.BigNumber(result.id),
+      id: new import_bignumber3.BigNumber(result.id),
       _event: event
     };
   }
   assign() {
-    let balanceOfParams = (params) => [params.account, utils_exports.toString(params.id)];
+    let balanceOfParams = (params) => [params.account, toString(params.id)];
     let balanceOf_call = async (params) => {
       let result = await this.call("balanceOf", balanceOfParams(params));
-      return new import_bignumber4.BigNumber(result);
+      return new import_bignumber3.BigNumber(result);
     };
     this.balanceOf = balanceOf_call;
-    let balanceOfBatchParams = (params) => [params.accounts, utils_exports.toString(params.ids)];
+    let balanceOfBatchParams = (params) => [params.accounts, toString(params.ids)];
     let balanceOfBatch_call = async (params) => {
       let result = await this.call("balanceOfBatch", balanceOfBatchParams(params));
-      return result.map((e) => new import_bignumber4.BigNumber(e));
+      return result.map((e) => new import_bignumber3.BigNumber(e));
     };
     this.balanceOfBatch = balanceOfBatch_call;
     let isApprovedForAllParams = (params) => [params.account, params.operator];
@@ -3276,11 +2395,11 @@ var ERC1155 = class extends import_contract2.Contract {
     };
     this.supportsInterface = supportsInterface_call;
     let uri_call = async (param1) => {
-      let result = await this.call("uri", [utils_exports.toString(param1)]);
+      let result = await this.call("uri", [toString(param1)]);
       return result;
     };
     this.uri = uri_call;
-    let safeBatchTransferFromParams = (params) => [params.from, params.to, utils_exports.toString(params.ids), utils_exports.toString(params.amounts), utils_exports.stringToBytes(params.data)];
+    let safeBatchTransferFromParams = (params) => [params.from, params.to, toString(params.ids), toString(params.amounts), stringToBytes(params.data)];
     let safeBatchTransferFrom_send = async (params) => {
       let result = await this.send("safeBatchTransferFrom", safeBatchTransferFromParams(params));
       return result;
@@ -3292,7 +2411,7 @@ var ERC1155 = class extends import_contract2.Contract {
     this.safeBatchTransferFrom = Object.assign(safeBatchTransferFrom_send, {
       call: safeBatchTransferFrom_call
     });
-    let safeTransferFromParams = (params) => [params.from, params.to, utils_exports.toString(params.id), utils_exports.toString(params.amount), utils_exports.stringToBytes(params.data)];
+    let safeTransferFromParams = (params) => [params.from, params.to, toString(params.id), toString(params.amount), stringToBytes(params.data)];
     let safeTransferFrom_send = async (params) => {
       let result = await this.send("safeTransferFrom", safeTransferFromParams(params));
       return result;
@@ -3319,6 +2438,11 @@ var ERC1155 = class extends import_contract2.Contract {
   }
 };
 
+// src/contracts/ERC20/ERC20.ts
+init_utils();
+var import_contract3 = __toModule(require_contract());
+var import_bignumber4 = __toModule(require("bignumber.js"));
+
 // src/contracts/ERC20/ERC20.json.ts
 var ERC20_json_default = {
   "abi": [
@@ -3341,7 +2465,7 @@ var ERC20_json_default = {
 };
 
 // src/contracts/ERC20/ERC20.ts
-var ERC20 = class extends import_contract2.Contract {
+var ERC20 = class extends import_contract3.Contract {
   constructor(wallet, address) {
     super(wallet, address, ERC20_json_default.abi, ERC20_json_default.bytecode);
     this.assign();
@@ -3405,7 +2529,7 @@ var ERC20 = class extends import_contract2.Contract {
       return new import_bignumber4.BigNumber(result);
     };
     this.totalSupply = totalSupply_call;
-    let approveParams = (params) => [params.spender, utils_exports.toString(params.amount)];
+    let approveParams = (params) => [params.spender, toString(params.amount)];
     let approve_send = async (params) => {
       let result = await this.send("approve", approveParams(params));
       return result;
@@ -3417,7 +2541,7 @@ var ERC20 = class extends import_contract2.Contract {
     this.approve = Object.assign(approve_send, {
       call: approve_call
     });
-    let decreaseAllowanceParams = (params) => [params.spender, utils_exports.toString(params.subtractedValue)];
+    let decreaseAllowanceParams = (params) => [params.spender, toString(params.subtractedValue)];
     let decreaseAllowance_send = async (params) => {
       let result = await this.send("decreaseAllowance", decreaseAllowanceParams(params));
       return result;
@@ -3429,7 +2553,7 @@ var ERC20 = class extends import_contract2.Contract {
     this.decreaseAllowance = Object.assign(decreaseAllowance_send, {
       call: decreaseAllowance_call
     });
-    let increaseAllowanceParams = (params) => [params.spender, utils_exports.toString(params.addedValue)];
+    let increaseAllowanceParams = (params) => [params.spender, toString(params.addedValue)];
     let increaseAllowance_send = async (params) => {
       let result = await this.send("increaseAllowance", increaseAllowanceParams(params));
       return result;
@@ -3441,7 +2565,7 @@ var ERC20 = class extends import_contract2.Contract {
     this.increaseAllowance = Object.assign(increaseAllowance_send, {
       call: increaseAllowance_call
     });
-    let transferParams = (params) => [params.to, utils_exports.toString(params.amount)];
+    let transferParams = (params) => [params.to, toString(params.amount)];
     let transfer_send = async (params) => {
       let result = await this.send("transfer", transferParams(params));
       return result;
@@ -3453,7 +2577,7 @@ var ERC20 = class extends import_contract2.Contract {
     this.transfer = Object.assign(transfer_send, {
       call: transfer_call
     });
-    let transferFromParams = (params) => [params.from, params.to, utils_exports.toString(params.amount)];
+    let transferFromParams = (params) => [params.from, params.to, toString(params.amount)];
     let transferFrom_send = async (params) => {
       let result = await this.send("transferFrom", transferFromParams(params));
       return result;
@@ -3467,6 +2591,11 @@ var ERC20 = class extends import_contract2.Contract {
     });
   }
 };
+
+// src/contracts/ERC721/ERC721.ts
+init_utils();
+var import_contract4 = __toModule(require_contract());
+var import_bignumber5 = __toModule(require("bignumber.js"));
 
 // src/contracts/ERC721/ERC721.json.ts
 var ERC721_json_default = {
@@ -3493,7 +2622,7 @@ var ERC721_json_default = {
 };
 
 // src/contracts/ERC721/ERC721.ts
-var ERC721 = class extends import_contract2.Contract {
+var ERC721 = class extends import_contract4.Contract {
   constructor(wallet, address) {
     super(wallet, address, ERC721_json_default.abi, ERC721_json_default.bytecode);
     this.assign();
@@ -3509,7 +2638,7 @@ var ERC721 = class extends import_contract2.Contract {
     return {
       owner: result.owner,
       approved: result.approved,
-      tokenId: new import_bignumber4.BigNumber(result.tokenId),
+      tokenId: new import_bignumber5.BigNumber(result.tokenId),
       _event: event
     };
   }
@@ -3533,18 +2662,18 @@ var ERC721 = class extends import_contract2.Contract {
     return {
       from: result.from,
       to: result.to,
-      tokenId: new import_bignumber4.BigNumber(result.tokenId),
+      tokenId: new import_bignumber5.BigNumber(result.tokenId),
       _event: event
     };
   }
   assign() {
     let balanceOf_call = async (owner) => {
       let result = await this.call("balanceOf", [owner]);
-      return new import_bignumber4.BigNumber(result);
+      return new import_bignumber5.BigNumber(result);
     };
     this.balanceOf = balanceOf_call;
     let getApproved_call = async (tokenId) => {
-      let result = await this.call("getApproved", [utils_exports.toString(tokenId)]);
+      let result = await this.call("getApproved", [toString(tokenId)]);
       return result;
     };
     this.getApproved = getApproved_call;
@@ -3560,7 +2689,7 @@ var ERC721 = class extends import_contract2.Contract {
     };
     this.name = name_call;
     let ownerOf_call = async (tokenId) => {
-      let result = await this.call("ownerOf", [utils_exports.toString(tokenId)]);
+      let result = await this.call("ownerOf", [toString(tokenId)]);
       return result;
     };
     this.ownerOf = ownerOf_call;
@@ -3575,11 +2704,11 @@ var ERC721 = class extends import_contract2.Contract {
     };
     this.symbol = symbol_call;
     let tokenURI_call = async (tokenId) => {
-      let result = await this.call("tokenURI", [utils_exports.toString(tokenId)]);
+      let result = await this.call("tokenURI", [toString(tokenId)]);
       return result;
     };
     this.tokenURI = tokenURI_call;
-    let approveParams = (params) => [params.to, utils_exports.toString(params.tokenId)];
+    let approveParams = (params) => [params.to, toString(params.tokenId)];
     let approve_send = async (params) => {
       let result = await this.send("approve", approveParams(params));
       return result;
@@ -3591,7 +2720,7 @@ var ERC721 = class extends import_contract2.Contract {
     this.approve = Object.assign(approve_send, {
       call: approve_call
     });
-    let safeTransferFromParams = (params) => [params.from, params.to, utils_exports.toString(params.tokenId)];
+    let safeTransferFromParams = (params) => [params.from, params.to, toString(params.tokenId)];
     let safeTransferFrom_send = async (params) => {
       let result = await this.send("safeTransferFrom", safeTransferFromParams(params));
       return result;
@@ -3603,7 +2732,7 @@ var ERC721 = class extends import_contract2.Contract {
     this.safeTransferFrom = Object.assign(safeTransferFrom_send, {
       call: safeTransferFrom_call
     });
-    let safeTransferFrom_1Params = (params) => [params.from, params.to, utils_exports.toString(params.tokenId), utils_exports.stringToBytes(params.data)];
+    let safeTransferFrom_1Params = (params) => [params.from, params.to, toString(params.tokenId), stringToBytes(params.data)];
     let safeTransferFrom_1_send = async (params) => {
       let result = await this.send("safeTransferFrom", safeTransferFromParams(params));
       return result;
@@ -3627,7 +2756,7 @@ var ERC721 = class extends import_contract2.Contract {
     this.setApprovalForAll = Object.assign(setApprovalForAll_send, {
       call: setApprovalForAll_call
     });
-    let transferFromParams = (params) => [params.from, params.to, utils_exports.toString(params.tokenId)];
+    let transferFromParams = (params) => [params.from, params.to, toString(params.tokenId)];
     let transferFrom_send = async (params) => {
       let result = await this.send("transferFrom", transferFromParams(params));
       return result;
@@ -3642,8 +2771,7 @@ var ERC721 = class extends import_contract2.Contract {
   }
 };
 
-// src/index.ts
-init_types();
+// src/plugin.ts
 init_constants();
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.

@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { Wallet } from "./wallet";
-import { IMerkleTreeAbiItem } from "./types";
+import { IMerkleTreeAbiItem } from "./nodeTypes";
 export interface IMerkleTreeOptions {
     leavesData: Record<string, any>[];
     abi: IMerkleTreeAbiItem[];

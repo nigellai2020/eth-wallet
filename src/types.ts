@@ -14,11 +14,6 @@
 *  https://github.com/ethereumjs/ethereumjs-monorepo/tree/master/packages/util
 *--------------------------------------------------------------------------------------------*/
 
-export interface IMerkleTreeAbiItem {
-    name: string;
-    type: string;
-}
-
 export interface MessageTypeProperty {
     name: string;
     type: string;
@@ -56,28 +51,3 @@ export interface TypedMessage<T extends MessageTypes> {
     };
     message: Record<string, unknown>;
 }
-
-export interface TransformableToArray {
-    toArray(): Uint8Array
-    toBuffer?(): Buffer
-}
-
-export interface TransformableToBuffer {
-    toBuffer(): Buffer
-    toArray?(): Uint8Array
-}
-
-export type NestedUint8Array = Array<Uint8Array | NestedUint8Array>
-export type NestedBufferArray = Array<Buffer | NestedBufferArray>
-export type PrefixedHexString = string
-export type ToBufferInputTypes =
-    | PrefixedHexString
-    | number
-    | bigint
-    | Buffer
-    | Uint8Array
-    | number[]
-    | TransformableToArray
-    | TransformableToBuffer
-    | null
-    | undefined

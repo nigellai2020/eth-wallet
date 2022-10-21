@@ -8,10 +8,8 @@ import * as W3 from 'web3';
 const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
-import {KMS} from './kms';
 import * as Utils from "./utils";
-import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
-import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
+
 let Web3Modal;
 let WalletConnectProvider;
 
@@ -926,16 +924,15 @@ module Wallet{
 		confirmation?: (receipt: any) => void;
 	};	
     export class Wallet implements IWallet{
-		private _web3: W3.default;		
-        private _account: IAccount;
+		protected _web3: W3.default;		
+        protected _account: IAccount;
 		private _accounts: IAccount[];
-		private _kms: KMS;		
 		private _provider: any;
 		private _eventTopicAbi: {[topic:string]:any} = {};
 		private _eventHandler = {};
-		private _sendTxEventHandler: ISendTxEventsOptions = {};
-		private _contracts = {};
-		private _blockGasLimit: number;
+		protected _sendTxEventHandler: ISendTxEventsOptions = {};
+		protected _contracts = {};
+		protected _blockGasLimit: number;
 		private _networksMap: NetworksMapType = {};    
 		public chainId: number;   
 		public clientSideProvider: ClientSideProvider;  
@@ -1044,9 +1041,6 @@ module Wallet{
 					this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
         		return this._account.address;
         	}
-			else if (this._kms && this._account){
-				return this._account.address
-			}
 			else if ((<any>this._web3).selectedAddress){				
 				return (<any>this._web3).selectedAddress
 			}
@@ -1066,7 +1060,6 @@ module Wallet{
 			}
 		}
         set account(value: IAccount){
-			this._kms = null;
 			this._web3.eth.defaultAccount = '';
             this._account = value;
         }
@@ -1160,11 +1153,6 @@ module Wallet{
 					to: tx.to
 				}, privateKey?privateKey:this._account.privateKey);
 				return signedTx.rawTransaction;
-			}
-			else if (this._account && this._account.kms){	
-				let chainId = await this.getChainId();
-				let txHash = await this.kms.signTransaction(chainId, tx);
-				return txHash;
 			}
 			else{
 				let t = await _web3.eth.signTransaction(<any>{
@@ -1502,25 +1490,6 @@ module Wallet{
 						return result.contractAddress;
 					return result;
 				}
-				else if (this._account && this._account.kms){
-					let nonce = await _web3.eth.getTransactionCount(this.address);
-					let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-					let tx = {
-						from: this.address,
-						nonce: nonce,
-						gasPrice: price,
-						gasLimit: gas,
-						gas: gas,
-						to: address,
-						data: method.encodeABI(),
-					};
-					let chainId = await this.getChainId();
-					let txHash = await this.kms.signTransaction(chainId, tx);
-					result = await _web3.eth.sendSignedTransaction(txHash)
-					if (methodName == 'deploy')
-						return result.contractAddress;
-					return result;
-				}
 				else{					
 					contract.options.address = address;
 					let nonce = await _web3.eth.getTransactionCount(this.address);
@@ -1621,25 +1590,9 @@ module Wallet{
 				return parseInt(block.timestamp)
 			else	
 				return <number>block.timestamp
-		};		
-		async initKMS(value?: IKMS){			
-			value = value || this._account.kms;			
-			if (value){
-				this._kms = new KMS(value);
-				this._account = {
-					address: await this._kms.getAddress(),
-					kms: value
-				};
-			}
-		};
-		private get kms(): KMS{
-			if (this._account && !this._kms && this._account.kms)
-				this._kms = new KMS(this._account.kms);
-			return this._kms;
 		};
         set privateKey(value: string){
 			if (value){
-				this._kms = null;
 				this._web3.eth.defaultAccount = '';
 			}			
         	this._account = {
@@ -1841,7 +1794,7 @@ module Wallet{
         		try{
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
-        			if ((self._account && self._account.privateKey) || self.kms){
+        			if ((self._account && self._account.privateKey)){
 						let nonce = await _web3.eth.getTransactionCount(address);        				
         				let gas = await _web3.eth.estimateGas({
 						     from: address,       
@@ -1859,15 +1812,8 @@ module Wallet{
 						    to: to,     
 					    	value: value
 						};
-						if (self.kms){
-							let chainId = await self.getChainId();
-							let txHash = await self.kms.signTransaction(chainId, tx);
-							result = await _web3.eth.sendSignedTransaction(txHash);
-						}
-						else{
-							let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-							result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
-						}						
+						let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
+						result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 						resolve(result);	
         			}
         			else{
@@ -1939,11 +1885,8 @@ module Wallet{
 			}
 			let promise = new Promise<string>(async function(resolve, reject){
 				try{
-					let result;
-					if (self.kms){
-						result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg))
-						resolve(result);
-					}else if (self._account && self._account.privateKey){
+					let result;					
+					if (self._account && self._account.privateKey){
 						result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
 						resolve(result.signature);
 					}
@@ -1964,64 +1907,7 @@ module Wallet{
 				this.provider = currentProvider;
 			})
 			return promise;
-        };
-		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
-			let self = this;
-			let currentProvider = this.provider;
-			let promise;
-			if (typeof window !== "undefined" && this.clientSideProvider) {
-				this.provider = this.clientSideProvider.provider;
-				promise = new Promise<string>(async (resolve, reject) => {
-					try {
-						((<any>self._web3.currentProvider)).send({
-							jsonrpc: "2.0",
-							method: 'eth_signTypedData_v4',
-							params: [
-								self.defaultAccount,
-								JSON.stringify(data)
-							],
-							id: Date.now()
-						}, function (err: Error, result: any) {
-							if (err)
-								return reject(err);
-							if (result.error)
-								return reject(result.error);
-							let signature = result.result;
-							resolve(signature);
-						});		
-					} catch (e) {
-						reject(e);
-					}
-				});
-				promise.finally(() => {
-					this.provider = currentProvider;
-				})
-			}
-			else {
-				promise = new Promise<string>(async (resolve, reject) => {
-					try {
-						let signature = signTypedDataWithPrivateKey({
-							privateKey: this._account.privateKey,
-							data: data,
-							version: SignTypedDataVersion.V4
-						});
-						resolve(signature);
-					} catch (e) {
-						reject(e);
-					}
-				});
-			}
-			return promise;
-		}	
-		recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string {
-			let signer = recoverTypedSignature({
-				signature: signature,
-				data: data,
-				version: SignTypedDataVersion.V4
-			})
-			signer = this._web3.utils.toChecksumAddress(signer);
-			return signer;
-		}	
+        };		
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
 		};
@@ -2079,11 +1965,6 @@ module Wallet{
 				if (this._account && this._account.privateKey){
 					let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
 					return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-				}
-				else if (this._account && this._account.kms){
-					let chainId = await this.getChainId();
-					let signedTx = await this.kms.signTransaction(chainId, transaction);
-					return await this._web3.eth.sendSignedTransaction(signedTx);
 				}
 				else {
 					let promiEvent = this._web3.eth.sendTransaction(transaction);

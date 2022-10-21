@@ -3,10 +3,9 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-
-import * as AwsSDK from 'aws-sdk';
-import * as asn1 from 'asn1.js';
-import BN from 'bn.js';
+import * as AwsSDK from 'aws-sdk'; 
+import * as asn1 from 'asn1.js'; 
+import BN from 'bn.js'; /* @ts-ignore */
 import * as ethutil from 'ethereumjs-util';
 import { Transaction, TxData } from 'ethereumjs-tx';
 // const keccak256 = require('./sha3').keccak256;

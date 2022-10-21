@@ -8,7 +8,6 @@ export {
     IWallet, 
     IWalletUtils, 
     IAccount, 
-    Wallet, 
     Transaction, 
     Event, 
     TransactionReceipt, 
@@ -19,6 +18,7 @@ export {
     IBatchRequestObj,
     INetwork
 } from './wallet';
+export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
 export {Erc20} from './contracts/erc20';
@@ -28,7 +28,7 @@ export {
     IGetMerkleProofOptions,
     IGetMerkleLeafDataOptions
 } from './merkleTree';
-export * as Utils from './utils';
+export * as Utils from './nodeUtils';
 export * as Contracts from './contracts';
-export * as Types from './types';
+export * as Types from './nodeTypes';
 export * as Constants from './constants';

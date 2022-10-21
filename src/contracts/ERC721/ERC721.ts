@@ -1,4 +1,7 @@
-import {IWallet, Contract, Transaction, TransactionReceipt, Utils, BigNumber, Event, IBatchRequestObj} from "../../";
+import {IWallet, TransactionReceipt, Event} from "../../wallet";
+import * as Utils from '../../utils';
+import {Contract} from '../../contract';
+import {BigNumber} from "bignumber.js";
 import Bin from "./ERC721.json";
 
 export interface IDeployParams {name:string;symbol:string}

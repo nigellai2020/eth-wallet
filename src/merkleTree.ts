@@ -6,8 +6,8 @@
 
 import { BigNumber } from "bignumber.js";
 import { Wallet } from "./wallet";
-import { IMerkleTreeAbiItem } from "./types";
-import { getSha3HashBufferFunc } from "./utils";
+import { IMerkleTreeAbiItem } from "./nodeTypes";
+import { getSha3HashBufferFunc } from "./nodeUtils";
 
 interface IMerkleNodeInfo {
     parent: string;
