@@ -225,8 +225,6 @@ declare module "bignumber.js" {
 }
 declare module "web3"{
     export default class {}
-    // export const dummy:any;
-    // export default dummy;
 }
 declare module "contract" {
     /*!-----------------------------------------------------------
