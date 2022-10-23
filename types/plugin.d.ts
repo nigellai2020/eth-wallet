@@ -3,6 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
+/// <amd-module name="@ijstech/eth-wallet" />
 export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, WalletPlugin, WalletPluginConfig, IBatchRequestObj, INetwork } from './wallet';
 export { Contract } from './contract';
 export { BigNumber } from "bignumber.js";

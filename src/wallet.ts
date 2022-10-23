@@ -33,7 +33,7 @@ function initWeb3ModalLib(callback: () => void){
 		})		
 	}
 };
-module Wallet{    	
+// module Wallet{    	
 	export function toString(value: any) {
 		if (Array.isArray(value)) {
 			let result = [];
@@ -2041,5 +2041,5 @@ module Wallet{
 			return this._web3;
 		}
 	}
-};
-export = Wallet;
+// };
+// export = Wallet;

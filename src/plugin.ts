@@ -3,7 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-
+///<amd-module name='@ijstech/eth-wallet'/>
 export {
     IWallet, 
     IWalletUtils, 

@@ -31,8 +31,8 @@
         "typescript": "4.2.4"
     },
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && rm -rf pluginTypes && rm -rf dist && npm run build:types && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "build:types": "tsc --P tsconfig.pluginTypes.json",
+        "build": "rm -rf lib && rm -rf types && rm -rf dist && npm run build:pluginTypes && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
+        "build:pluginTypes": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json && cat src/types/bignumber src/types/web3 pluginTypes/index.d.ts > pluginTypes/tmp && mv pluginTypes/tmp pluginTypes/index.d.ts",
         "build:tools": "cd tools && rm -rf bin && tsc && cd ..",
         "build:test": "rm -f test/contracts/*.ts && sol2ts test/test-contracts.json",
         "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
