@@ -28,9 +28,13 @@ async function build() {
     plugins: [],
   }).catch(() => process.exit(1));
   let content = await readFile('dist/plugin.js');
-  content = `define("aws-sdk", ()=>{});
-define("asn1.js", ()=>{});
-define("bn.js", ()=>{});
+  let web3 = await readFile('node_modules/web3/dist/web3.min.js');
+  let bignumber = await readFile('node_modules/bignumber.js/bignumber.min.js');
+//   define("aws-sdk", ()=>{});
+// define("asn1.js", ()=>{});
+// define("bn.js", ()=>{});
+  content = `${web3}
+${bignumber}
 define("ethereumjs-tx", ()=>{});
 define("ethereumjs-util", ()=>{});
 define("ethereum-cryptography/keccak", ()=>{});
