@@ -1259,12 +1259,12 @@ var Web3ModalProvider = class extends ClientSideProvider {
 function createClientSideProvider(wallet, walletPlugin, events, providerOptions) {
   if (Wallet.isInstalled(walletPlugin)) {
     if (walletPlugin == WalletPlugin.BinanceChainWallet) {
-      return new BinanceChainWalletProvider(wallet, walletPlugin, events);
+      return new BinanceChainWalletProvider(wallet, walletPlugin, events, providerOptions);
     }
     if (walletPlugin == WalletPlugin.WalletConnect) {
       return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
     } else {
-      return new ClientSideProvider(wallet, walletPlugin, events);
+      return new ClientSideProvider(wallet, walletPlugin, events, providerOptions);
     }
   }
   return null;
