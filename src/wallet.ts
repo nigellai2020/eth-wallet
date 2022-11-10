@@ -908,13 +908,13 @@ function initWeb3ModalLib(callback: () => void){
 	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
 		if (Wallet.isInstalled(walletPlugin)) {
 			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
-				return new BinanceChainWalletProvider(wallet, walletPlugin, events);
+				return new BinanceChainWalletProvider(wallet, walletPlugin, events, providerOptions);
 			}
 			if (walletPlugin == WalletPlugin.WalletConnect) {
 				return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
 			}
 			else {
-				return new ClientSideProvider(wallet, walletPlugin, events);
+				return new ClientSideProvider(wallet, walletPlugin, events, providerOptions);
 			}
 		}
 		return null;
