@@ -446,6 +446,7 @@ declare module "wallet" {
     import * as W3 from 'web3';
     import { BigNumber } from 'bignumber.js';
     import { Erc20 } from "contracts/erc20";
+    import { MessageTypes, TypedMessage } from "types";
     export function toString(value: any): any;
     export function stringToBytes32(value: string | stringArray): string | string[];
     export function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
@@ -820,6 +821,7 @@ declare module "wallet" {
         setBlockTime(time: number): Promise<any>;
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
+        signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;
