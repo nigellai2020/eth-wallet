@@ -27,8 +27,8 @@ function initWeb3Lib(){
 function initWeb3ModalLib(callback: () => void){
 	if (typeof window !== "undefined") {
 		RequireJS.require(['WalletConnectProvider', 'Web3Modal'], (walletconnect, web3modal) => {
-			window["WalletConnectProvider"] = walletconnect;
-			window["Web3Modal"] = web3modal;
+			window["WalletConnectProvider"] = walletconnect.WalletConnectProvider;
+			window["Web3Modal"] = web3modal.Web3Modal;
 			callback();
 		})		
 	}
