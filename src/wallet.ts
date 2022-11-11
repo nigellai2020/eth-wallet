@@ -9,6 +9,7 @@ const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
 import {Erc20} from './contracts/erc20';
 import * as Utils from "./utils";
+import { MessageTypes, TypedMessage } from './types';
 
 let Web3Modal;
 let WalletConnectProvider;
@@ -1907,7 +1908,38 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = currentProvider;
 			})
 			return promise;
-        };		
+        };	
+		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
+			let self = this;
+			let currentProvider = this.provider;
+			this.provider = this.clientSideProvider.provider;
+			let promise = new Promise<string>(async (resolve, reject) => {
+				try {
+					((<any>self._web3.currentProvider)).send({
+						jsonrpc: "2.0",
+						method: 'eth_signTypedData_v4',
+						params: [
+							self.defaultAccount,
+							JSON.stringify(data)
+						],
+						id: Date.now()
+					}, function (err: Error, result: any) {
+						if (err)
+							return reject(err);
+						if (result.error)
+							return reject(result.error);
+						let signature = result.result;
+						resolve(signature);
+					});		
+				} catch (e) {
+					reject(e);
+				}
+			});
+			promise.finally(() => {
+				this.provider = currentProvider;
+			})
+			return promise;
+		}			
 		token(tokenAddress: string, decimals?: number): Erc20{
 			return new Erc20(this, tokenAddress, decimals);
 		};
