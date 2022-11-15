@@ -221,10 +221,6 @@ var require_contract = __commonJS({
             return ["NULL"];
           return [result];
         }
-        registerEvents(handler) {
-          if (this._address)
-            this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
-        }
         scanEvents(fromBlock, toBlock, eventNames) {
           let topics = this.getAbiTopics(eventNames);
           let events = this.getAbiEvents();
@@ -1898,20 +1894,6 @@ var _Wallet = class {
       address: "",
       privateKey: value
     };
-  }
-  registerEvent(abi, eventMap, address, handler) {
-    let hash = "";
-    if (typeof abi == "string") {
-      hash = this._web3.utils.sha3(abi);
-      abi = JSON.parse(abi);
-    } else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
-    }
-    this.registerAbiContracts(hash, address, handler);
-    this._eventTopicAbi[hash] = {};
-    for (let topic in eventMap) {
-      this._eventTopicAbi[hash][topic] = eventMap[topic];
-    }
   }
   getAbiEvents(abi) {
     let _web3 = this._web3;
