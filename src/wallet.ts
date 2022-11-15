@@ -182,7 +182,7 @@ function initWeb3ModalLib(callback: () => void){
 		privateKey: string;
 		provider: any;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
-		registerEvent(eventMap:{[topics:string]:any}, address: string, handler: any);
+		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any);
 		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
@@ -1601,12 +1601,18 @@ function initWeb3ModalLib(callback: () => void){
 				privateKey: value
 			}
         };
-		registerEvent(eventMap:{[topics:string]:any}, address: string, handler: any) {
-			for (let topic in eventMap){
-				this._eventTopicAbi[topic] = eventMap[topic];
+		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any) {
+			let hash = '';			
+			if (typeof(abi) == 'string'){
+				hash = this._web3.utils.sha3(abi);
+				abi = JSON.parse(abi);
+			} else {
+				hash = this._web3.utils.sha3(JSON.stringify(abi));
 			}
-			if (address && handler) {
-				this._eventHandler[address] = handler;
+			this.registerAbiContracts(hash, address, handler);
+			this._eventTopicAbi[hash] = {};
+			for (let topic in eventMap){
+				this._eventTopicAbi[hash][topic] = eventMap[topic];
 			}
 		};
         // rollback
@@ -1668,8 +1674,9 @@ function initWeb3ModalLib(callback: () => void){
 
 			let eventMap: any;
 			eventMap = this.getAbiEvents(<any[]>abi);
+			this._eventTopicAbi[hash] = {};
 			for (let topic in eventMap){
-				this._eventTopicAbi[topic] = eventMap[topic];
+				this._eventTopicAbi[hash][topic] = eventMap[topic];
 			}
 			this._abiHashDict[hash] = abi;
 			if (address)
@@ -1723,7 +1730,10 @@ function initWeb3ModalLib(callback: () => void){
 			if (events)
 				event = events[data.topics[0]]
 			else{
-				event = this._eventTopicAbi[data.topics[0]];
+				const abiHash = this._abiAddressDict[data.address];
+				if (abiHash && this._eventTopicAbi[abiHash]) {
+					event = this._eventTopicAbi[abiHash][data.topics[0]];
+				}
 			};
 			let log = this.decode(event, data);
 			let handler = this._eventHandler[data.address]

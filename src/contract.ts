@@ -116,7 +116,7 @@ module Contract {
 		}
         registerEvents(handler: any) {
             if (this._address)
-                this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
+                this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
         }
         scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<Event[]>{
             let topics = this.getAbiTopics(eventNames);

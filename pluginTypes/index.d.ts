@@ -538,7 +538,7 @@ declare module "wallet" {
         privateKey: string;
         provider: any;
         recoverSigner(msg: string, signature: string): Promise<string>;
-        registerEvent(eventMap: {
+        registerEvent(abi: any, eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): any;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
@@ -798,7 +798,7 @@ declare module "wallet" {
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         set privateKey(value: string);
-        registerEvent(eventMap: {
+        registerEvent(abi: any, eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): void;
         private _abiHashDict;
