@@ -98,9 +98,6 @@ export interface IWallet {
     privateKey: string;
     provider: any;
     recoverSigner(msg: string, signature: string): Promise<string>;
-    registerEvent(eventMap: {
-        [topics: string]: any;
-    }, address: string, handler: any): any;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
     send(to: string, amount: number): Promise<TransactionReceipt>;
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
@@ -358,9 +355,6 @@ export declare class Wallet implements IWallet {
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     set privateKey(value: string);
-    registerEvent(eventMap: {
-        [topics: string]: any;
-    }, address: string, handler: any): void;
     private _abiHashDict;
     private _abiContractDict;
     private _abiAddressDict;

@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.22",
+    "version": "0.1.24",
     "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {

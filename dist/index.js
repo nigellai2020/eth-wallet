@@ -221,10 +221,6 @@ var require_contract = __commonJS({
             return ["NULL"];
           return [result];
         }
-        registerEvents(handler) {
-          if (this._address)
-            this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
-        }
         scanEvents(fromBlock, toBlock, eventNames) {
           let topics = this.getAbiTopics(eventNames);
           let events = this.getAbiEvents();
@@ -1899,14 +1895,6 @@ var _Wallet = class {
       privateKey: value
     };
   }
-  registerEvent(eventMap, address, handler) {
-    for (let topic in eventMap) {
-      this._eventTopicAbi[topic] = eventMap[topic];
-    }
-    if (address && handler) {
-      this._eventHandler[address] = handler;
-    }
-  }
   getAbiEvents(abi) {
     let _web3 = this._web3;
     let events = abi.filter((e) => e.type == "event");
@@ -1959,8 +1947,9 @@ var _Wallet = class {
       return hash;
     let eventMap;
     eventMap = this.getAbiEvents(abi);
+    this._eventTopicAbi[hash] = {};
     for (let topic in eventMap) {
-      this._eventTopicAbi[topic] = eventMap[topic];
+      this._eventTopicAbi[hash][topic] = eventMap[topic];
     }
     this._abiHashDict[hash] = abi;
     if (address)
@@ -2012,7 +2001,10 @@ var _Wallet = class {
     if (events)
       event = events[data.topics[0]];
     else {
-      event = this._eventTopicAbi[data.topics[0]];
+      const abiHash = this._abiAddressDict[data.address];
+      if (abiHash && this._eventTopicAbi[abiHash]) {
+        event = this._eventTopicAbi[abiHash][data.topics[0]];
+      }
     }
     ;
     let log = this.decode(event, data);
