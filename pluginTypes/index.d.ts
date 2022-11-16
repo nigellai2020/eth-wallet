@@ -254,6 +254,7 @@ declare module "contract" {
             get events(): EventType[];
             protected getAbiEvents(): any;
             protected getAbiTopics(eventNames?: string[]): any[];
+            registerEvents(handler: any): void;
             scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
             batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
             protected call(methodName: string, params?: any[], options?: any): Promise<any>;
@@ -537,6 +538,9 @@ declare module "wallet" {
         privateKey: string;
         provider: any;
         recoverSigner(msg: string, signature: string): Promise<string>;
+        registerEvent(abi: any, eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): any;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
@@ -794,6 +798,9 @@ declare module "wallet" {
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         set privateKey(value: string);
+        registerEvent(abi: any, eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): void;
         private _abiHashDict;
         private _abiContractDict;
         private _abiAddressDict;

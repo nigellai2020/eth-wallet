@@ -182,7 +182,7 @@ function initWeb3ModalLib(callback: () => void){
 		privateKey: string;
 		provider: any;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
-		// registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any);
+		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any);
 		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
@@ -1601,20 +1601,20 @@ function initWeb3ModalLib(callback: () => void){
 				privateKey: value
 			}
         };
-		// registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any) {
-		// 	let hash = '';			
-		// 	if (typeof(abi) == 'string'){
-		// 		hash = this._web3.utils.sha3(abi);
-		// 		abi = JSON.parse(abi);
-		// 	} else {
-		// 		hash = this._web3.utils.sha3(JSON.stringify(abi));
-		// 	}
-		// 	this.registerAbiContracts(hash, address, handler);
-		// 	this._eventTopicAbi[hash] = {};
-		// 	for (let topic in eventMap){
-		// 		this._eventTopicAbi[hash][topic] = eventMap[topic];
-		// 	}
-		// };
+		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any) {
+			let hash = '';			
+			if (typeof(abi) == 'string'){
+				hash = this._web3.utils.sha3(abi);
+				abi = JSON.parse(abi);
+			} else {
+				hash = this._web3.utils.sha3(JSON.stringify(abi));
+			}
+			this.registerAbiContracts(hash, address, handler);
+			this._eventTopicAbi[hash] = {};
+			for (let topic in eventMap){
+				this._eventTopicAbi[hash][topic] = eventMap[topic];
+			}
+		};
         // rollback
 		private _abiHashDict: IDictionary = {};
 		private _abiContractDict: IDictionary = {};
