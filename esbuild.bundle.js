@@ -33,7 +33,13 @@ async function build() {
 //   define("aws-sdk", ()=>{});
 // define("asn1.js", ()=>{});
 // define("bn.js", ()=>{});
-  content = `${web3}
+  content = `
+var __defineAmdValue;
+if (typeof(define) == 'function'){
+  __defineAmdValue = define.amd;
+  define.amd = null;
+};
+${web3}
 ${bignumber}
 define("ethereumjs-tx", ()=>{});
 define("ethereumjs-util", ()=>{});
@@ -46,7 +52,10 @@ define("bignumber.js", (require,exports)=>{
 });
 define("@ijstech/eth-wallet",(require, exports)=>{
 ${content}
-});`
+});
+if (typeof(define) == 'function')
+  define.amd = __defineAmdValue;
+`
 
   Fs.writeFileSync('dist/plugin.js', content);
   Fs.renameSync('dist/plugin.js', 'dist/index.js');
