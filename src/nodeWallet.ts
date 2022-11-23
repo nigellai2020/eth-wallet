@@ -266,24 +266,23 @@ export class NodeWallet extends Wallet{
         })
     };
     async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
-        transaction.value = new BigNumber(transaction.value).toFixed();
-        transaction.gasPrice = new BigNumber(transaction.gasPrice).toFixed();
+        let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
         let currentProvider = this.provider;
         try {
             if (typeof window !== "undefined" && this.clientSideProvider) {
                 this.provider = this.clientSideProvider.provider;
             }
             if (this._account && this._account.privateKey){
-                let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
+                let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
                 return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
             }
             else if (this._account && this._account.kms){
             	let chainId = await this.getChainId();
-            	let signedTx = await this.kms.signTransaction(chainId, transaction);
+            	let signedTx = await this.kms.signTransaction(chainId, _transaction);
             	return await this._web3.eth.sendSignedTransaction(signedTx);
             }
             else {
-                let promiEvent = this._web3.eth.sendTransaction(transaction);
+                let promiEvent = this._web3.eth.sendTransaction(_transaction);
                 promiEvent.on('error', (error: Error) =>{
                     if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
                         return;

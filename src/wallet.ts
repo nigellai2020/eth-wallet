@@ -170,7 +170,7 @@ function initWeb3ModalLib(callback: () => void){
 		balanceOf(address: string): Promise<BigNumber>;
 		chainId: number;
 		createAccount(): IAccount;
-		_call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
+		_call(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>;
 		decode(abi:any, event:Log|EventLog, raw?:{data: string,topics: string[]}): Event;
 		decodeEventData(data: Log, events?: any): Promise<Event>;
 		decodeLog(inputs: any, hexString: string, topics: any): any;
@@ -183,7 +183,7 @@ function initWeb3ModalLib(callback: () => void){
 		provider: any;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
 		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any);
-		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;
+		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>;
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
 		signMessage(msg: string): Promise<string>;
@@ -210,6 +210,8 @@ function initWeb3ModalLib(callback: () => void){
 		registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;	
 		// end of rollback	
 		soliditySha3(...val: any[]): string;	
+		_txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<Transaction>;
+		_txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>;
 	};
 	export interface IContractMethod {
 		call: any;
@@ -277,9 +279,18 @@ function initWeb3ModalLib(callback: () => void){
 		to: string;
 		nonce: number;
 		gas: number;
-		gasPrice: /*BigNumber |*/ string | number;
+		gasPrice: BigNumber;
 		data: string;
-		value?: /*BigNumber |*/ string | number;
+		value?: BigNumber;
+	}
+	export interface TransactionOptions {
+		from?: string;
+		nonce?: number;
+		gas?: number;
+		gasLimit?: number;
+		gasPrice?: BigNumber | number;
+		data?: string;
+		value?: BigNumber | number;
 	}
     export interface IKMS{
 
@@ -1180,14 +1191,35 @@ function initWeb3ModalLib(callback: () => void){
 			};
 			return this._abiContractDict[abiHash];    
         }
-		async _call(abiHash: string, address: string, methodName: string, params?:any[], options?:any): Promise<any>{			
-			let contract:any = await this.getContract(abiHash);
-			contract.options.address = address;
-            let method = <IContractMethod>contract.methods[methodName].apply(this, params);
+		async _call(abiHash: string, address: string, methodName: string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>{
+			if (!address || !methodName)
+				throw new Error("no contract address or method name");
+			let method = await this._getMethod(abiHash, address, methodName, params);
+            let tx:Transaction = {} as Transaction;
+            tx.to = address;
+            tx.data = method.encodeABI();
+			if (options) {
+				if (typeof options === "number") {
+					tx.value = new BigNumber(options);
+				} else if (BigNumber.isBigNumber(options)) {
+					tx.value = options;
+				} else if (options.value) {
+					if (typeof options.value === "number") {
+						tx.value = new BigNumber(options.value);
+					} else if (BigNumber.isBigNumber(options.value)) {
+						tx.value = options.value;
+					}
+				}
+			}
+			options = <TransactionOptions>options;
+			tx.from = (options && options.from) || this.address;
+			if (options && (options.gas || options.gasLimit)) {
+                tx.gas = options.gas || options.gasLimit;			
+			}
             let result = method.call({from:this.address, ...options});
 			return result;
-		};
-		protected async txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<Transaction>{
+		}
+		private async _getMethod(abiHash: string, address: string, methodName:string, params?:any[]): Promise<IContractMethod>{
             let contract:any = await this.getContract(abiHash);
             params = params || [];
 			let bytecode: string;
@@ -1229,21 +1261,35 @@ function initWeb3ModalLib(callback: () => void){
                 method = contract.deploy({data:bytecode, arguments:params});
             else
                 method = contract.methods[methodName].apply(this, params);
-
-            let tx:any = {};
+			return method;
+		}
+		async _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<Transaction>{
+			let method = await this._getMethod(abiHash, address, methodName, params);
+            let tx:Transaction = {} as Transaction;
             tx.from = this.address;
             tx.to = address || undefined;
             tx.data = method.encodeABI();
-            if (options && options.value) {
-                tx.value = options.value;
-            } else {
-                tx.value = 0;
-            }
-            if (options && (options.gas || options.gasLimit)) {
+			if (options) {
+				if (typeof options === "number") {
+					tx.value = new BigNumber(options);
+					options = undefined;
+				} else if (BigNumber.isBigNumber(options)) {
+					tx.value = options;
+					options = undefined;
+				} else if (options.value) {
+					if (typeof options.value === "number") {
+						tx.value = new BigNumber(options.value);
+					} else if (BigNumber.isBigNumber(options.value)) {
+						tx.value = options.value;
+					}
+				}
+			}
+			options = <TransactionOptions>options;
+			if (options && (options.gas || options.gasLimit)) {
                 tx.gas = options.gas || options.gasLimit;
             } else {
                 try {
-                    tx.gas = await method.estimateGas({ from: this.address, to: address ? address : undefined, value: (options&&options.value) || 0 });
+                    tx.gas = await method.estimateGas({ from: this.address, to: address ? address : undefined, value: tx.value });
                     tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
 
                 } catch (e) {
@@ -1273,7 +1319,7 @@ function initWeb3ModalLib(callback: () => void){
                 }
             }
             if (!tx.gasPrice) {
-                tx.gasPrice = await this.getGasPrice();
+                tx.gasPrice = (await this.getGasPrice());
             }
             if (options && options.nonce){
                 tx.nonce = options.nonce;
@@ -1282,10 +1328,15 @@ function initWeb3ModalLib(callback: () => void){
             }
             return tx;
         }
-		async _send(abiHash: string, address: string, methodName: string, params?:any[], options?:any): Promise<TransactionReceipt>{			
-			let tx = await this.txObj(abiHash, address, methodName, params, options);
+		async _send(abiHash: string, address: string, methodName: string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<TransactionReceipt>{			
+			let tx = await this._txObj(abiHash, address, methodName, params, options);
             let receipt = await this.sendTransaction(tx);
             return receipt;
+		}
+		async _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>{
+			let method = await this._getMethod(abiHash, address, methodName, params);
+			let data = method.encodeABI();
+			return data;
 		}
 		async _methods(...args){
 			let _web3 = this._web3;        	
@@ -1997,19 +2048,18 @@ function initWeb3ModalLib(callback: () => void){
 			return (async ()=>(await this._web3.eth.getTransactionCount(this.address)))();
 		}
 		async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
-			transaction.value = new BigNumber(transaction.value).toFixed();
-			transaction.gasPrice = new BigNumber(transaction.gasPrice).toFixed();
+			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
 			let currentProvider = this.provider;
 			try {
 				if (typeof window !== "undefined" && this.clientSideProvider) {
 					this.provider = this.clientSideProvider.provider;
 				}
 				if (this._account && this._account.privateKey){
-					let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
+					let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
 					return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 				}
 				else {
-					let promiEvent = this._web3.eth.sendTransaction(transaction);
+					let promiEvent = this._web3.eth.sendTransaction(_transaction);
 					promiEvent.on('error', (error: Error) =>{
 						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
 							return;
@@ -2041,18 +2091,17 @@ function initWeb3ModalLib(callback: () => void){
 				to: web3Receipt.to,
 				nonce: web3Receipt.nonce,
 				gas: web3Receipt.gas,
-				gasPrice: web3Receipt.gasPrice,
+				gasPrice: new BigNumber(web3Receipt.gasPrice),
 				data: web3Receipt.input,
-				value: web3Receipt.value 
+				value: new BigNumber(web3Receipt.value)
 			}
 		}
 		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
 			return this._web3.eth.getTransactionReceipt(transactionHash);
 		}
 		call(transaction: Transaction): Promise<any> {
-			transaction.value = new BigNumber(transaction.value).toFixed();
-			transaction.gasPrice = new BigNumber(transaction.gasPrice).toFixed();
-			return this._web3.eth.call(transaction);
+			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
+			return this._web3.eth.call(_transaction);
 		}
 		newContract(abi:any, address?:string): IContract {
 			return new this._web3.eth.Contract(abi, address);

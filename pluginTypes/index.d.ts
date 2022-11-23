@@ -523,7 +523,7 @@ declare module "wallet" {
         balanceOf(address: string): Promise<BigNumber>;
         chainId: number;
         createAccount(): IAccount;
-        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         decode(abi: any, event: Log | EventLog, raw?: {
             data: string;
             topics: string[];
@@ -541,7 +541,7 @@ declare module "wallet" {
         registerEvent(abi: any, eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): any;
-        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         signMessage(msg: string): Promise<string>;
@@ -566,6 +566,8 @@ declare module "wallet" {
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
         soliditySha3(...val: any[]): string;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     }
     export interface IContractMethod {
         call: any;
@@ -638,9 +640,18 @@ declare module "wallet" {
         to: string;
         nonce: number;
         gas: number;
-        gasPrice: /*BigNumber |*/ string | number;
+        gasPrice: BigNumber;
         data: string;
-        value?: /*BigNumber |*/ string | number;
+        value?: BigNumber;
+    }
+    export interface TransactionOptions {
+        from?: string;
+        nonce?: number;
+        gas?: number;
+        gasLimit?: number;
+        gasPrice?: BigNumber | number;
+        data?: string;
+        value?: BigNumber | number;
     }
     export interface IKMS {
     }
@@ -783,9 +794,11 @@ declare module "wallet" {
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
         private getContract;
-        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
-        protected txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
-        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        private _getMethod;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
         _methods(...args: any[]): Promise<{
             to: any;
             data: any;

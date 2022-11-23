@@ -91,7 +91,9 @@ define("bignumber.js", (require,exports)=>{
 define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
@@ -109,6 +111,7 @@ var __spreadValues = (a, b) => {
     }
   return a;
 };
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -1515,13 +1518,34 @@ var _Wallet = class {
     return this._abiContractDict[abiHash];
   }
   async _call(abiHash, address, methodName, params, options) {
-    let contract = await this.getContract(abiHash);
-    contract.options.address = address;
-    let method = contract.methods[methodName].apply(this, params);
+    if (!address || !methodName)
+      throw new Error("no contract address or method name");
+    let method = await this._getMethod(abiHash, address, methodName, params);
+    let tx = {};
+    tx.to = address;
+    tx.data = method.encodeABI();
+    if (options) {
+      if (typeof options === "number") {
+        tx.value = new import_bignumber3.BigNumber(options);
+      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
+        tx.value = options;
+      } else if (options.value) {
+        if (typeof options.value === "number") {
+          tx.value = new import_bignumber3.BigNumber(options.value);
+        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
+          tx.value = options.value;
+        }
+      }
+    }
+    options = options;
+    tx.from = options && options.from || this.address;
+    if (options && (options.gas || options.gasLimit)) {
+      tx.gas = options.gas || options.gasLimit;
+    }
     let result = method.call(__spreadValues({ from: this.address }, options));
     return result;
   }
-  async txObj(abiHash, address, methodName, params, options) {
+  async _getMethod(abiHash, address, methodName, params) {
     let contract = await this.getContract(abiHash);
     params = params || [];
     let bytecode;
@@ -1558,20 +1582,35 @@ var _Wallet = class {
       method = contract.deploy({ data: bytecode, arguments: params });
     else
       method = contract.methods[methodName].apply(this, params);
+    return method;
+  }
+  async _txObj(abiHash, address, methodName, params, options) {
+    let method = await this._getMethod(abiHash, address, methodName, params);
     let tx = {};
     tx.from = this.address;
     tx.to = address || void 0;
     tx.data = method.encodeABI();
-    if (options && options.value) {
-      tx.value = options.value;
-    } else {
-      tx.value = 0;
+    if (options) {
+      if (typeof options === "number") {
+        tx.value = new import_bignumber3.BigNumber(options);
+        options = void 0;
+      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
+        tx.value = options;
+        options = void 0;
+      } else if (options.value) {
+        if (typeof options.value === "number") {
+          tx.value = new import_bignumber3.BigNumber(options.value);
+        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
+          tx.value = options.value;
+        }
+      }
     }
+    options = options;
     if (options && (options.gas || options.gasLimit)) {
       tx.gas = options.gas || options.gasLimit;
     } else {
       try {
-        tx.gas = await method.estimateGas({ from: this.address, to: address ? address : void 0, value: options && options.value || 0 });
+        tx.gas = await method.estimateGas({ from: this.address, to: address ? address : void 0, value: tx.value });
         tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
       } catch (e) {
         if (e.message == "Returned error: out of gas") {
@@ -1610,9 +1649,14 @@ var _Wallet = class {
     return tx;
   }
   async _send(abiHash, address, methodName, params, options) {
-    let tx = await this.txObj(abiHash, address, methodName, params, options);
+    let tx = await this._txObj(abiHash, address, methodName, params, options);
     let receipt = await this.sendTransaction(tx);
     return receipt;
+  }
+  async _txData(abiHash, address, methodName, params, options) {
+    let method = await this._getMethod(abiHash, address, methodName, params);
+    let data = method.encodeABI();
+    return data;
   }
   async _methods(...args) {
     let _web3 = this._web3;
@@ -2249,18 +2293,17 @@ var _Wallet = class {
     return (async () => await this._web3.eth.getTransactionCount(this.address))();
   }
   async sendTransaction(transaction) {
-    transaction.value = new import_bignumber3.BigNumber(transaction.value).toFixed();
-    transaction.gasPrice = new import_bignumber3.BigNumber(transaction.gasPrice).toFixed();
+    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     let currentProvider = this.provider;
     try {
       if (typeof window !== "undefined" && this.clientSideProvider) {
         this.provider = this.clientSideProvider.provider;
       }
       if (this._account && this._account.privateKey) {
-        let signedTx = await this._web3.eth.accounts.signTransaction(transaction, this._account.privateKey);
+        let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
         return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
       } else {
-        let promiEvent = this._web3.eth.sendTransaction(transaction);
+        let promiEvent = this._web3.eth.sendTransaction(_transaction);
         promiEvent.on("error", (error) => {
           if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
             return;
@@ -2290,18 +2333,17 @@ var _Wallet = class {
       to: web3Receipt.to,
       nonce: web3Receipt.nonce,
       gas: web3Receipt.gas,
-      gasPrice: web3Receipt.gasPrice,
+      gasPrice: new import_bignumber3.BigNumber(web3Receipt.gasPrice),
       data: web3Receipt.input,
-      value: web3Receipt.value
+      value: new import_bignumber3.BigNumber(web3Receipt.value)
     };
   }
   getTransactionReceipt(transactionHash) {
     return this._web3.eth.getTransactionReceipt(transactionHash);
   }
   call(transaction) {
-    transaction.value = new import_bignumber3.BigNumber(transaction.value).toFixed();
-    transaction.gasPrice = new import_bignumber3.BigNumber(transaction.gasPrice).toFixed();
-    return this._web3.eth.call(transaction);
+    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
+    return this._web3.eth.call(_transaction);
   }
   newContract(abi, address) {
     return new this._web3.eth.Contract(abi, address);
