@@ -2128,6 +2128,9 @@ function initWeb3ModalLib(callback: () => void){
 		soliditySha3(...val: any[]) {
 			return this._web3.utils.soliditySha3(...val);
 		}
+		toChecksumAddress(address: string) {
+			return this._web3.utils.toChecksumAddress(address);
+		}
 		public get web3(): W3.default{
 			return this._web3;
 		}
