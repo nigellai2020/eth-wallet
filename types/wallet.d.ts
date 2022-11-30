@@ -411,5 +411,6 @@ export declare class Wallet implements IWallet {
     decodeErrorMessage(msg: string): any;
     newBatchRequest(): Promise<IBatchRequestObj>;
     soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;
     get web3(): W3.default;
 }

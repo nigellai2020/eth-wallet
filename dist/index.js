@@ -2370,6 +2370,9 @@ var _Wallet = class {
   soliditySha3(...val) {
     return this._web3.utils.soliditySha3(...val);
   }
+  toChecksumAddress(address) {
+    return this._web3.utils.toChecksumAddress(address);
+  }
   get web3() {
     return this._web3;
   }
