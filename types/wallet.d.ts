@@ -326,7 +326,7 @@ export declare class Wallet implements IWallet {
     private _utils;
     constructor(provider?: any, account?: IAccount | IAccount[]);
     private static readonly instance;
-    static getInstance(): Wallet;
+    static getInstance(): IWallet;
     static isInstalled(walletPlugin: WalletPlugin): boolean;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;

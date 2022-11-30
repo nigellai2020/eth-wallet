@@ -976,7 +976,7 @@ function initWeb3ModalLib(callback: () => void){
 			this._networksMap = DefaultNetworksMap;
 		}		
 		private static readonly instance: Wallet = new Wallet();
-		static getInstance(): Wallet {
+		static getInstance(): IWallet {
 		  return Wallet.instance;
 		}
 		static isInstalled(walletPlugin: WalletPlugin) {
