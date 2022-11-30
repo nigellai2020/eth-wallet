@@ -297,6 +297,7 @@ __export(exports, {
   Contract: () => import_contract5.Contract,
   Contracts: () => contracts_exports,
   Erc20: () => Erc20,
+  Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => Wallet,
   WalletPlugin: () => WalletPlugin,
@@ -2874,6 +2875,18 @@ var ERC721 = class extends import_contract4.Contract {
     });
   }
 };
+
+// src/types.ts
+var types_exports = {};
+__export(types_exports, {
+  SignTypedDataVersion: () => SignTypedDataVersion
+});
+var SignTypedDataVersion;
+(function(SignTypedDataVersion2) {
+  SignTypedDataVersion2["V1"] = "V1";
+  SignTypedDataVersion2["V3"] = "V3";
+  SignTypedDataVersion2["V4"] = "V4";
+})(SignTypedDataVersion || (SignTypedDataVersion = {}));
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
 * Released under dual AGPLv3/commercial license
