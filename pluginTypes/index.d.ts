@@ -1319,5 +1319,6 @@ declare module "@ijstech/eth-wallet" {
     export { Erc20 } from "contracts/erc20";
     export * as Utils from "utils";
     export * as Contracts from "contracts/index";
+    export * as Types from "types";
     export * as Constants from "constants";
 }
