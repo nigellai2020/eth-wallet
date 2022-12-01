@@ -1,6 +1,4 @@
-import { IWallet, TransactionReceipt, Event } from "../../wallet";
-import { Contract } from '../../contract';
-import { BigNumber } from "bignumber.js";
+import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
 export interface IDeployParams {
     name: string;
     symbol: string;
@@ -33,9 +31,9 @@ export interface ITransferFromParams {
     to: string;
     tokenId: number | BigNumber;
 }
-export declare class ERC721 extends Contract {
+export declare class ERC721 extends _Contract {
     constructor(wallet: IWallet, address?: string);
-    deploy(params: IDeployParams): Promise<string>;
+    deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
     parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
     decodeApprovalEvent(event: Event): ERC721.ApprovalEvent;
     parseApprovalForAllEvent(receipt: TransactionReceipt): ERC721.ApprovalForAllEvent[];
@@ -43,48 +41,48 @@ export declare class ERC721 extends Contract {
     parseTransferEvent(receipt: TransactionReceipt): ERC721.TransferEvent[];
     decodeTransferEvent(event: Event): ERC721.TransferEvent;
     approve: {
-        (params: IApproveParams): Promise<TransactionReceipt>;
-        call: (params: IApproveParams) => Promise<void>;
+        (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
     };
     balanceOf: {
-        (owner: string): Promise<BigNumber>;
+        (owner: string, options?: TransactionOptions): Promise<BigNumber>;
     };
     getApproved: {
-        (tokenId: number | BigNumber): Promise<string>;
+        (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
     };
     isApprovedForAll: {
-        (params: IIsApprovedForAllParams): Promise<boolean>;
+        (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
     };
     name: {
-        (): Promise<string>;
+        (options?: TransactionOptions): Promise<string>;
     };
     ownerOf: {
-        (tokenId: number | BigNumber): Promise<string>;
+        (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
     };
     safeTransferFrom: {
-        (params: ISafeTransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ISafeTransferFromParams) => Promise<void>;
+        (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
     };
     safeTransferFrom_1: {
-        (params: ISafeTransferFrom_1Params): Promise<TransactionReceipt>;
-        call: (params: ISafeTransferFrom_1Params) => Promise<void>;
+        (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
     };
     setApprovalForAll: {
-        (params: ISetApprovalForAllParams): Promise<TransactionReceipt>;
-        call: (params: ISetApprovalForAllParams) => Promise<void>;
+        (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
     };
     supportsInterface: {
-        (interfaceId: string): Promise<boolean>;
+        (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
     };
     symbol: {
-        (): Promise<string>;
+        (options?: TransactionOptions): Promise<string>;
     };
     tokenURI: {
-        (tokenId: number | BigNumber): Promise<string>;
+        (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
     };
     transferFrom: {
-        (params: ITransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ITransferFromParams) => Promise<void>;
+        (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
     };
     private assign;
 }

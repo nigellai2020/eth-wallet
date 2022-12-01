@@ -1,6 +1,4 @@
-import { IWallet, TransactionReceipt, Event } from "../../wallet";
-import { Contract } from '../../contract';
-import { BigNumber } from "bignumber.js";
+import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
 export interface IBalanceOfParams {
     account: string;
     id: number | BigNumber;
@@ -31,9 +29,9 @@ export interface ISetApprovalForAllParams {
     operator: string;
     approved: boolean;
 }
-export declare class ERC1155 extends Contract {
+export declare class ERC1155 extends _Contract {
     constructor(wallet: IWallet, address?: string);
-    deploy(uri: string): Promise<string>;
+    deploy(uri: string, options?: TransactionOptions): Promise<string>;
     parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
     decodeApprovalForAllEvent(event: Event): ERC1155.ApprovalForAllEvent;
     parseTransferBatchEvent(receipt: TransactionReceipt): ERC1155.TransferBatchEvent[];
@@ -43,31 +41,31 @@ export declare class ERC1155 extends Contract {
     parseURIEvent(receipt: TransactionReceipt): ERC1155.URIEvent[];
     decodeURIEvent(event: Event): ERC1155.URIEvent;
     balanceOf: {
-        (params: IBalanceOfParams): Promise<BigNumber>;
+        (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber>;
     };
     balanceOfBatch: {
-        (params: IBalanceOfBatchParams): Promise<BigNumber[]>;
+        (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]>;
     };
     isApprovedForAll: {
-        (params: IIsApprovedForAllParams): Promise<boolean>;
+        (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
     };
     safeBatchTransferFrom: {
-        (params: ISafeBatchTransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ISafeBatchTransferFromParams) => Promise<void>;
+        (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
     };
     safeTransferFrom: {
-        (params: ISafeTransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ISafeTransferFromParams) => Promise<void>;
+        (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
     };
     setApprovalForAll: {
-        (params: ISetApprovalForAllParams): Promise<TransactionReceipt>;
-        call: (params: ISetApprovalForAllParams) => Promise<void>;
+        (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
     };
     supportsInterface: {
-        (interfaceId: string): Promise<boolean>;
+        (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
     };
     uri: {
-        (param1: number | BigNumber): Promise<string>;
+        (param1: number | BigNumber, options?: TransactionOptions): Promise<string>;
     };
     private assign;
 }

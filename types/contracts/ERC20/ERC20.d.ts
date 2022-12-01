@@ -1,6 +1,4 @@
-import { IWallet, TransactionReceipt, Event } from "../../wallet";
-import { Contract } from '../../contract';
-import { BigNumber } from "bignumber.js";
+import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
 export interface IDeployParams {
     name: string;
     symbol: string;
@@ -30,50 +28,50 @@ export interface ITransferFromParams {
     to: string;
     amount: number | BigNumber;
 }
-export declare class ERC20 extends Contract {
+export declare class ERC20 extends _Contract {
     constructor(wallet: IWallet, address?: string);
-    deploy(params: IDeployParams): Promise<string>;
+    deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
     parseApprovalEvent(receipt: TransactionReceipt): ERC20.ApprovalEvent[];
     decodeApprovalEvent(event: Event): ERC20.ApprovalEvent;
     parseTransferEvent(receipt: TransactionReceipt): ERC20.TransferEvent[];
     decodeTransferEvent(event: Event): ERC20.TransferEvent;
     allowance: {
-        (params: IAllowanceParams): Promise<BigNumber>;
+        (params: IAllowanceParams, options?: TransactionOptions): Promise<BigNumber>;
     };
     approve: {
-        (params: IApproveParams): Promise<TransactionReceipt>;
-        call: (params: IApproveParams) => Promise<boolean>;
+        (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
     };
     balanceOf: {
-        (account: string): Promise<BigNumber>;
+        (account: string, options?: TransactionOptions): Promise<BigNumber>;
     };
     decimals: {
-        (): Promise<BigNumber>;
+        (options?: TransactionOptions): Promise<BigNumber>;
     };
     decreaseAllowance: {
-        (params: IDecreaseAllowanceParams): Promise<TransactionReceipt>;
-        call: (params: IDecreaseAllowanceParams) => Promise<boolean>;
+        (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
     };
     increaseAllowance: {
-        (params: IIncreaseAllowanceParams): Promise<TransactionReceipt>;
-        call: (params: IIncreaseAllowanceParams) => Promise<boolean>;
+        (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
     };
     name: {
-        (): Promise<string>;
+        (options?: TransactionOptions): Promise<string>;
     };
     symbol: {
-        (): Promise<string>;
+        (options?: TransactionOptions): Promise<string>;
     };
     totalSupply: {
-        (): Promise<BigNumber>;
+        (options?: TransactionOptions): Promise<BigNumber>;
     };
     transfer: {
-        (params: ITransferParams): Promise<TransactionReceipt>;
-        call: (params: ITransferParams) => Promise<boolean>;
+        (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
     };
     transferFrom: {
-        (params: ITransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ITransferFromParams) => Promise<boolean>;
+        (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
     };
     private assign;
 }
