@@ -1,7 +1,4 @@
-import {IWallet, TransactionReceipt, Event} from "../../wallet";
-import * as Utils from '../../utils';
-import {Contract} from '../../contract';
-import {BigNumber} from "bignumber.js";
+import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";
 import Bin from "./ERC1155.json";
 
 export interface IBalanceOfParams {account:string;id:number|BigNumber}
@@ -10,13 +7,13 @@ export interface IIsApprovedForAllParams {account:string;operator:string}
 export interface ISafeBatchTransferFromParams {from:string;to:string;ids:(number|BigNumber)[];amounts:(number|BigNumber)[];data:string}
 export interface ISafeTransferFromParams {from:string;to:string;id:number|BigNumber;amount:number|BigNumber;data:string}
 export interface ISetApprovalForAllParams {operator:string;approved:boolean}
-export class ERC1155 extends Contract{
+export class ERC1155 extends _Contract{
     constructor(wallet: IWallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
         this.assign()
     }
-    deploy(uri:string): Promise<string>{
-        return this.__deploy([uri]);
+    deploy(uri:string, options?: TransactionOptions): Promise<string>{
+        return this.__deploy([uri], options);
     }
     parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[]{
         return this.parseEvents(receipt, "ApprovalForAll").map(e=>this.decodeApprovalForAllEvent(e));
@@ -70,92 +67,92 @@ export class ERC1155 extends Contract{
         };
     }
     balanceOf: {
-        (params: IBalanceOfParams): Promise<BigNumber>;
+        (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber>;
     }
     balanceOfBatch: {
-        (params: IBalanceOfBatchParams): Promise<BigNumber[]>;
+        (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]>;
     }
     isApprovedForAll: {
-        (params: IIsApprovedForAllParams): Promise<boolean>;
+        (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
     }
     safeBatchTransferFrom: {
-        (params: ISafeBatchTransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ISafeBatchTransferFromParams) => Promise<void>;
+        (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
     }
     safeTransferFrom: {
-        (params: ISafeTransferFromParams): Promise<TransactionReceipt>;
-        call: (params: ISafeTransferFromParams) => Promise<void>;
+        (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
     }
     setApprovalForAll: {
-        (params: ISetApprovalForAllParams): Promise<TransactionReceipt>;
-        call: (params: ISetApprovalForAllParams) => Promise<void>;
+        (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+        call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
     }
     supportsInterface: {
-        (interfaceId:string): Promise<boolean>;
+        (interfaceId:string, options?: TransactionOptions): Promise<boolean>;
     }
     uri: {
-        (param1:number|BigNumber): Promise<string>;
+        (param1:number|BigNumber, options?: TransactionOptions): Promise<string>;
     }
     private assign(){
-        let balanceOfParams = (params: IBalanceOfParams) => [params.account,Utils.toString(params.id)];
-        let balanceOf_call = async (params: IBalanceOfParams): Promise<BigNumber> => {
-            let result = await this.call('balanceOf',balanceOfParams(params));
+        let balanceOfParams = (params: IBalanceOfParams) => [params.account,this.wallet.utils.toString(params.id)];
+        let balanceOf_call = async (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber> => {
+            let result = await this.call('balanceOf',balanceOfParams(params),options);
             return new BigNumber(result);
         }
         this.balanceOf = balanceOf_call
-        let balanceOfBatchParams = (params: IBalanceOfBatchParams) => [params.accounts,Utils.toString(params.ids)];
-        let balanceOfBatch_call = async (params: IBalanceOfBatchParams): Promise<BigNumber[]> => {
-            let result = await this.call('balanceOfBatch',balanceOfBatchParams(params));
+        let balanceOfBatchParams = (params: IBalanceOfBatchParams) => [params.accounts,this.wallet.utils.toString(params.ids)];
+        let balanceOfBatch_call = async (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]> => {
+            let result = await this.call('balanceOfBatch',balanceOfBatchParams(params),options);
             return result.map(e=>new BigNumber(e));
         }
         this.balanceOfBatch = balanceOfBatch_call
         let isApprovedForAllParams = (params: IIsApprovedForAllParams) => [params.account,params.operator];
-        let isApprovedForAll_call = async (params: IIsApprovedForAllParams): Promise<boolean> => {
-            let result = await this.call('isApprovedForAll',isApprovedForAllParams(params));
+        let isApprovedForAll_call = async (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean> => {
+            let result = await this.call('isApprovedForAll',isApprovedForAllParams(params),options);
             return result;
         }
         this.isApprovedForAll = isApprovedForAll_call
-        let supportsInterface_call = async (interfaceId:string): Promise<boolean> => {
-            let result = await this.call('supportsInterface',[interfaceId]);
+        let supportsInterface_call = async (interfaceId:string, options?: TransactionOptions): Promise<boolean> => {
+            let result = await this.call('supportsInterface',[interfaceId],options);
             return result;
         }
         this.supportsInterface = supportsInterface_call
-        let uri_call = async (param1:number|BigNumber): Promise<string> => {
-            let result = await this.call('uri',[Utils.toString(param1)]);
+        let uri_call = async (param1:number|BigNumber, options?: TransactionOptions): Promise<string> => {
+            let result = await this.call('uri',[this.wallet.utils.toString(param1)],options);
             return result;
         }
         this.uri = uri_call
-        let safeBatchTransferFromParams = (params: ISafeBatchTransferFromParams) => [params.from,params.to,Utils.toString(params.ids),Utils.toString(params.amounts),Utils.stringToBytes(params.data)];
-        let safeBatchTransferFrom_send = async (params: ISafeBatchTransferFromParams): Promise<TransactionReceipt> => {
-            let result = await this.send('safeBatchTransferFrom',safeBatchTransferFromParams(params));
+        let safeBatchTransferFromParams = (params: ISafeBatchTransferFromParams) => [params.from,params.to,this.wallet.utils.toString(params.ids),this.wallet.utils.toString(params.amounts),this.wallet.utils.stringToBytes(params.data)];
+        let safeBatchTransferFrom_send = async (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
+            let result = await this.send('safeBatchTransferFrom',safeBatchTransferFromParams(params),options);
             return result;
         }
-        let safeBatchTransferFrom_call = async (params: ISafeBatchTransferFromParams): Promise<void> => {
-            let result = await this.call('safeBatchTransferFrom',safeBatchTransferFromParams(params));
+        let safeBatchTransferFrom_call = async (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<void> => {
+            let result = await this.call('safeBatchTransferFrom',safeBatchTransferFromParams(params),options);
             return;
         }
         this.safeBatchTransferFrom = Object.assign(safeBatchTransferFrom_send, {
             call:safeBatchTransferFrom_call
         });
-        let safeTransferFromParams = (params: ISafeTransferFromParams) => [params.from,params.to,Utils.toString(params.id),Utils.toString(params.amount),Utils.stringToBytes(params.data)];
-        let safeTransferFrom_send = async (params: ISafeTransferFromParams): Promise<TransactionReceipt> => {
-            let result = await this.send('safeTransferFrom',safeTransferFromParams(params));
+        let safeTransferFromParams = (params: ISafeTransferFromParams) => [params.from,params.to,this.wallet.utils.toString(params.id),this.wallet.utils.toString(params.amount),this.wallet.utils.stringToBytes(params.data)];
+        let safeTransferFrom_send = async (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
+            let result = await this.send('safeTransferFrom',safeTransferFromParams(params),options);
             return result;
         }
-        let safeTransferFrom_call = async (params: ISafeTransferFromParams): Promise<void> => {
-            let result = await this.call('safeTransferFrom',safeTransferFromParams(params));
+        let safeTransferFrom_call = async (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<void> => {
+            let result = await this.call('safeTransferFrom',safeTransferFromParams(params),options);
             return;
         }
         this.safeTransferFrom = Object.assign(safeTransferFrom_send, {
             call:safeTransferFrom_call
         });
         let setApprovalForAllParams = (params: ISetApprovalForAllParams) => [params.operator,params.approved];
-        let setApprovalForAll_send = async (params: ISetApprovalForAllParams): Promise<TransactionReceipt> => {
-            let result = await this.send('setApprovalForAll',setApprovalForAllParams(params));
+        let setApprovalForAll_send = async (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
+            let result = await this.send('setApprovalForAll',setApprovalForAllParams(params),options);
             return result;
         }
-        let setApprovalForAll_call = async (params: ISetApprovalForAllParams): Promise<void> => {
-            let result = await this.call('setApprovalForAll',setApprovalForAllParams(params));
+        let setApprovalForAll_call = async (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<void> => {
+            let result = await this.call('setApprovalForAll',setApprovalForAllParams(params),options);
             return;
         }
         this.setApprovalForAll = Object.assign(setApprovalForAll_send, {

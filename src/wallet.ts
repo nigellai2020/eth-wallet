@@ -181,15 +181,22 @@ function initWeb3ModalLib(callback: () => void){
 		getChainId(): Promise<number>;
 		privateKey: string;
 		provider: any;
+		clientSideProvider: ClientSideProvider;
+		isConnected: boolean;
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+		connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
+		disconnect(): Promise<void>;
 		recoverSigner(msg: string, signature: string): Promise<string>;		
 		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any);
 		_send(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>;
 		send(to: string, amount: number): Promise<TransactionReceipt>;		
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;		
 		signMessage(msg: string): Promise<string>;
+		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
 		signTransaction(tx: any, privateKey?: string): Promise<string>;
 		tokenInfo(address: string): Promise<ITokenInfo>
 		utils: IWalletUtils;
+		registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 		blockGasLimit(): Promise<number>;
 		getGasPrice(): Promise<BigNumber>;
