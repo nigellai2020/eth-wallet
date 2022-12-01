@@ -1,3 +1,6 @@
+declare module "web3"{
+    export default class {}
+}
 declare module "contract" {
     /*!-----------------------------------------------------------
     * Copyright (c) IJS Technologies. All rights reserved.
