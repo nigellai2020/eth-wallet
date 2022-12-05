@@ -230,10 +230,6 @@ var require_contract = __commonJS({
             return ["NULL"];
           return [result];
         }
-        registerEvents(handler) {
-          if (this._address)
-            this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
-        }
         scanEvents(fromBlock, toBlock, eventNames) {
           let topics = this.getAbiTopics(eventNames);
           let events = this.getAbiEvents();
@@ -802,66 +798,6 @@ function initWeb3ModalLib(callback) {
       window["Web3Modal"] = web3modal.Web3Modal;
       callback();
     });
-  }
-}
-function toString2(value) {
-  if (Array.isArray(value)) {
-    let result = [];
-    for (let i = 0; i < value.length; i++) {
-      result.push(toString2(value[i]));
-    }
-    return result;
-  } else if (typeof value === "number")
-    return value.toString(10);
-  else if (import_bignumber3.BigNumber.isBigNumber(value))
-    return value.toFixed();
-  else
-    return value;
-}
-function stringToBytes322(value) {
-  if (Array.isArray(value)) {
-    let result = [];
-    for (let i = 0; i < value.length; i++) {
-      result.push(stringToBytes322(value[i]));
-    }
-    return result;
-  } else {
-    if (value.length == 66 && value.startsWith("0x"))
-      return value;
-    return Web32.utils.padRight(Web32.utils.asciiToHex(value), 64);
-  }
-}
-function stringToBytes2(value, nByte) {
-  if (Array.isArray(value)) {
-    let result = [];
-    for (let i = 0; i < value.length; i++) {
-      result.push(stringToBytes2(value[i]));
-    }
-    return result;
-  } else {
-    if (nByte) {
-      if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
-        return value;
-      else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
-        if (value.length >= nByte * 2 + 2)
-          return value;
-        else
-          return "0x" + value.substring(2) + "00".repeat(nByte - (value.length - 2) / 2);
-      } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
-        if (value.length >= nByte * 2)
-          return value;
-        else
-          return "0x" + value + "00".repeat(nByte - value.length / 2);
-      } else
-        return Web32.utils.padRight(Web32.utils.asciiToHex(value), nByte * 2);
-    } else {
-      if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
-        return value;
-      else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
-        return "0x" + value;
-      else
-        return Web32.utils.asciiToHex(value);
-    }
   }
 }
 var DefaultNetworksMap = {
@@ -1452,14 +1388,16 @@ var _Wallet = class {
     this._provider = provider;
     this._web3 = new Web32(provider);
     this._utils = {
+      fromDecimals,
       fromWei: this._web3.utils.fromWei,
       hexToUtf8: this._web3.utils.hexToUtf8,
       sha3: this._web3.utils.sha3,
+      toDecimals,
+      toString,
       toUtf8: this._web3.utils.toUtf8,
       toWei: this._web3.utils.toWei,
-      toString: toString2,
-      stringToBytes: stringToBytes2,
-      stringToBytes32: stringToBytes322
+      stringToBytes,
+      stringToBytes32
     };
     if (Array.isArray(account)) {
       this._accounts = account;

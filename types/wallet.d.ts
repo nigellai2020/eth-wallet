@@ -14,11 +14,13 @@ export declare type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
 export interface IWalletUtils {
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
     sha3(value: string): string;
     stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     toString(value: any): string;
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;
@@ -81,60 +83,64 @@ export interface IWallet {
     address: string;
     balance: Promise<BigNumber>;
     balanceOf(address: string): Promise<BigNumber>;
+    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
     chainId: number;
     createAccount(): IAccount;
-    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
     decode(abi: any, event: Log | EventLog, raw?: {
         data: string;
         topics: string[];
     }): Event;
+    decodeErrorMessage(msg: string): any;
     decodeEventData(data: Log, events?: any): Promise<Event>;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     defaultAccount: string;
+    getAbiEvents(abi: any[]): any;
+    getAbiTopics(abi: any[], eventNames: string[]): any[];
     getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     getChainId(): Promise<number>;
+    getContractAbi(address: string): any;
+    getContractAbiEvents(address: string): any;
+    getTransaction(transactionHash: string): Promise<Transaction>;
+    methods(...args: any): Promise<any>;
     privateKey: string;
-    provider: any;
+    recoverSigner(msg: string, signature: string): Promise<string>;
+    registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+    registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+    send(to: string, amount: number): Promise<TransactionReceipt>;
+    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+    signMessage(msg: string): Promise<string>;
+    signTransaction(tx: any, privateKey?: string): Promise<string>;
+    soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;
+    tokenInfo(address: string): Promise<ITokenInfo>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+    utils: IWalletUtils;
+    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+}
+export interface IWalletClient extends IWallet {
+    blockGasLimit(): Promise<number>;
     clientSideProvider: ClientSideProvider;
-    isConnected: boolean;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
     disconnect(): Promise<void>;
-    recoverSigner(msg: string, signature: string): Promise<string>;
+    getGasPrice(): Promise<BigNumber>;
+    getTransaction(transactionHash: string): Promise<Transaction>;
+    getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+    isConnected: boolean;
+    newContract(abi: any, address?: string): IContract;
+    provider: any;
     registerEvent(abi: any, eventMap: {
         [topics: string]: any;
     }, address: string, handler: any): any;
-    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
-    send(to: string, amount: number): Promise<TransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
-    signMessage(msg: string): Promise<string>;
-    signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
-    signTransaction(tx: any, privateKey?: string): Promise<string>;
-    tokenInfo(address: string): Promise<ITokenInfo>;
-    utils: IWalletUtils;
     registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
-    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
-    blockGasLimit(): Promise<number>;
-    getGasPrice(): Promise<BigNumber>;
-    transactionCount(): Promise<number>;
-    sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
     sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
-    getTransaction(transactionHash: string): Promise<Transaction>;
-    getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
-    newContract(abi: any, address?: string): IContract;
-    decodeErrorMessage(msg: string): any;
-    methods(...args: any): Promise<any>;
-    getAbiEvents(abi: any[]): any;
-    getAbiTopics(abi: any[], eventNames?: string[]): any[];
-    getContractAbi(address: string): any;
-    getContractAbiEvents(address: string): any;
-    registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
-    registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
-    soliditySha3(...val: any[]): string;
-    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
-    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+    sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+    signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    transactionCount(): Promise<number>;
 }
 export interface IContractMethod {
     call: any;
@@ -204,11 +210,11 @@ export interface TransactionReceipt {
 }
 export interface Transaction {
     from?: string;
-    to: string;
-    nonce: number;
-    gas: number;
-    gasPrice: BigNumber;
-    data: string;
+    to?: string;
+    nonce?: number;
+    gas?: number;
+    gasPrice?: BigNumber;
+    data?: string;
     value?: BigNumber;
 }
 export interface TransactionOptions {
@@ -316,7 +322,7 @@ export interface ISendTxEventsOptions {
     transactionHash?: (error: Error, receipt?: string) => void;
     confirmation?: (receipt: any) => void;
 }
-export declare class Wallet implements IWallet {
+export declare class Wallet implements IWalletClient {
     protected _web3: W3.default;
     protected _account: IAccount;
     private _accounts;

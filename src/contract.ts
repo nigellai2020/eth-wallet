@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {IWallet, IContract, IContractMethod, Transaction, TransactionReceipt, Event, EventLog, IBatchRequestObj} from "./wallet";
+import {IWallet, TransactionReceipt, Event, EventLog, IBatchRequestObj} from "./wallet";
 
 // import * as W3 from 'web3';
 // const Web3 = require('web3'); // tslint:disable-line
@@ -114,10 +114,10 @@ module Contract {
 				return ['NULL']
 		    return [result];
 		}
-        registerEvents(handler: any) {
-            if (this._address)
-                this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
-        }
+        // registerEvents(handler: any) {
+        //     if (this._address)
+        //         this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
+        // }
         scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<Event[]>{
             let topics = this.getAbiTopics(eventNames);
         	let events = this.getAbiEvents();

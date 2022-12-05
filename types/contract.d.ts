@@ -25,7 +25,6 @@ declare module Contract {
         get events(): EventType[];
         protected getAbiEvents(): any;
         protected getAbiTopics(eventNames?: string[]): any[];
-        registerEvents(handler: any): void;
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
         batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
         protected call(methodName: string, params?: any[], options?: any): Promise<any>;

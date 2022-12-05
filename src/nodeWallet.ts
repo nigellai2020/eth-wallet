@@ -1,6 +1,5 @@
 import {IKMS, IAccount, Wallet, TransactionReceipt, Transaction} from './wallet';
 import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
-import {BigNumber} from 'bignumber.js';
 import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
 import {KMS} from './kms';
 
