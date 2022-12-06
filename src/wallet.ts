@@ -208,7 +208,7 @@ function initWeb3ModalLib(callback: () => void){
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 	};
-	export interface IWalletClient extends IWallet {	
+	export interface IClientWallet extends IWallet {	
 		blockGasLimit(): Promise<number>;
 		clientSideProvider: ClientSideProvider;
 		connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
@@ -951,7 +951,7 @@ function initWeb3ModalLib(callback: () => void){
 		transactionHash?: (error: Error, receipt?: string) => void;
 		confirmation?: (receipt: any) => void;
 	};	
-    export class Wallet implements IWalletClient{
+    export class Wallet implements IClientWallet{
 		protected _web3: W3.default;		
         protected _account: IAccount;
 		private _accounts: IAccount[];
@@ -997,6 +997,9 @@ function initWeb3ModalLib(callback: () => void){
 		static getInstance(): IWallet {
 		  return Wallet.instance;
 		}
+		static getClientInstance(): IClientWallet {
+			return Wallet.instance;
+		  }
 		static isInstalled(walletPlugin: WalletPlugin) {
 			if (walletPlugin == WalletPlugin.WalletConnect) return true;
 			return WalletPluginConfig[walletPlugin] ? WalletPluginConfig[walletPlugin].installed() : false;

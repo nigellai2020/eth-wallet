@@ -335,7 +335,7 @@ declare module "wallet" {
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     }
-    export interface IWalletClient extends IWallet {
+    export interface IClientWallet extends IWallet {
         blockGasLimit(): Promise<number>;
         clientSideProvider: ClientSideProvider;
         connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
@@ -536,7 +536,7 @@ declare module "wallet" {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
     }
-    export class Wallet implements IWalletClient {
+    export class Wallet implements IClientWallet {
         protected _web3: W3.default;
         protected _account: IAccount;
         private _accounts;
@@ -554,6 +554,7 @@ declare module "wallet" {
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): IWallet;
+        static getClientInstance(): IClientWallet;
         static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;

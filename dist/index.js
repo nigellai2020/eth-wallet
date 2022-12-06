@@ -1411,6 +1411,9 @@ var _Wallet = class {
   static getInstance() {
     return _Wallet.instance;
   }
+  static getClientInstance() {
+    return _Wallet.instance;
+  }
   static isInstalled(walletPlugin) {
     if (walletPlugin == WalletPlugin.WalletConnect)
       return true;
