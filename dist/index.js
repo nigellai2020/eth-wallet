@@ -251,15 +251,15 @@ var require_contract = __commonJS({
         _deploy(...params) {
           return this.__deploy(params);
         }
-        methods(methodName, ...params) {
+        async methods(methodName, ...params) {
           let method = this._abi.find((e) => e.name == methodName);
           if (method.stateMutability == "view" || method.stateMutability == "pure") {
-            return this.call(methodName, params);
+            return await this.call(methodName, params);
           } else if (method.stateMutability == "payable") {
             let value = params.pop();
-            return this.call(methodName, params, { value });
+            return await this.call(methodName, params, { value });
           } else {
-            return this.send(methodName, params);
+            return await this.send(methodName, params);
           }
         }
       }
@@ -1601,7 +1601,7 @@ var _Wallet = class {
   registerSendTxEvents(eventsOptions) {
     this._sendTxEventHandler = eventsOptions;
   }
-  async getContract(abiHash) {
+  getContract(abiHash) {
     let contract;
     if (!this._abiContractDict[abiHash]) {
       contract = this.newContract(this._abiHashDict[abiHash]);
@@ -1614,7 +1614,7 @@ var _Wallet = class {
   async _call(abiHash, address, methodName, params, options) {
     if (!address || !methodName)
       throw new Error("no contract address or method name");
-    let method = await this._getMethod(abiHash, address, methodName, params);
+    let method = this._getMethod(abiHash, address, methodName, params);
     let tx = {};
     tx.to = address;
     tx.data = method.encodeABI();
@@ -1636,11 +1636,11 @@ var _Wallet = class {
     if (options && (options.gas || options.gasLimit)) {
       tx.gas = options.gas || options.gasLimit;
     }
-    let result = method.call(__spreadValues({ from: this.address }, options));
+    let result = await method.call(__spreadValues({ from: this.address }, options));
     return result;
   }
-  async _getMethod(abiHash, address, methodName, params) {
-    let contract = await this.getContract(abiHash);
+  _getMethod(abiHash, address, methodName, params) {
+    let contract = this.getContract(abiHash);
     params = params || [];
     let bytecode;
     if (!methodName) {
@@ -1679,7 +1679,7 @@ var _Wallet = class {
     return method;
   }
   async _txObj(abiHash, address, methodName, params, options) {
-    let method = await this._getMethod(abiHash, address, methodName, params);
+    let method = this._getMethod(abiHash, address, methodName, params);
     let tx = {};
     tx.from = this.address;
     tx.to = address || void 0;
@@ -1748,7 +1748,7 @@ var _Wallet = class {
     return receipt;
   }
   async _txData(abiHash, address, methodName, params, options) {
-    let method = await this._getMethod(abiHash, address, methodName, params);
+    let method = this._getMethod(abiHash, address, methodName, params);
     let data = method.encodeABI();
     return data;
   }
