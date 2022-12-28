@@ -1203,7 +1203,7 @@ function initWeb3ModalLib(callback: () => void){
 		registerSendTxEvents(eventsOptions: ISendTxEventsOptions) {
 			this._sendTxEventHandler = eventsOptions;
 		};
-		private async getContract(abiHash: string): Promise<IContract>{
+		private getContract(abiHash: string): IContract{
             let contract: IContract;			
 			if (!this._abiContractDict[abiHash]){
 				contract = this.newContract(this._abiHashDict[abiHash]);
@@ -1215,7 +1215,7 @@ function initWeb3ModalLib(callback: () => void){
 		async _call(abiHash: string, address: string, methodName: string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>{
 			if (!address || !methodName)
 				throw new Error("no contract address or method name");
-			let method = await this._getMethod(abiHash, address, methodName, params);
+			let method = this._getMethod(abiHash, address, methodName, params);
             let tx:Transaction = {} as Transaction;
             tx.to = address;
             tx.data = method.encodeABI();
@@ -1237,11 +1237,11 @@ function initWeb3ModalLib(callback: () => void){
 			if (options && (options.gas || options.gasLimit)) {
                 tx.gas = options.gas || options.gasLimit;			
 			}
-            let result = method.call({from:this.address, ...options});
+            let result = await method.call({from:this.address, ...options});
 			return result;
 		}
-		private async _getMethod(abiHash: string, address: string, methodName:string, params?:any[]): Promise<IContractMethod>{
-            let contract:any = await this.getContract(abiHash);
+		private _getMethod(abiHash: string, address: string, methodName:string, params?:any[]): IContractMethod{
+            let contract:any = this.getContract(abiHash);
             params = params || [];
 			let bytecode: string;
 			if (!methodName){
@@ -1285,7 +1285,7 @@ function initWeb3ModalLib(callback: () => void){
 			return method;
 		}
 		async _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<Transaction>{
-			let method = await this._getMethod(abiHash, address, methodName, params);
+			let method = this._getMethod(abiHash, address, methodName, params);
             let tx:Transaction = {} as Transaction;
             tx.from = this.address;
             tx.to = address || undefined;
@@ -1355,7 +1355,7 @@ function initWeb3ModalLib(callback: () => void){
             return receipt;
 		}
 		async _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>{
-			let method = await this._getMethod(abiHash, address, methodName, params);
+			let method = this._getMethod(abiHash, address, methodName, params);
 			let data = method.encodeABI();
 			return data;
 		}
