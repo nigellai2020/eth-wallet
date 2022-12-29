@@ -618,7 +618,7 @@ declare module "wallet" {
         }): Event;
         decodeEventData(data: Log, events?: any): Promise<Event>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
-        send(to: string, amount: number): Promise<TransactionReceipt>;
+        send(to: string, amount: number | BigNumber): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;

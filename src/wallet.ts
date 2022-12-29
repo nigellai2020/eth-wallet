@@ -1869,7 +1869,7 @@ function initWeb3ModalLib(callback: () => void){
         		}
         	})
         };
-        send(to: string, amount: number): Promise<TransactionReceipt>{
+        send(to: string, amount: number|BigNumber): Promise<TransactionReceipt>{
         	let _web3 = this._web3;
         	let address = this.address;
         	let self = this;
