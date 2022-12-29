@@ -1237,7 +1237,7 @@ function initWeb3ModalLib(callback: () => void){
 			if (options && (options.gas || options.gasLimit)) {
                 tx.gas = options.gas || options.gasLimit;			
 			}
-            let result = await method.call({from:this.address, ...options});
+            let result = await method.call({from:this.address, ...tx});
 			return result;
 		}
 		private _getMethod(abiHash: string, address: string, methodName:string, params?:any[]): IContractMethod{
@@ -1322,7 +1322,7 @@ function initWeb3ModalLib(callback: () => void){
                             throw e;
                         }
                         try{
-                            await method.call({from:this.address, ...options});
+                            await method.call({from:this.address, ...tx});
                         } catch(e) {
                             if (e.message.includes("VM execution error.")) {
                                 var msg = (e.data || e.message).match(/0x[0-9a-fA-F]+/);
@@ -1869,7 +1869,7 @@ function initWeb3ModalLib(callback: () => void){
         		}
         	})
         };
-        send(to: string, amount: number): Promise<TransactionReceipt>{
+        send(to: string, amount: number|BigNumber): Promise<TransactionReceipt>{
         	let _web3 = this._web3;
         	let address = this.address;
         	let self = this;
@@ -2100,10 +2100,10 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			}
 			catch(err) {
-
+				throw err;
+			} finally {
+				this.provider = currentProvider;
 			}
-			this.provider = currentProvider;
-			return null;
 		}
 		async getTransaction(transactionHash: string): Promise<Transaction> {
 			let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
