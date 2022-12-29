@@ -2100,10 +2100,10 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			}
 			catch(err) {
-
+				throw err;
+			} finally {
+				this.provider = currentProvider;
 			}
-			this.provider = currentProvider;
-			return null;
 		}
 		async getTransaction(transactionHash: string): Promise<Transaction> {
 			let web3Receipt = await this._web3.eth.getTransaction(transactionHash);

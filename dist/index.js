@@ -2423,9 +2423,10 @@ var _Wallet = class {
         return await promiEvent;
       }
     } catch (err) {
+      throw err;
+    } finally {
+      this.provider = currentProvider;
     }
-    this.provider = currentProvider;
-    return null;
   }
   async getTransaction(transactionHash) {
     let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
