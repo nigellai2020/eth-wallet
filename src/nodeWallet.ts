@@ -301,7 +301,7 @@ export class NodeWallet extends Wallet{
             }
         }
         catch(err) {
-
+            throw err;
         }
         this.provider = currentProvider;
         return null;
