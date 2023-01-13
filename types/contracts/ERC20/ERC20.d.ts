@@ -44,6 +44,7 @@ export declare class ERC20 extends _Contract {
     };
     balanceOf: {
         (account: string, options?: TransactionOptions): Promise<BigNumber>;
+        txData: (account: string, options?: TransactionOptions) => Promise<string>;
     };
     decimals: {
         (options?: TransactionOptions): Promise<BigNumber>;

@@ -178,10 +178,16 @@ export function getMultiCallAddress(chainId: number) {
             break;      
         case 250:
             address = '0xA31bB36c5164B165f9c36955EA4CcBaB42B3B28E';
-            break;                    
+            break;             
+        case 43113:
+            address = '0x40784b92542649DDA13FF97580e8A021aC57b320';
+            break;       
         case 43114:
             address = '0xC4A8B7e29E3C8ec560cd4945c1cF3461a85a148d';
-            break;            
+            break;   
+        case 80001:
+            address = '0x7810eC500061f5469fF6e1485Ab130045B3af6b0';
+            break;         
     }
     return address;
 }

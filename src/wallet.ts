@@ -2155,13 +2155,14 @@ function initWeb3ModalLib(callback: () => void){
 			return this._web3.utils.toChecksumAddress(address);
 		}
 		async multiCall(calls: {to: string; data: string}[], gasBuffer?: string) {
-			const chainId = await this.getChainId()
-			const multiCallContractAddress = Utils.getMultiCallAddress(chainId);
-			const multiCall = new MultiCall(this, multiCallContractAddress)
+			const chainId = await this.getChainId();
+			const contractAddress = Utils.getMultiCallAddress(chainId);
+			if (!contractAddress) return null;
+			const multiCall = new MultiCall(this, contractAddress);
 			const result = await multiCall.multicallWithGasLimitation.call({
 				calls,
 				gasBuffer: new BigNumber(gasBuffer??'3000000')
-			})
+			});
 			return result;
 		}
 		public get web3(): W3.default{

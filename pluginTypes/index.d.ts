@@ -240,6 +240,7 @@ declare module "contracts/ERC20/ERC20" {
         };
         balanceOf: {
             (account: string, options?: TransactionOptions): Promise<BigNumber>;
+            txData: (account: string, options?: TransactionOptions) => Promise<string>;
         };
         decimals: {
             (options?: TransactionOptions): Promise<BigNumber>;
