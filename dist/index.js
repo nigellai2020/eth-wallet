@@ -416,7 +416,7 @@ var require_contract = __commonJS({
             return await this.call(methodName, params);
           } else if (method.stateMutability == "payable") {
             let value = params.pop();
-            return await this.call(methodName, params, { value });
+            return await this.send(methodName, params, { value });
           } else {
             return await this.send(methodName, params);
           }
