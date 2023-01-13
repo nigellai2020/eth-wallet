@@ -7,6 +7,7 @@
 import * as W3 from 'web3';
 const Web3 = initWeb3Lib(); // tslint:disable-line
 import {BigNumber} from 'bignumber.js';
+import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
 import * as Utils from "./utils";
 import { MessageTypes, TypedMessage } from './types';
@@ -207,6 +208,7 @@ function initWeb3ModalLib(callback: () => void){
 		_txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+		multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
 	};
 	export interface IClientWallet extends IWallet {	
 		blockGasLimit(): Promise<number>;
@@ -2151,6 +2153,17 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		toChecksumAddress(address: string) {
 			return this._web3.utils.toChecksumAddress(address);
+		}
+		async multiCall(calls: {to: string; data: string}[], gasBuffer?: string) {
+			const chainId = await this.getChainId();
+			const contractAddress = Utils.getMultiCallAddress(chainId);
+			if (!contractAddress) return null;
+			const multiCall = new MultiCall(this, contractAddress);
+			const result = await multiCall.multicallWithGasLimitation.call({
+				calls,
+				gasBuffer: new BigNumber(gasBuffer??'3000000')
+			});
+			return result;
 		}
 		public get web3(): W3.default{
 			return this._web3;

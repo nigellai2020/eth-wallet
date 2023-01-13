@@ -1,6 +1,535 @@
 declare module "web3"{
     export default class {}
 }
+declare module "contracts/ERC1155/ERC1155.json" {
+    const _default: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default;
+}
+declare module "contracts/ERC1155/ERC1155" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IBalanceOfParams {
+        account: string;
+        id: number | BigNumber;
+    }
+    export interface IBalanceOfBatchParams {
+        accounts: string[];
+        ids: (number | BigNumber)[];
+    }
+    export interface IIsApprovedForAllParams {
+        account: string;
+        operator: string;
+    }
+    export interface ISafeBatchTransferFromParams {
+        from: string;
+        to: string;
+        ids: (number | BigNumber)[];
+        amounts: (number | BigNumber)[];
+        data: string;
+    }
+    export interface ISafeTransferFromParams {
+        from: string;
+        to: string;
+        id: number | BigNumber;
+        amount: number | BigNumber;
+        data: string;
+    }
+    export interface ISetApprovalForAllParams {
+        operator: string;
+        approved: boolean;
+    }
+    export class ERC1155 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(uri: string, options?: TransactionOptions): Promise<string>;
+        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
+        decodeApprovalForAllEvent(event: Event): ERC1155.ApprovalForAllEvent;
+        parseTransferBatchEvent(receipt: TransactionReceipt): ERC1155.TransferBatchEvent[];
+        decodeTransferBatchEvent(event: Event): ERC1155.TransferBatchEvent;
+        parseTransferSingleEvent(receipt: TransactionReceipt): ERC1155.TransferSingleEvent[];
+        decodeTransferSingleEvent(event: Event): ERC1155.TransferSingleEvent;
+        parseURIEvent(receipt: TransactionReceipt): ERC1155.URIEvent[];
+        decodeURIEvent(event: Event): ERC1155.URIEvent;
+        balanceOf: {
+            (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        balanceOfBatch: {
+            (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]>;
+        };
+        isApprovedForAll: {
+            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
+        };
+        safeBatchTransferFrom: {
+            (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        safeTransferFrom: {
+            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        setApprovalForAll: {
+            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        };
+        supportsInterface: {
+            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
+        };
+        uri: {
+            (param1: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        private assign;
+    }
+    export module ERC1155 {
+        interface ApprovalForAllEvent {
+            account: string;
+            operator: string;
+            approved: boolean;
+            _event: Event;
+        }
+        interface TransferBatchEvent {
+            operator: string;
+            from: string;
+            to: string;
+            ids: BigNumber[];
+            values: BigNumber[];
+            _event: Event;
+        }
+        interface TransferSingleEvent {
+            operator: string;
+            from: string;
+            to: string;
+            id: BigNumber;
+            value: BigNumber;
+            _event: Event;
+        }
+        interface URIEvent {
+            value: string;
+            id: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/ERC20/ERC20.json" {
+    const _default_1: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default_1;
+}
+declare module "contracts/ERC20/ERC20" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IDeployParams {
+        name: string;
+        symbol: string;
+    }
+    export interface IAllowanceParams {
+        owner: string;
+        spender: string;
+    }
+    export interface IApproveParams {
+        spender: string;
+        amount: number | BigNumber;
+    }
+    export interface IDecreaseAllowanceParams {
+        spender: string;
+        subtractedValue: number | BigNumber;
+    }
+    export interface IIncreaseAllowanceParams {
+        spender: string;
+        addedValue: number | BigNumber;
+    }
+    export interface ITransferParams {
+        to: string;
+        amount: number | BigNumber;
+    }
+    export interface ITransferFromParams {
+        from: string;
+        to: string;
+        amount: number | BigNumber;
+    }
+    export class ERC20 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
+        parseApprovalEvent(receipt: TransactionReceipt): ERC20.ApprovalEvent[];
+        decodeApprovalEvent(event: Event): ERC20.ApprovalEvent;
+        parseTransferEvent(receipt: TransactionReceipt): ERC20.TransferEvent[];
+        decodeTransferEvent(event: Event): ERC20.TransferEvent;
+        allowance: {
+            (params: IAllowanceParams, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        approve: {
+            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        balanceOf: {
+            (account: string, options?: TransactionOptions): Promise<BigNumber>;
+            txData: (account: string, options?: TransactionOptions) => Promise<string>;
+        };
+        decimals: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        decreaseAllowance: {
+            (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        increaseAllowance: {
+            (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        name: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        symbol: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        totalSupply: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        transfer: {
+            (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        transferFrom: {
+            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        private assign;
+    }
+    export module ERC20 {
+        interface ApprovalEvent {
+            owner: string;
+            spender: string;
+            value: BigNumber;
+            _event: Event;
+        }
+        interface TransferEvent {
+            from: string;
+            to: string;
+            value: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/ERC721/ERC721.json" {
+    const _default_2: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default_2;
+}
+declare module "contracts/ERC721/ERC721" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IDeployParams {
+        name: string;
+        symbol: string;
+    }
+    export interface IApproveParams {
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export interface IIsApprovedForAllParams {
+        owner: string;
+        operator: string;
+    }
+    export interface ISafeTransferFromParams {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export interface ISafeTransferFrom_1Params {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+        data: string;
+    }
+    export interface ISetApprovalForAllParams {
+        operator: string;
+        approved: boolean;
+    }
+    export interface ITransferFromParams {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export class ERC721 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
+        parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
+        decodeApprovalEvent(event: Event): ERC721.ApprovalEvent;
+        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC721.ApprovalForAllEvent[];
+        decodeApprovalForAllEvent(event: Event): ERC721.ApprovalForAllEvent;
+        parseTransferEvent(receipt: TransactionReceipt): ERC721.TransferEvent[];
+        decodeTransferEvent(event: Event): ERC721.TransferEvent;
+        approve: {
+            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
+        };
+        balanceOf: {
+            (owner: string, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        getApproved: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        isApprovedForAll: {
+            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
+        };
+        name: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        ownerOf: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        safeTransferFrom: {
+            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        safeTransferFrom_1: {
+            (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
+        };
+        setApprovalForAll: {
+            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        };
+        supportsInterface: {
+            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
+        };
+        symbol: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        tokenURI: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        transferFrom: {
+            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        private assign;
+    }
+    export module ERC721 {
+        interface ApprovalEvent {
+            owner: string;
+            approved: string;
+            tokenId: BigNumber;
+            _event: Event;
+        }
+        interface ApprovalForAllEvent {
+            owner: string;
+            operator: string;
+            approved: boolean;
+            _event: Event;
+        }
+        interface TransferEvent {
+            from: string;
+            to: string;
+            tokenId: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/MultiCall/MultiCall.json" {
+    const _default_3: {
+        abi: {
+            inputs: ({
+                components: {
+                    internalType: string;
+                    name: string;
+                    type: string;
+                }[];
+                internalType: string;
+                name: string;
+                type: string;
+            } | {
+                internalType: string;
+                name: string;
+                type: string;
+                components?: undefined;
+            })[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+        }[];
+        bytecode: string;
+    };
+    export default _default_3;
+}
+declare module "contracts/MultiCall/MultiCall" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IMulticallWithGasLimitationParams {
+        calls: {
+            to: string;
+            data: string;
+        }[];
+        gasBuffer: number | BigNumber;
+    }
+    export class MultiCall extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(options?: number | BigNumber | TransactionOptions): Promise<string>;
+        gasLeft: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        gaslimit: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        multicall: {
+            (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<string[]>;
+        };
+        multicallWithGas: {
+            (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<{
+                results: string[];
+                gasUsed: BigNumber[];
+            }>;
+        };
+        multicallWithGasLimitation: {
+            (params: IMulticallWithGasLimitationParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IMulticallWithGasLimitationParams, options?: TransactionOptions) => Promise<{
+                results: string[];
+                lastSuccessIndex: BigNumber;
+            }>;
+        };
+        private assign;
+    }
+}
+declare module "contracts/index" {
+    export { ERC1155 } from "contracts/ERC1155/ERC1155";
+    export { ERC20 } from "contracts/ERC20/ERC20";
+    export { ERC721 } from "contracts/ERC721/ERC721";
+    export { MultiCall } from "contracts/MultiCall/MultiCall";
+}
 declare module "contract" {
     /*!-----------------------------------------------------------
     * Copyright (c) IJS Technologies. All rights reserved.
@@ -148,6 +677,7 @@ declare module "utils" {
     export function toString(value: any): any;
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
+    export function getMultiCallAddress(chainId: number): any;
 }
 declare module "contracts/erc20" {
     /*!-----------------------------------------------------------
@@ -334,6 +864,13 @@ declare module "wallet" {
         _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        multiCall(calls: {
+            to: string;
+            data: string;
+        }[], gasBuffer?: string): Promise<{
+            results: string[];
+            lastSuccessIndex: BigNumber;
+        }>;
     }
     export interface IClientWallet extends IWallet {
         blockGasLimit(): Promise<number>;
@@ -640,453 +1177,15 @@ declare module "wallet" {
         newBatchRequest(): Promise<IBatchRequestObj>;
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;
+        multiCall(calls: {
+            to: string;
+            data: string;
+        }[], gasBuffer?: string): Promise<{
+            results: string[];
+            lastSuccessIndex: BigNumber;
+        }>;
         get web3(): W3.default;
     }
-}
-declare module "contracts/ERC1155/ERC1155.json" {
-    const _default: {
-        abi: ({
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-            name?: undefined;
-            outputs?: undefined;
-        } | {
-            anonymous: boolean;
-            inputs: {
-                indexed: boolean;
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            type: string;
-            stateMutability?: undefined;
-            outputs?: undefined;
-        } | {
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            outputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-        })[];
-        bytecode: string;
-    };
-    export default _default;
-}
-declare module "contracts/ERC1155/ERC1155" {
-    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
-    export interface IBalanceOfParams {
-        account: string;
-        id: number | BigNumber;
-    }
-    export interface IBalanceOfBatchParams {
-        accounts: string[];
-        ids: (number | BigNumber)[];
-    }
-    export interface IIsApprovedForAllParams {
-        account: string;
-        operator: string;
-    }
-    export interface ISafeBatchTransferFromParams {
-        from: string;
-        to: string;
-        ids: (number | BigNumber)[];
-        amounts: (number | BigNumber)[];
-        data: string;
-    }
-    export interface ISafeTransferFromParams {
-        from: string;
-        to: string;
-        id: number | BigNumber;
-        amount: number | BigNumber;
-        data: string;
-    }
-    export interface ISetApprovalForAllParams {
-        operator: string;
-        approved: boolean;
-    }
-    export class ERC1155 extends _Contract {
-        constructor(wallet: IWallet, address?: string);
-        deploy(uri: string, options?: TransactionOptions): Promise<string>;
-        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
-        decodeApprovalForAllEvent(event: Event): ERC1155.ApprovalForAllEvent;
-        parseTransferBatchEvent(receipt: TransactionReceipt): ERC1155.TransferBatchEvent[];
-        decodeTransferBatchEvent(event: Event): ERC1155.TransferBatchEvent;
-        parseTransferSingleEvent(receipt: TransactionReceipt): ERC1155.TransferSingleEvent[];
-        decodeTransferSingleEvent(event: Event): ERC1155.TransferSingleEvent;
-        parseURIEvent(receipt: TransactionReceipt): ERC1155.URIEvent[];
-        decodeURIEvent(event: Event): ERC1155.URIEvent;
-        balanceOf: {
-            (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber>;
-        };
-        balanceOfBatch: {
-            (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]>;
-        };
-        isApprovedForAll: {
-            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
-        };
-        safeBatchTransferFrom: {
-            (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
-        };
-        safeTransferFrom: {
-            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
-        };
-        setApprovalForAll: {
-            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
-        };
-        supportsInterface: {
-            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
-        };
-        uri: {
-            (param1: number | BigNumber, options?: TransactionOptions): Promise<string>;
-        };
-        private assign;
-    }
-    export module ERC1155 {
-        interface ApprovalForAllEvent {
-            account: string;
-            operator: string;
-            approved: boolean;
-            _event: Event;
-        }
-        interface TransferBatchEvent {
-            operator: string;
-            from: string;
-            to: string;
-            ids: BigNumber[];
-            values: BigNumber[];
-            _event: Event;
-        }
-        interface TransferSingleEvent {
-            operator: string;
-            from: string;
-            to: string;
-            id: BigNumber;
-            value: BigNumber;
-            _event: Event;
-        }
-        interface URIEvent {
-            value: string;
-            id: BigNumber;
-            _event: Event;
-        }
-    }
-}
-declare module "contracts/ERC20/ERC20.json" {
-    const _default_1: {
-        abi: ({
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-            name?: undefined;
-            outputs?: undefined;
-        } | {
-            anonymous: boolean;
-            inputs: {
-                indexed: boolean;
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            type: string;
-            stateMutability?: undefined;
-            outputs?: undefined;
-        } | {
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            outputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-        })[];
-        bytecode: string;
-    };
-    export default _default_1;
-}
-declare module "contracts/ERC20/ERC20" {
-    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
-    export interface IDeployParams {
-        name: string;
-        symbol: string;
-    }
-    export interface IAllowanceParams {
-        owner: string;
-        spender: string;
-    }
-    export interface IApproveParams {
-        spender: string;
-        amount: number | BigNumber;
-    }
-    export interface IDecreaseAllowanceParams {
-        spender: string;
-        subtractedValue: number | BigNumber;
-    }
-    export interface IIncreaseAllowanceParams {
-        spender: string;
-        addedValue: number | BigNumber;
-    }
-    export interface ITransferParams {
-        to: string;
-        amount: number | BigNumber;
-    }
-    export interface ITransferFromParams {
-        from: string;
-        to: string;
-        amount: number | BigNumber;
-    }
-    export class ERC20 extends _Contract {
-        constructor(wallet: IWallet, address?: string);
-        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
-        parseApprovalEvent(receipt: TransactionReceipt): ERC20.ApprovalEvent[];
-        decodeApprovalEvent(event: Event): ERC20.ApprovalEvent;
-        parseTransferEvent(receipt: TransactionReceipt): ERC20.TransferEvent[];
-        decodeTransferEvent(event: Event): ERC20.TransferEvent;
-        allowance: {
-            (params: IAllowanceParams, options?: TransactionOptions): Promise<BigNumber>;
-        };
-        approve: {
-            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
-        };
-        balanceOf: {
-            (account: string, options?: TransactionOptions): Promise<BigNumber>;
-        };
-        decimals: {
-            (options?: TransactionOptions): Promise<BigNumber>;
-        };
-        decreaseAllowance: {
-            (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
-        };
-        increaseAllowance: {
-            (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
-        };
-        name: {
-            (options?: TransactionOptions): Promise<string>;
-        };
-        symbol: {
-            (options?: TransactionOptions): Promise<string>;
-        };
-        totalSupply: {
-            (options?: TransactionOptions): Promise<BigNumber>;
-        };
-        transfer: {
-            (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
-        };
-        transferFrom: {
-            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
-        };
-        private assign;
-    }
-    export module ERC20 {
-        interface ApprovalEvent {
-            owner: string;
-            spender: string;
-            value: BigNumber;
-            _event: Event;
-        }
-        interface TransferEvent {
-            from: string;
-            to: string;
-            value: BigNumber;
-            _event: Event;
-        }
-    }
-}
-declare module "contracts/ERC721/ERC721.json" {
-    const _default_2: {
-        abi: ({
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-            name?: undefined;
-            outputs?: undefined;
-        } | {
-            anonymous: boolean;
-            inputs: {
-                indexed: boolean;
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            type: string;
-            stateMutability?: undefined;
-            outputs?: undefined;
-        } | {
-            inputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            name: string;
-            outputs: {
-                internalType: string;
-                name: string;
-                type: string;
-            }[];
-            stateMutability: string;
-            type: string;
-            anonymous?: undefined;
-        })[];
-        bytecode: string;
-    };
-    export default _default_2;
-}
-declare module "contracts/ERC721/ERC721" {
-    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
-    export interface IDeployParams {
-        name: string;
-        symbol: string;
-    }
-    export interface IApproveParams {
-        to: string;
-        tokenId: number | BigNumber;
-    }
-    export interface IIsApprovedForAllParams {
-        owner: string;
-        operator: string;
-    }
-    export interface ISafeTransferFromParams {
-        from: string;
-        to: string;
-        tokenId: number | BigNumber;
-    }
-    export interface ISafeTransferFrom_1Params {
-        from: string;
-        to: string;
-        tokenId: number | BigNumber;
-        data: string;
-    }
-    export interface ISetApprovalForAllParams {
-        operator: string;
-        approved: boolean;
-    }
-    export interface ITransferFromParams {
-        from: string;
-        to: string;
-        tokenId: number | BigNumber;
-    }
-    export class ERC721 extends _Contract {
-        constructor(wallet: IWallet, address?: string);
-        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
-        parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
-        decodeApprovalEvent(event: Event): ERC721.ApprovalEvent;
-        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC721.ApprovalForAllEvent[];
-        decodeApprovalForAllEvent(event: Event): ERC721.ApprovalForAllEvent;
-        parseTransferEvent(receipt: TransactionReceipt): ERC721.TransferEvent[];
-        decodeTransferEvent(event: Event): ERC721.TransferEvent;
-        approve: {
-            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
-        };
-        balanceOf: {
-            (owner: string, options?: TransactionOptions): Promise<BigNumber>;
-        };
-        getApproved: {
-            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
-        };
-        isApprovedForAll: {
-            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
-        };
-        name: {
-            (options?: TransactionOptions): Promise<string>;
-        };
-        ownerOf: {
-            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
-        };
-        safeTransferFrom: {
-            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
-        };
-        safeTransferFrom_1: {
-            (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
-        };
-        setApprovalForAll: {
-            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
-        };
-        supportsInterface: {
-            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
-        };
-        symbol: {
-            (options?: TransactionOptions): Promise<string>;
-        };
-        tokenURI: {
-            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
-        };
-        transferFrom: {
-            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
-            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
-        };
-        private assign;
-    }
-    export module ERC721 {
-        interface ApprovalEvent {
-            owner: string;
-            approved: string;
-            tokenId: BigNumber;
-            _event: Event;
-        }
-        interface ApprovalForAllEvent {
-            owner: string;
-            operator: string;
-            approved: boolean;
-            _event: Event;
-        }
-        interface TransferEvent {
-            from: string;
-            to: string;
-            tokenId: BigNumber;
-            _event: Event;
-        }
-    }
-}
-declare module "contracts/index" {
-    export { ERC1155 } from "contracts/ERC1155/ERC1155";
-    export { ERC20 } from "contracts/ERC20/ERC20";
-    export { ERC721 } from "contracts/ERC721/ERC721";
 }
 /// <amd-module name="@ijstech/eth-wallet" />
 declare module "@ijstech/eth-wallet" {

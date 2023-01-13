@@ -49,6 +49,7 @@ export class ERC20 extends _Contract{
     }
     balanceOf: {
         (account:string, options?: TransactionOptions): Promise<BigNumber>;
+        txData: (account:string, options?: TransactionOptions) => Promise<string>;
     }
     decimals: {
         (options?: TransactionOptions): Promise<BigNumber>;
@@ -89,7 +90,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('balanceOf',[account],options);
             return new BigNumber(result);
         }
-        this.balanceOf = balanceOf_call
+        let balanceOf_txData = async (account:string, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('balanceOf',[account],options);
+            return result;
+        }       
+        this.balanceOf = Object.assign(balanceOf_call, {
+            txData:balanceOf_txData
+        });
         let decimals_call = async (options?: TransactionOptions): Promise<BigNumber> => {
             let result = await this.call('decimals',[],options);
             return new BigNumber(result);

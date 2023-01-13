@@ -120,6 +120,13 @@ export interface IWallet {
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+    multiCall(calls: {
+        to: string;
+        data: string;
+    }[], gasBuffer?: string): Promise<{
+        results: string[];
+        lastSuccessIndex: BigNumber;
+    }>;
 }
 export interface IClientWallet extends IWallet {
     blockGasLimit(): Promise<number>;
@@ -426,5 +433,12 @@ export declare class Wallet implements IClientWallet {
     newBatchRequest(): Promise<IBatchRequestObj>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
+    multiCall(calls: {
+        to: string;
+        data: string;
+    }[], gasBuffer?: string): Promise<{
+        results: string[];
+        lastSuccessIndex: BigNumber;
+    }>;
     get web3(): W3.default;
 }
