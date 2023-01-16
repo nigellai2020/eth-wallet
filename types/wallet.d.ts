@@ -148,6 +148,9 @@ export interface IClientWallet extends IWallet {
     signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     transactionCount(): Promise<number>;
+    getNetworkInfo(chainId: number): INetwork;
+    setNetworkInfo(network: INetwork): void;
+    setMultipleNetworksInfo(networks: INetwork[]): void;
 }
 export interface IContractMethod {
     call: any;
