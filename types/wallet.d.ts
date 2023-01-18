@@ -6,7 +6,7 @@
 import * as W3 from 'web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
-import { MessageTypes, TypedMessage } from './types';
+import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 export declare function toString(value: any): any;
 export declare function stringToBytes32(value: string | stringArray): string | string[];
 export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
@@ -127,6 +127,9 @@ export interface IWallet {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
 }
 export interface IClientWallet extends IWallet {
     blockGasLimit(): Promise<number>;
@@ -443,5 +446,8 @@ export declare class Wallet implements IClientWallet {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     get web3(): W3.default;
 }
