@@ -51,3 +51,7 @@ export interface TypedMessage<T extends MessageTypes> {
     };
     message: Record<string, unknown>;
 }
+
+export interface IAbiDefinition {
+    _abi: any;
+}

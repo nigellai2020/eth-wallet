@@ -3084,6 +3084,10 @@ var _Wallet = class {
     });
     return result;
   }
+  encodeFunctionCall(contract, methodName, params) {
+    const abi = contract._abi.find((v) => v.name == methodName);
+    return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+  }
   get web3() {
     return this._web3;
   }

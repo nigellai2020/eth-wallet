@@ -10,7 +10,7 @@ import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
 import * as Utils from "./utils";
-import { MessageTypes, TypedMessage } from './types';
+import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 
 let Web3Modal;
 let WalletConnectProvider;
@@ -209,6 +209,11 @@ function initWeb3ModalLib(callback: () => void){
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 		multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+		encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+			contract: T, 
+			methodName: F, 
+			params: string[]
+		): string;
 	};
 	export interface IClientWallet extends IWallet {	
 		blockGasLimit(): Promise<number>;
@@ -2167,6 +2172,14 @@ function initWeb3ModalLib(callback: () => void){
 				gasBuffer: new BigNumber(gasBuffer??'3000000')
 			});
 			return result;
+		}
+		encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+			contract: T, 
+			methodName: F, 
+			params: string[]
+		) {
+			const abi = contract._abi.find(v => v.name == methodName);
+			return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
 		}
 		public get web3(): W3.default{
 			return this._web3;
