@@ -137,8 +137,8 @@ suite('##Wallet Ganache', async function() {
         assert.strictEqual((await wallet.balanceOf(accounts[3])).toNumber(), 1002);        
     })    
 })
+/*
 suite('##Wallet', function() {
-    return;
     this.timeout(20000);
     const wallet = new Wallet(Config.provider,  [
         {
@@ -243,8 +243,9 @@ suite('##Wallet', function() {
         assert.strictEqual(event.data.to, '0x3E38C203a196b1bB1bb90016A984AD9578910896');
     })
 })
+*/
+/*
 suite('##Wallet AWS KMS', async function() {   
-    return;
     this.timeout(40000);
     const wallet = new Wallet(Config.provider);    
     const kmsWallet = new Wallet(Config.provider, Config.kmsAccount);        
@@ -283,3 +284,4 @@ suite('##Wallet AWS KMS', async function() {
         assert.strictEqual(balance.eq(await walletToken.balance), true);
     })
 })
+*/

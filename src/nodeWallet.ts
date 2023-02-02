@@ -1,35 +1,35 @@
 import {IKMS, IAccount, Wallet, TransactionReceipt, Transaction} from './wallet';
 import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
 import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
-import {KMS} from './kms';
+// import {KMS} from './kms';
 
 export class NodeWallet extends Wallet{
-    private _kms: KMS;
+    // private _kms: KMS;
     set account(value: IAccount){
-        this._kms = null;
+        // this._kms = null;
         super.account = value;
     };
     get address(): string{			
-        if (this._kms && this._account)
-        	return this._account.address
-        else
+        // if (this._kms && this._account)
+        // 	return this._account.address
+        // else
             return super.address;
     };
-    async initKMS(value?: IKMS){			
-        value = value || this._account.kms;			
-        if (value){
-            this._kms = new KMS(value);
-            this._account = {
-                address: await this._kms.getAddress(),
-                kms: value
-            };
-        };
-    };
-    private get kms(): KMS{
-        if (this._account && !this._kms && this._account.kms)
-            this._kms = new KMS(this._account.kms);
-        return this._kms;
-    };
+    // async initKMS(value?: IKMS){			
+    //     value = value || this._account.kms;			
+    //     if (value){
+    //         this._kms = new KMS(value);
+    //         this._account = {
+    //             address: await this._kms.getAddress(),
+    //             kms: value
+    //         };
+    //     };
+    // };
+    // private get kms(): KMS{
+    //     if (this._account && !this._kms && this._account.kms)
+    //         this._kms = new KMS(this._account.kms);
+    //     return this._kms;
+    // };
     async methods(...args: any): Promise<any>{
         let _web3 = this._web3;
         if ((<any>_web3).methods){
@@ -156,25 +156,25 @@ export class NodeWallet extends Wallet{
                     return result.contractAddress;
                 return result;
             }
-            else if (this._account && this._account.kms){
-            	let nonce = await _web3.eth.getTransactionCount(this.address);
-            	let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-            	let tx = {
-            		from: this.address,
-            		nonce: nonce,
-            		gasPrice: price,
-            		gasLimit: gas,
-            		gas: gas,
-            		to: address,
-            		data: method.encodeABI(),
-            	};
-            	let chainId = await this.getChainId();
-            	let txHash = await this.kms.signTransaction(chainId, tx);
-            	result = await _web3.eth.sendSignedTransaction(txHash)
-            	if (methodName == 'deploy')
-            		return result.contractAddress;
-            	return result;
-            }
+            // else if (this._account && this._account.kms){
+            // 	let nonce = await _web3.eth.getTransactionCount(this.address);
+            // 	let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
+            // 	let tx = {
+            // 		from: this.address,
+            // 		nonce: nonce,
+            // 		gasPrice: price,
+            // 		gasLimit: gas,
+            // 		gas: gas,
+            // 		to: address,
+            // 		data: method.encodeABI(),
+            // 	};
+            // 	let chainId = await this.getChainId();
+            // 	let txHash = await this.kms.signTransaction(chainId, tx);
+            // 	result = await _web3.eth.sendSignedTransaction(txHash)
+            // 	if (methodName == 'deploy')
+            // 		return result.contractAddress;
+            // 	return result;
+            // }
             else{					
                 contract.options.address = address;
                 let nonce = await _web3.eth.getTransactionCount(this.address);
@@ -212,9 +212,9 @@ export class NodeWallet extends Wallet{
         }
     };
     set privateKey(value: string){
-        if (value){
-            this._kms = null;
-        };
+        // if (value){
+        //     this._kms = null;
+        // };
         super.privateKey = value;
     };
     send(to: string, amount: number): Promise<TransactionReceipt>{
@@ -225,7 +225,7 @@ export class NodeWallet extends Wallet{
             try{
                 let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
                 let result;
-                if ((self._account && self._account.privateKey) || self.kms){
+                if ((self._account && self._account.privateKey) /*|| self.kms*/){
                     let nonce = await _web3.eth.getTransactionCount(address);        				
                     let gas = await _web3.eth.estimateGas({
                          from: address,       
@@ -243,15 +243,15 @@ export class NodeWallet extends Wallet{
                         to: to,     
                         value: value
                     };
-                    if (self.kms){
-                    	let chainId = await self.getChainId();
-                    	let txHash = await self.kms.signTransaction(chainId, tx);
-                    	result = await _web3.eth.sendSignedTransaction(txHash);
-                    }
-                    else{
+                    // if (self.kms){
+                    // 	let chainId = await self.getChainId();
+                    // 	let txHash = await self.kms.signTransaction(chainId, tx);
+                    // 	result = await _web3.eth.sendSignedTransaction(txHash);
+                    // }
+                    // else{
                         let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
                         result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
-                    }						
+                    // }						
                     resolve(result);	
                 }
                 else{
@@ -275,11 +275,11 @@ export class NodeWallet extends Wallet{
                 let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
                 return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
             }
-            else if (this._account && this._account.kms){
-            	let chainId = await this.getChainId();
-            	let signedTx = await this.kms.signTransaction(chainId, _transaction);
-            	return await this._web3.eth.sendSignedTransaction(signedTx);
-            }
+            // else if (this._account && this._account.kms){
+            // 	let chainId = await this.getChainId();
+            // 	let signedTx = await this.kms.signTransaction(chainId, _transaction);
+            // 	return await this._web3.eth.sendSignedTransaction(signedTx);
+            // }
             else {
                 let promiEvent = this._web3.eth.sendTransaction(_transaction);
                 promiEvent.on('error', (error: Error) =>{
@@ -317,11 +317,11 @@ export class NodeWallet extends Wallet{
         let promise = new Promise<string>(async function(resolve, reject){
             try{
                 let result;
-                if (self.kms){
-                	result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg))
-                	resolve(result);
-                }
-                else 
+                // if (self.kms){
+                // 	result = await self.kms.signMessage(self.chainId, _web3.utils.stringToHex(msg))
+                // 	resolve(result);
+                // }
+                // else 
                 if (self._account && self._account.privateKey){
                     result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
                     resolve(result.signature);
@@ -366,11 +366,11 @@ export class NodeWallet extends Wallet{
             }, privateKey?privateKey:this._account.privateKey);
             return signedTx.rawTransaction;
         }
-        else if (this._account && this._account.kms){	
-        	let chainId = await this.getChainId();
-        	let txHash = await this.kms.signTransaction(chainId, tx);
-        	return txHash;
-        }
+        // else if (this._account && this._account.kms){	
+        // 	let chainId = await this.getChainId();
+        // 	let txHash = await this.kms.signTransaction(chainId, tx);
+        // 	return txHash;
+        // }
         else{
             let t = await _web3.eth.signTransaction(<any>{
                 from: this.address,
