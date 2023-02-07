@@ -556,8 +556,8 @@ declare module "contract" {
             protected decodeEvents(receipt: TransactionReceipt): any[];
             protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
             get events(): EventType[];
-            protected getAbiEvents(): any;
-            protected getAbiTopics(eventNames?: string[]): any[];
+            getAbiEvents(): any;
+            getAbiTopics(eventNames?: string[]): any[];
             scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
             batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
             protected call(methodName: string, params?: any[], options?: any): Promise<any>;
@@ -858,6 +858,13 @@ declare module "wallet" {
         send(to: string, amount: number): Promise<TransactionReceipt>;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        scanEvents(params: {
+            fromBlock: number;
+            toBlock: number | string;
+            topics?: any;
+            events?: any;
+            address?: string | string[];
+        }): Promise<Event[]>;
         signMessage(msg: string): Promise<string>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         soliditySha3(...val: any[]): string;
@@ -1163,6 +1170,13 @@ declare module "wallet" {
             topics: string[];
         }): Event;
         decodeEventData(data: Log, events?: any): Promise<Event>;
+        scanEvents(params: {
+            fromBlock: number;
+            toBlock: number | string;
+            topics?: any;
+            events?: any;
+            address?: string | string[];
+        }): Promise<Event[]>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         send(to: string, amount: number | BigNumber): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;

@@ -2779,7 +2779,26 @@ var _Wallet = class {
       await handler(this, log);
     return log;
   }
-  scanEvents(fromBlock, toBlock, topics, events, address) {
+  scanEvents(param1, param2, param3, param4, param5) {
+    let fromBlock;
+    let toBlock;
+    let topics;
+    let events;
+    let address;
+    if (typeof param1 == "number") {
+      fromBlock = param1;
+      toBlock = param2;
+      topics = param3;
+      events = param4;
+      address = param5;
+    } else {
+      fromBlock = param1.fromBlock;
+      toBlock = param1.toBlock;
+      topics = param1.topics;
+      events = param1.events;
+      address = param1.address;
+    }
+    ;
     let _web3 = this._web3;
     return new Promise(async (resolve, reject) => {
       try {

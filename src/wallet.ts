@@ -199,6 +199,7 @@ function initWeb3ModalLib(callback: () => void){
 		send(to: string, amount: number): Promise<TransactionReceipt>;
 		_send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
 		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+		scanEvents(params: {fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]}): Promise<Event[]>;
 		signMessage(msg: string): Promise<string>;
 		signTransaction(tx: any, privateKey?: string): Promise<string>;
 		soliditySha3(...val: any[]): string;
@@ -1823,7 +1824,29 @@ function initWeb3ModalLib(callback: () => void){
 				await handler(this, log);
 			return log;
 		};
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>{
+		scanEvents(params: {fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
+		scanEvents(param1: any, param2?: any | string, param3?: any, param4?: any, param5?: string|string[]): Promise<Event[]>{
+			let fromBlock: number;
+			let toBlock: number | string;
+			let topics: any 
+			let events: any 
+			let address: string|string[];
+			
+			if (typeof(param1) == 'number'){
+				fromBlock = param1;
+				toBlock = param2;
+				topics = param3;
+				events = param4;
+				address = param5;
+			}
+			else{
+				fromBlock = param1.fromBlock;
+				toBlock = param1.toBlock
+				topics = param1.topics
+				events = param1.events
+				address = param1.address
+			};
         	let _web3 = this._web3;        	
         	return new Promise(async (resolve, reject)=>{
         		try{
@@ -1918,7 +1941,7 @@ function initWeb3ModalLib(callback: () => void){
         			reject(err);
         		}
         	})
-		}
+		};
 		setBlockTime(time: number): Promise<any>{
 			return new Promise((resolve, reject) => {
 				let method = time > 1000000000 ? 'evm_mine' : 'evm_increaseTime'; 
@@ -1948,7 +1971,7 @@ function initWeb3ModalLib(callback: () => void){
 					}
 				})
 			});
-		}
+		};
 	    increaseBlockTime(value: number): Promise<any>{
 			return new Promise((resolve, reject) => {
 				(<any>this._web3.currentProvider).send({

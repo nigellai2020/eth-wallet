@@ -92,7 +92,10 @@ suite('##Wallet Ganache', async function() {
         let events = await erc20.scanEvents(fromBlock, 'latest', ['Transfer']);
         let event = events[0];        
         assert.strictEqual(wallet.utils.fromWei(event.data.value), '1001');
-    })
+        events = await wallet.scanEvents({fromBlock: fromBlock, toBlock: 'latest', topics: erc20.getAbiTopics(['Transfer']), events: erc20.getAbiEvents()});
+        event = events[0];        
+        assert.strictEqual(wallet.utils.fromWei(event.data.value), '1001');
+    });
     test('Erc20.transfer', async function(){
         let erc20 = wallet.token(erc20Address);
         wallet.defaultAccount = accounts[1];
