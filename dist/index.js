@@ -230,9 +230,17 @@ var require_lib = __commonJS({
         return [result];
       }
       scanEvents(fromBlock, toBlock, eventNames) {
-        let topics = this.getAbiTopics(eventNames);
-        let events = this.getAbiEvents();
-        return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        if (typeof fromBlock == "number") {
+          let topics = this.getAbiTopics(eventNames);
+          let events = this.getAbiEvents();
+          return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        } else {
+          let params = fromBlock;
+          let topics = this.getAbiTopics(params.eventNames);
+          let events = this.getAbiEvents();
+          return this.wallet.scanEvents(params.fromBlock, params.toBlock, topics, events, this._address);
+        }
+        ;
       }
       async batchCall(batchObj, key, methodName, params, options) {
       }
@@ -1573,6 +1581,7 @@ var WalletPlugin;
   WalletPlugin2["ONTOWallet"] = "onto";
   WalletPlugin2["WalletConnect"] = "walletconnect";
   WalletPlugin2["BitKeepWallet"] = "bitkeepwallet";
+  WalletPlugin2["FrontierWallet"] = "frontierwallet";
 })(WalletPlugin || (WalletPlugin = {}));
 var WalletPluginConfig = {
   [WalletPlugin.MetaMask]: {
@@ -1642,6 +1651,17 @@ var WalletPluginConfig = {
     },
     homepage: () => {
       return "https://bitkeep.com/download?type=2";
+    }
+  },
+  [WalletPlugin.FrontierWallet]: {
+    provider: () => {
+      return window["frontier"]["ethereum"];
+    },
+    installed: () => {
+      return !!window["frontier"];
+    },
+    homepage: () => {
+      return "https://www.frontier.xyz/browser-extension";
     }
   }
 };

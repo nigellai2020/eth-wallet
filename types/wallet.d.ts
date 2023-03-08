@@ -290,7 +290,8 @@ export declare enum WalletPlugin {
     BinanceChainWallet = "binancechainwallet",
     ONTOWallet = "onto",
     WalletConnect = "walletconnect",
-    BitKeepWallet = "bitkeepwallet"
+    BitKeepWallet = "bitkeepwallet",
+    FrontierWallet = "frontierwallet"
 }
 export declare type WalletPluginConfigType = {
     [key in WalletPlugin]?: {
