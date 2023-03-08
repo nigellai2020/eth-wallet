@@ -537,6 +537,7 @@ function initWeb3ModalLib(callback: () => void){
 		ONTOWallet = 'onto',
 		WalletConnect = 'walletconnect',
 		BitKeepWallet = 'bitkeepwallet',
+		FrontierWallet = 'frontierwallet',
 	}
 	export type WalletPluginConfigType = { [key in WalletPlugin]?: {
 		provider: () => any;
@@ -612,7 +613,18 @@ function initWeb3ModalLib(callback: () => void){
 			homepage: () => {
 				return 'https://bitkeep.com/download?type=2'
 			}
-		}
+		},
+		[WalletPlugin.FrontierWallet]: {
+			provider: () => {
+				return window['frontier']['ethereum'];
+			},
+			installed: () => {
+				return !!window['frontier'];
+			},
+			homepage: () => {
+				return 'https://www.frontier.xyz/browser-extension';
+			}
+		},
 	}
 	export interface IClientProviderOptions {	
 		infuraId?: string;

@@ -1037,7 +1037,8 @@ declare module "wallet" {
         BinanceChainWallet = "binancechainwallet",
         ONTOWallet = "onto",
         WalletConnect = "walletconnect",
-        BitKeepWallet = "bitkeepwallet"
+        BitKeepWallet = "bitkeepwallet",
+        FrontierWallet = "frontierwallet"
     }
     export type WalletPluginConfigType = {
         [key in WalletPlugin]?: {
