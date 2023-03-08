@@ -198,8 +198,8 @@ function initWeb3ModalLib(callback: () => void){
 		registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
 		send(to: string, amount: number): Promise<TransactionReceipt>;
 		_send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
-		scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
-		scanEvents(params: {fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]}): Promise<Event[]>;
+		scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+		scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]}): Promise<Event[]>;
 		signMessage(msg: string): Promise<string>;
 		signTransaction(tx: any, privateKey?: string): Promise<string>;
 		soliditySha3(...val: any[]): string;
@@ -1836,8 +1836,8 @@ function initWeb3ModalLib(callback: () => void){
 				await handler(this, log);
 			return log;
 		};
-		scanEvents(params: {fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
+		scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
 		scanEvents(param1: any, param2?: any | string, param3?: any, param4?: any, param5?: string|string[]): Promise<Event[]>{
 			let fromBlock: number;
 			let toBlock: number | string;

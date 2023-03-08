@@ -857,10 +857,10 @@ declare module "wallet" {
         registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
         send(to: string, amount: number): Promise<TransactionReceipt>;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         scanEvents(params: {
             fromBlock: number;
-            toBlock: number | string;
+            toBlock?: number | string;
             topics?: any;
             events?: any;
             address?: string | string[];
@@ -1173,12 +1173,12 @@ declare module "wallet" {
         decodeEventData(data: Log, events?: any): Promise<Event>;
         scanEvents(params: {
             fromBlock: number;
-            toBlock: number | string;
+            toBlock?: number | string;
             topics?: any;
             events?: any;
             address?: string | string[];
         }): Promise<Event[]>;
-        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         send(to: string, amount: number | BigNumber): Promise<TransactionReceipt>;
         setBlockTime(time: number): Promise<any>;
         increaseBlockTime(value: number): Promise<any>;
