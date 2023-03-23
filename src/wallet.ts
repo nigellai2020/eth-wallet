@@ -4,8 +4,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import * as W3 from 'web3';
-const Web3 = initWeb3Lib(); // tslint:disable-line
+// const Web3 = initWeb3Lib(); // tslint:disable-line
+import {Web3} from './web3';
 import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
@@ -248,6 +248,7 @@ function initWeb3ModalLib(callback: () => void){
 	export interface IContract {
 		deploy(params: {data: string, arguments?: any[]}): IContractMethod;
 		methods: {[methodName: string]: (...params:any[]) => IContractMethod};
+		options: {address: string};
 	}
     export interface Event{
 		name: string;
@@ -331,7 +332,7 @@ function initWeb3ModalLib(callback: () => void){
     }    
 	const WalletUtils = {
 		fromWei(value: any): BigNumber{
-			return new BigNumber(W3.default.utils.fromWei(value))
+			return new BigNumber(Web3.utils.fromWei(value))
 		}
 	}
 	interface IDictionary {
@@ -975,7 +976,7 @@ function initWeb3ModalLib(callback: () => void){
 		confirmation?: (receipt: any) => void;
 	};	
     export class Wallet implements IClientWallet{
-		protected _web3: W3.default;		
+		protected _web3: Web3;
         protected _account: IAccount;
 		private _accounts: IAccount[];
 		private _provider: any;
@@ -1264,7 +1265,7 @@ function initWeb3ModalLib(callback: () => void){
 			return result;
 		}
 		private _getMethod(abiHash: string, address: string, methodName:string, params?:any[]): IContractMethod{
-            let contract:any = this.getContract(abiHash);
+            let contract:IContract = this.getContract(abiHash);
             params = params || [];
 			let bytecode: string;
 			if (!methodName){
@@ -1478,7 +1479,7 @@ function initWeb3ModalLib(callback: () => void){
         		if (methodName == 'deploy')
         			byteCode = args.shift();
 
-				let contract;				
+				let contract: IContract;				
 				let hash;
 				if (address && this._contracts[address])
 					contract = this._contracts[address]
@@ -2179,7 +2180,7 @@ function initWeb3ModalLib(callback: () => void){
             return new Promise((resolve, reject) => {
                 try {            
                     resolve({
-                        batch: new this._web3.BatchRequest(),
+                        batch: new this._web3.eth.BatchRequest(),
                         promises: [],
                         execute: (batch: any, promises: any[]) => {
                             batch.execute(); 
@@ -2216,7 +2217,7 @@ function initWeb3ModalLib(callback: () => void){
 			const abi = contract._abi.find(v => v.name == methodName);
 			return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
 		}
-		public get web3(): W3.default{
+		public get web3(): Web3{
 			return this._web3;
 		}
 	}

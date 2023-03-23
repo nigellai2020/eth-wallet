@@ -9,7 +9,8 @@ import { IGetMerkleLeafDataOptions, IGetMerkleProofOptions, IMerkleTreeOptions, 
 import {IMerkleTreeAbiItem, EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage} from './nodeTypes';
 import { BigNumber } from "bignumber.js";
 import { EIP712DomainAbi } from "./constants";
-const Web3 = Web3Lib(); // tslint:disable-line
+// const Web3 = Web3Lib(); // tslint:disable-line
+import {Web3} from './web3';
 
 function Web3Lib() {
     if (typeof window !== "undefined" && window["Web3"])
