@@ -15,13 +15,14 @@
         "ethereumjs-tx": "2.1.2",
         "ethereumjs-util": "7.0.7",
         "solc": "0.8.6",
-        "web3": "1.8.2"
+        "web3-eth": "1.8.2",
+        "web3-utils": "1.8.2"
     },
     "devDependencies": {
         "@ijstech/eth-contract": "^0.1.5",
         "@openzeppelin/contracts": "4.8.2",
         "@types/mocha": "9.1.1",
-        "@types/node": "14.17",
+        "@types/node": "18.15",
         "esbuild": "0.13.13",
         "ganache": "7.2.0",
         "mocha": "10.0.0",
@@ -36,6 +37,7 @@
         "build:test": "rm -f test/contracts/*.ts && sol2ts test/test-contracts.json",
         "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
         "test:wallet": "mocha --ui tdd --exit --require ts-node/register test/wallet.spec.ts",
-        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts"
+        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts",
+        "patch-web3": "patch -d ./ -p 0 < web3.patch"
     }
 }
