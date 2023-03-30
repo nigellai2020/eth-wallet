@@ -14,7 +14,7 @@ declare module "web3" {
     export class Web3 {
         eth: Eth;
         utils: Utils;
-        constructor(provider: any | provider);
+        constructor(provider?: any | provider);
         get currentProvider(): provider;
         setProvider(provider: provider): boolean;
     }

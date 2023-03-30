@@ -1,7 +1,7 @@
 // @ts-ignore
 import { Eth } from 'web3-eth';
 import { Utils } from 'web3-utils';
-import {  provider, Providers} from 'web3-core';
+import {  provider} from 'web3-core';
 
 const eth = require('web3-eth');
 const utils = require('web3-utils');
@@ -15,8 +15,7 @@ export interface IWeb3{
 export class Web3 {
 	eth: Eth;
 	utils: Utils = utils;
-	constructor(provider: any | provider){
-		// @ts-ignore
+	constructor(provider?: any | provider){
 		this.eth = new eth(provider);
 	}
 	get currentProvider(): provider{

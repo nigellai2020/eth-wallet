@@ -10,7 +10,7 @@ export interface IWeb3 {
 export declare class Web3 {
     eth: Eth;
     utils: Utils;
-    constructor(provider: any | provider);
+    constructor(provider?: any | provider);
     get currentProvider(): provider;
     setProvider(provider: provider): boolean;
 }
