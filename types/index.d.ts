@@ -8,6 +8,7 @@ export { NodeWallet as Wallet } from './nodeWallet';
 export { Contract } from './contract';
 export { BigNumber } from "bignumber.js";
 export { Erc20 } from './contracts/erc20';
+export { IWeb3, Web3 } from './web3';
 export { MerkleTree, IMerkleTreeOptions, IGetMerkleProofOptions, IGetMerkleLeafDataOptions } from './merkleTree';
 export * as Utils from './nodeUtils';
 export * as Contracts from './contracts';

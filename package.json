@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.47",
+    "version": "0.1.49",
     "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {
@@ -10,10 +10,8 @@
     "pluginTypes": "pluginTypes/index.d.ts",
     "dependencies": {
         "bignumber.js": "9.0.1",
-        "bn.js": "5.2.0",
         "ethereum-cryptography": "1.1.2",
         "solc": "0.8.6",
-        "web3": "^1.9.0",
         "web3-eth": "1.9.0",
         "web3-utils": "1.9.0"
     },
@@ -30,13 +28,12 @@
     },
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -rf dist && npm run build:pluginTypes && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "build:pluginTypes": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json && cat src/types/web3 pluginTypes/index.d.ts > pluginTypes/tmp && mv pluginTypes/tmp pluginTypes/index.d.ts",
+        "build:pluginTypes": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json",
         "build:pluginTypes1": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json && cat src/types/bignumber src/types/web3 pluginTypes/index.d.ts > pluginTypes/tmp && mv pluginTypes/tmp pluginTypes/index.d.ts",
         "build:tools": "cd tools && rm -rf bin && tsc && cd ..",
         "build:test": "rm -f test/contracts/*.ts && sol2ts test/test-contracts.json",
         "test": "mocha --ui tdd --exit --require ts-node/register test/*.spec.ts",
         "test:wallet": "mocha --ui tdd --exit --require ts-node/register test/wallet.spec.ts",
-        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts",
-        "patch-web3": "patch -d ./ -p 0 < web3.patch"
+        "test:signTypedData": "mocha --ui tdd --exit --require ts-node/register test/signTypedData.spec.ts"
     }
 }

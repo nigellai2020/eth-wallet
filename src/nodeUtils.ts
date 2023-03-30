@@ -10,13 +10,12 @@ import {IMerkleTreeAbiItem, EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMes
 import { BigNumber } from "bignumber.js";
 import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib();// tslint:disable-line
-import {Web3 as W3, IWeb3} from './web3';
 
-function Web3Lib(): IWeb3 {
+function Web3Lib() {
     if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
     else
-        return require("web3");
+        return require("./web3");
 };
 export function sleep(millisecond: number) {
     return new Promise(function (resolve) {
