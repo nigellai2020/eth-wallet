@@ -12,11 +12,10 @@
         "bignumber.js": "9.0.1",
         "bn.js": "5.2.0",
         "ethereum-cryptography": "1.1.2",
-        "ethereumjs-tx": "2.1.2",
-        "ethereumjs-util": "7.0.7",
         "solc": "0.8.6",
-        "web3-eth": "1.8.2",
-        "web3-utils": "1.8.2"
+        "web3": "^1.9.0",
+        "web3-eth": "1.9.0",
+        "web3-utils": "1.9.0"
     },
     "devDependencies": {
         "@ijstech/eth-contract": "^0.1.5",

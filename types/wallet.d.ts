@@ -3,7 +3,8 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import * as W3 from 'web3';
+declare const Web3: any;
+import { IWeb3 } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
@@ -175,6 +176,9 @@ export interface IContract {
     methods: {
         [methodName: string]: (...params: any[]) => IContractMethod;
     };
+    options: {
+        address: string;
+    };
 }
 export interface Event {
     name: string;
@@ -344,7 +348,7 @@ export interface ISendTxEventsOptions {
     confirmation?: (receipt: any) => void;
 }
 export declare class Wallet implements IClientWallet {
-    protected _web3: W3.default;
+    protected _web3: IWeb3;
     protected _account: IAccount;
     private _accounts;
     private _provider;
@@ -464,5 +468,6 @@ export declare class Wallet implements IClientWallet {
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
-    get web3(): W3.default;
+    get web3(): typeof Web3;
 }
+export {};

@@ -28,7 +28,7 @@ async function build() {
     plugins: [],
   }).catch(() => process.exit(1));
   let content = await readFile('dist/plugin.js');
-  let web3 = await readFile('node_modules/web3/dist/web3.min.js');
+  let web3 = await readFile('src/lib/web3/1.9.0/web3.min.js');
   let bignumber = await readFile('node_modules/bignumber.js/bignumber.min.js');
 //   define("aws-sdk", ()=>{});
 // define("asn1.js", ()=>{});

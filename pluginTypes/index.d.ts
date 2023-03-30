@@ -1,6 +1,24 @@
 declare module "web3"{
     export default class {}
 }
+declare module "web3" {
+    import { Eth } from 'web3-eth';
+    import { Utils } from 'web3-utils';
+    import { provider } from 'web3-core';
+    export interface IWeb3 {
+        eth: Eth;
+        utils: Utils;
+        currentProvider(): provider;
+        setProvider(provider: provider): any;
+    }
+    export class Web3 {
+        eth: Eth;
+        utils: Utils;
+        constructor(provider: any | provider);
+        get currentProvider(): provider;
+        setProvider(provider: provider): boolean;
+    }
+}
 declare module "contracts/ERC1155/ERC1155.json" {
     const _default: {
         abi: ({
@@ -750,7 +768,8 @@ declare module "wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    import * as W3 from 'web3';
+    const Web3: any;
+    import { IWeb3 } from "web3";
     import { BigNumber } from 'bignumber.js';
     import { Erc20 } from "contracts/erc20";
     import { IAbiDefinition, MessageTypes, TypedMessage } from "types";
@@ -922,6 +941,9 @@ declare module "wallet" {
         methods: {
             [methodName: string]: (...params: any[]) => IContractMethod;
         };
+        options: {
+            address: string;
+        };
     }
     export interface Event {
         name: string;
@@ -1091,7 +1113,7 @@ declare module "wallet" {
         confirmation?: (receipt: any) => void;
     }
     export class Wallet implements IClientWallet {
-        protected _web3: W3.default;
+        protected _web3: IWeb3;
         protected _account: IAccount;
         private _accounts;
         private _provider;
@@ -1211,7 +1233,7 @@ declare module "wallet" {
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
-        get web3(): W3.default;
+        get web3(): typeof Web3;
     }
 }
 /// <amd-module name="@ijstech/eth-wallet" />

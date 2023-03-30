@@ -7,14 +7,14 @@
 import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
-// const Web3 = Web3Lib(); // tslint:disable-line
-import {Web3} from './web3';
+const Web3 = Web3Lib(); // tslint:disable-line
+// import {Web3} from './web3';
 
 function Web3Lib() {
     if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
     else
-        return require("web3");
+        return require("./web3");
 };
 export function sleep(millisecond: number) {
     return new Promise(function (resolve) {

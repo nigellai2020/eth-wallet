@@ -4,8 +4,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-// const Web3 = initWeb3Lib(); // tslint:disable-line
-import {Web3} from './web3';
+const Web3 = initWeb3Lib(); // tslint:disable-line
+import {IWeb3} from './web3';
 import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
@@ -19,12 +19,13 @@ const RequireJS = {
     require(reqs:string[], callback:any):void {
         (<any>window.require)(reqs, callback);
     }
-}
+};
 function initWeb3Lib(){
 	if (typeof window !== "undefined" && window["Web3"])
         return window["Web3"];
-	else
-		return require("web3");
+	else{
+		return require("./web3");
+	};
 };
 function initWeb3ModalLib(callback: () => void){
 	if (typeof window !== "undefined") {
@@ -976,7 +977,7 @@ function initWeb3ModalLib(callback: () => void){
 		confirmation?: (receipt: any) => void;
 	};	
     export class Wallet implements IClientWallet{
-		protected _web3: Web3;
+		protected _web3: IWeb3;
         protected _account: IAccount;
 		private _accounts: IAccount[];
 		private _provider: any;
@@ -992,7 +993,8 @@ function initWeb3ModalLib(callback: () => void){
 		private _utils: IWalletUtils;
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
-			this._provider = provider;			
+			this._provider = provider;		
+			// let W3: any = Web3;	
 			this._web3 = new Web3(provider);
 			this._utils = {
 				fromDecimals: Utils.fromDecimals,
@@ -2217,7 +2219,7 @@ function initWeb3ModalLib(callback: () => void){
 			const abi = contract._abi.find(v => v.name == methodName);
 			return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
 		}
-		public get web3(): Web3{
+		public get web3(): typeof Web3{
 			return this._web3;
 		}
 	}

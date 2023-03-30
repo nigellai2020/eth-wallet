@@ -1,18 +1,29 @@
-import Eth from "web3-eth";
-import * as WEB3_UTILS from "web3-utils";
+// @ts-ignore
+import { Eth } from 'web3-eth';
+import { Utils } from 'web3-utils';
+import {  provider, Providers} from 'web3-core';
+
+const eth = require('web3-eth');
+const utils = require('web3-utils');
+
+export interface IWeb3{
+	eth: Eth;
+	utils: Utils;
+	currentProvider(): provider;
+	setProvider(provider: provider): any;
+};
 export class Web3 {
 	eth: Eth;
-	utils = WEB3_UTILS;
-	constructor(provider: any){
-		this.eth = new Eth(provider);
+	utils: Utils = utils;
+	constructor(provider: any | provider){
+		// @ts-ignore
+		this.eth = new eth(provider);
 	}
-	get currentProvider(){
+	get currentProvider(): provider{
 		return this.eth.currentProvider;
 	}
-	setProvider(provider){
+	setProvider(provider: provider): boolean{
 		return this.eth.setProvider(provider)
 	}
-}
-export module Web3 {
-	export const utils = WEB3_UTILS;
-}
+};
+module.exports = Web3;
