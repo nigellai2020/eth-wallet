@@ -22,6 +22,16 @@ suite('##Wallet Ganache', async function() {
     suiteSetup(async function(){
         accounts = await wallet.accounts;        
     })
+    test('wallet.utils', async function(){
+        assert.strictEqual(
+            wallet.utils.stringToBytes32(['a','b','c']).toString(),
+            [
+                '0x6100000000000000000000000000000000000000000000000000000000000000',
+                '0x6200000000000000000000000000000000000000000000000000000000000000',
+                '0x6300000000000000000000000000000000000000000000000000000000000000'
+            ].toString()
+        );
+    })
     test('wallet.setPrivateKey', async function(){
         wallet.defaultAccount = accounts[0];
         assert.strictEqual(wallet.address, accounts[0]);
