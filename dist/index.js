@@ -397,6 +397,7 @@ var init_web3 = __esm({
         return this.eth.setProvider(provider);
       }
     };
+    Web3.utils = utils;
     module.exports = Web3;
   }
 });

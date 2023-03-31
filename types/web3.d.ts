@@ -776,8 +776,9 @@ export interface IWeb3 {
     setProvider(provider: any): any;
 }
 export declare class Web3 implements IWeb3 {
-    eth: Eth;
-    utils: Utils;
+    readonly eth: Eth;
+    readonly utils: Utils;
+    static utils: Utils;
     constructor(provider?: any);
     get currentProvider(): any;
     setProvider(provider: any): boolean;

@@ -1289,8 +1289,9 @@ export interface IWeb3{
 	setProvider(provider: any): any;
 };
 export class Web3 implements IWeb3{
-	eth: Eth;
-	utils: Utils = utils;
+	public readonly eth: Eth;
+    public readonly utils: Utils = utils;
+	static utils: Utils = utils;
 	constructor(provider?: any){
 		this.eth = new eth(provider);
 	}
