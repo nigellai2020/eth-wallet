@@ -14,10 +14,13 @@ export {
     TransactionReceipt, 
     ISendTxEventsOptions, 
     IClientProviderOptions,
-    WalletPlugin,
-    WalletPluginConfig,
     IBatchRequestObj,
-    INetwork
+    INetwork,
+    EthereumProvider,
+    MetaMaskProvider,
+    Web3ModalProvider,
+    IClientSideProviderEvents,
+    IClientSideProvider
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";

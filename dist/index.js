@@ -65,173 +65,6 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
-// node_modules/@ijstech/eth-contract/lib/index.js
-var require_lib = __commonJS({
-  "node_modules/@ijstech/eth-contract/lib/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.TAuthContract = exports.Contract = exports.nullAddress = exports.BigNumber = void 0;
-    var bignumber_js_1 = require("bignumber.js");
-    Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function() {
-      return bignumber_js_1.BigNumber;
-    } });
-    exports.nullAddress = "0x0000000000000000000000000000000000000000";
-    var Contract3 = class {
-      constructor(wallet, address, abi, bytecode) {
-        this.wallet = wallet;
-        if (abi)
-          this.abiHash = this.wallet.registerAbi(abi);
-        if (typeof abi == "string")
-          this._abi = JSON.parse(abi);
-        else
-          this._abi = abi;
-        this._bytecode = bytecode;
-        if (address)
-          this._address = address;
-      }
-      at(address) {
-        this._address = address;
-        return this;
-      }
-      set address(value) {
-        this._address = value;
-      }
-      get address() {
-        return this._address || "";
-      }
-      decodeEvents(receipt) {
-        let events = this.getAbiEvents();
-        let result = [];
-        for (let name in receipt.events) {
-          let events2 = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
-          events2.forEach((e) => {
-            let data = e.raw;
-            let event = events2[data.topics[0]];
-            result.push(Object.assign({ _name: name, _address: this.address }, this.wallet.decodeLog(event.inputs, data.data, data.topics.slice(1))));
-          });
-        }
-        return result;
-      }
-      parseEvents(receipt, eventName) {
-        let eventAbis = this.getAbiEvents();
-        let topic0 = this.getAbiTopics([eventName])[0];
-        let result = [];
-        if (receipt.events) {
-          for (let name in receipt.events) {
-            let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
-            events.forEach((event) => {
-              if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
-                result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
-              }
-            });
-          }
-        } else if (receipt.logs) {
-          for (let i = 0; i < receipt.logs.length; i++) {
-            let log = receipt.logs[i];
-            if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
-              result.push(this.wallet.decode(eventAbis[topic0], log));
-            }
-          }
-        }
-        return result;
-      }
-      get events() {
-        let result = [];
-        for (let i = 0; i < this._abi.length; i++) {
-          if (this._abi[i].type == "event")
-            result.push(this._abi[i]);
-        }
-        return result;
-      }
-      getAbiEvents() {
-        if (!this._events) {
-          this._events = {};
-          let events = this._abi.filter((e) => e.type == "event");
-          for (let i = 0; i < events.length; i++) {
-            let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-            this._events[topic] = events[i];
-          }
-        }
-        return this._events;
-      }
-      getAbiTopics(eventNames) {
-        if (!eventNames || eventNames.length == 0)
-          eventNames = null;
-        let result = [];
-        let events = this.getAbiEvents();
-        for (let topic in events) {
-          if (!eventNames || eventNames.includes(events[topic].name)) {
-            result.push(topic);
-          }
-        }
-        if (result.length == 0 && eventNames && eventNames.length > 0)
-          return ["NULL"];
-        return [result];
-      }
-      scanEvents(fromBlock, toBlock, eventNames) {
-        if (typeof fromBlock == "number") {
-          let topics = this.getAbiTopics(eventNames);
-          let events = this.getAbiEvents();
-          return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
-        } else {
-          let params = fromBlock;
-          let topics = this.getAbiTopics(params.eventNames);
-          let events = this.getAbiEvents();
-          return this.wallet.scanEvents(params.fromBlock, params.toBlock, topics, events, this._address);
-        }
-        ;
-      }
-      async batchCall(batchObj, key, methodName, params, options) {
-      }
-      async txData(methodName, params, options) {
-        return await this.wallet._txData(this.abiHash, this._address, methodName, params, options);
-      }
-      async call(methodName, params, options) {
-        return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
-      }
-      async _send(methodName, params, options) {
-        params = params || [];
-        if (!methodName)
-          params.unshift(this._bytecode);
-        return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
-      }
-      async __deploy(params, options) {
-        let receipt = await this._send("", params, options);
-        this.address = receipt.contractAddress;
-        return this.address;
-      }
-      send(methodName, params, options) {
-        let receipt = this._send(methodName, params, options);
-        return receipt;
-      }
-      _deploy(...params) {
-        return this.__deploy(params);
-      }
-      async methods(methodName, ...params) {
-        let method = this._abi.find((e) => e.name == methodName);
-        if (method.stateMutability == "view" || method.stateMutability == "pure") {
-          return await this.call(methodName, params);
-        } else if (method.stateMutability == "payable") {
-          let value = params.pop();
-          return await this.call(methodName, params, { value });
-        } else {
-          return await this.send(methodName, params);
-        }
-      }
-    };
-    exports.Contract = Contract3;
-    var TAuthContract = class extends Contract3 {
-      async rely(address) {
-        return await this.methods("rely", address);
-      }
-      async deny(address) {
-        return await this.methods("deny", address);
-      }
-    };
-    exports.TAuthContract = TAuthContract;
-  }
-});
-
 // src/contract.ts
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
@@ -419,11 +252,12 @@ __export(exports, {
   Contract: () => import_contract2.Contract,
   Contracts: () => contracts_exports,
   Erc20: () => Erc20,
+  EthereumProvider: () => EthereumProvider,
+  MetaMaskProvider: () => MetaMaskProvider,
   Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => Wallet,
-  WalletPlugin: () => WalletPlugin,
-  WalletPluginConfig: () => WalletPluginConfig
+  Web3ModalProvider: () => Web3ModalProvider
 });
 
 // src/wallet.ts
@@ -439,7 +273,7 @@ __export(contracts_exports, {
 });
 
 // src/contracts/ERC1155/ERC1155.ts
-var import_eth_contract = __toModule(require_lib());
+var import_eth_contract = __toModule(require("@ijstech/eth-contract"));
 
 // src/contracts/ERC1155/ERC1155.json.ts
 var ERC1155_json_default = {
@@ -590,7 +424,7 @@ var ERC1155 = class extends import_eth_contract.Contract {
 };
 
 // src/contracts/ERC20/ERC20.ts
-var import_eth_contract2 = __toModule(require_lib());
+var import_eth_contract2 = __toModule(require("@ijstech/eth-contract"));
 
 // src/contracts/ERC20/ERC20.json.ts
 var ERC20_json_default = {
@@ -748,7 +582,7 @@ var ERC20 = class extends import_eth_contract2.Contract {
 };
 
 // src/contracts/ERC721/ERC721.ts
-var import_eth_contract3 = __toModule(require_lib());
+var import_eth_contract3 = __toModule(require("@ijstech/eth-contract"));
 
 // src/contracts/ERC721/ERC721.json.ts
 var ERC721_json_default = {
@@ -925,7 +759,7 @@ var ERC721 = class extends import_eth_contract3.Contract {
 };
 
 // src/contracts/MultiCall/MultiCall.ts
-var import_eth_contract4 = __toModule(require_lib());
+var import_eth_contract4 = __toModule(require("@ijstech/eth-contract"));
 
 // src/contracts/MultiCall/MultiCall.json.ts
 var MultiCall_json_default = {
@@ -1539,113 +1373,31 @@ var DefaultNetworksMap = {
     }
   }
 };
-var WalletPlugin;
-(function(WalletPlugin2) {
-  WalletPlugin2["MetaMask"] = "metamask";
-  WalletPlugin2["Coin98"] = "coin98";
-  WalletPlugin2["TrustWallet"] = "trustwallet";
-  WalletPlugin2["BinanceChainWallet"] = "binancechainwallet";
-  WalletPlugin2["ONTOWallet"] = "onto";
-  WalletPlugin2["WalletConnect"] = "walletconnect";
-  WalletPlugin2["BitKeepWallet"] = "bitkeepwallet";
-  WalletPlugin2["FrontierWallet"] = "frontierwallet";
-})(WalletPlugin || (WalletPlugin = {}));
-var WalletPluginConfig = {
-  [WalletPlugin.MetaMask]: {
-    provider: () => {
-      return window["ethereum"];
-    },
-    installed: () => {
-      let ethereum = window["ethereum"];
-      return !!ethereum && !!ethereum.isMetaMask;
-    },
-    homepage: () => {
-      return "https://metamask.io/download.html";
-    }
-  },
-  [WalletPlugin.Coin98]: {
-    provider: () => {
-      return window["ethereum"];
-    },
-    installed: () => {
-      let ethereum = window["ethereum"];
-      return !!ethereum && (!!ethereum.isCoin98 || !!window["isCoin98"]);
-    },
-    homepage: () => {
-      return "https://docs.coin98.com/products/coin98-wallet";
-    }
-  },
-  [WalletPlugin.TrustWallet]: {
-    provider: () => {
-      return window["ethereum"];
-    },
-    installed: () => {
-      let ethereum = window["ethereum"];
-      return !!ethereum && !!ethereum.isTrust;
-    },
-    homepage: () => {
-      return "https://link.trustwallet.com/open_url?url=" + window.location.href;
-    }
-  },
-  [WalletPlugin.BinanceChainWallet]: {
-    provider: () => {
-      return window["BinanceChain"];
-    },
-    installed: () => {
-      return !!window["BinanceChain"];
-    },
-    homepage: () => {
-      return "https://www.binance.org/en";
-    }
-  },
-  [WalletPlugin.ONTOWallet]: {
-    provider: () => {
-      return window["onto"];
-    },
-    installed: () => {
-      return !!window["onto"];
-    },
-    homepage: () => {
-      return "https://onto.app/en/download/?mode=app";
-    }
-  },
-  [WalletPlugin.BitKeepWallet]: {
-    provider: () => {
-      return window["bitkeep"]["ethereum"];
-    },
-    installed: () => {
-      return !!window["isBitKeep"];
-    },
-    homepage: () => {
-      return "https://bitkeep.com/download?type=2";
-    }
-  },
-  [WalletPlugin.FrontierWallet]: {
-    provider: () => {
-      return window["frontier"]["ethereum"];
-    },
-    installed: () => {
-      return !!window["frontier"];
-    },
-    homepage: () => {
-      return "https://www.frontier.xyz/browser-extension";
-    }
-  }
-};
-var ClientSideProvider = class {
-  constructor(wallet, walletPlugin, events, options) {
+var EthereumProvider = class {
+  constructor(wallet, events, options) {
     this._isConnected = false;
     this.wallet = wallet;
-    this.walletPlugin = walletPlugin;
     this._events = events;
     this._options = options;
   }
-  get installed() {
-    return WalletPluginConfig[this.walletPlugin].installed();
+  get name() {
+    return "ethereum";
+  }
+  get provider() {
+    return window["ethereum"];
+  }
+  installed() {
+    return !!window["ethereum"];
+  }
+  get events() {
+    return this._events;
+  }
+  get options() {
+    return this._options;
   }
   initEvents() {
     let self = this;
-    if (this.installed) {
+    if (this.installed()) {
       this.provider.on("accountsChanged", (accounts) => {
         let accountAddress;
         let hasAccounts = accounts && accounts.length > 0;
@@ -1682,7 +1434,6 @@ var ClientSideProvider = class {
     ;
   }
   async connect() {
-    this.provider = WalletPluginConfig[this.walletPlugin].provider();
     this.wallet.chainId = parseInt(this.provider.chainId, 16);
     this.wallet.web3.setProvider(this.provider);
     if (this._events) {
@@ -1694,7 +1445,7 @@ var ClientSideProvider = class {
     this.initEvents();
     let self = this;
     try {
-      if (this.installed) {
+      if (this.installed()) {
         await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
           let accountAddress;
           let hasAccounts = accounts && accounts.length > 0;
@@ -1725,7 +1476,7 @@ var ClientSideProvider = class {
     this.wallet.account = null;
     this._isConnected = false;
   }
-  get isConnected() {
+  isConnected() {
     return this._isConnected;
   }
   addToken(option, type) {
@@ -1822,66 +1573,33 @@ var ClientSideProvider = class {
     });
   }
 };
-var BinanceChainWalletProvider = class extends ClientSideProvider {
-  switchNetwork(chainId, onChainChanged) {
-    let self = this;
-    if (onChainChanged) {
-      this.onChainChanged = onChainChanged;
-    }
-    return new Promise(async function(resolve, reject) {
-      try {
-        let chainIdHex = "0x" + chainId.toString(16);
-        try {
-          let result = await self.provider.request({
-            method: "wallet_switchEthereumChain",
-            params: [{
-              chainId: chainIdHex
-            }]
-          });
-          resolve(!result);
-        } catch (error) {
-          if (error.code === 4902) {
-            try {
-              let network = self.wallet.networksMap[chainId];
-              if (!network)
-                resolve(false);
-              let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
-              if (!Array.isArray(rpcUrls))
-                rpcUrls = [rpcUrls];
-              if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
-                blockExplorerUrls = [blockExplorerUrls];
-              if (iconUrls && !Array.isArray(iconUrls))
-                iconUrls = [iconUrls];
-              let result = await self.provider.request({
-                method: "wallet_addEthereumChain",
-                params: [{
-                  chainId: chainIdHex,
-                  chainName,
-                  nativeCurrency,
-                  rpcUrls,
-                  blockExplorerUrls,
-                  iconUrls
-                }]
-              });
-              resolve(!result);
-            } catch (error2) {
-              reject(error2);
-            }
-          } else
-            reject(error);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
+var MetaMaskProvider = class extends EthereumProvider {
+  get name() {
+    return "metamask";
+  }
+  get homepage() {
+    return "https://metamask.io/download.html";
+  }
+  installed() {
+    let ethereum = window["ethereum"];
+    return !!ethereum && !!ethereum.isMetaMask;
   }
 };
-var Web3ModalProvider = class extends ClientSideProvider {
-  constructor(wallet, walletPlugin, events, options) {
-    super(wallet, walletPlugin, events);
+var Web3ModalProvider = class extends EthereumProvider {
+  constructor(wallet, events, options) {
+    super(wallet, events);
     this.initializeWeb3Modal(options);
   }
-  get installed() {
+  get name() {
+    return "walletconnect";
+  }
+  get provider() {
+    return this._provider;
+  }
+  get homepage() {
+    return null;
+  }
+  installed() {
     return true;
   }
   initializeWeb3Modal(options) {
@@ -1903,7 +1621,7 @@ var Web3ModalProvider = class extends ClientSideProvider {
   }
   async connect() {
     await this.disconnect();
-    this.provider = await this.web3Modal.connectTo(WalletPlugin.WalletConnect);
+    this._provider = await this.web3Modal.connectTo("walletconnect");
     this.wallet.chainId = this.provider.chainId;
     this.wallet.web3.setProvider(this.provider);
     if (this._events) {
@@ -1945,19 +1663,6 @@ var Web3ModalProvider = class extends ClientSideProvider {
     this._isConnected = false;
   }
 };
-function createClientSideProvider(wallet, walletPlugin, events, providerOptions) {
-  if (Wallet.isInstalled(walletPlugin)) {
-    if (walletPlugin == WalletPlugin.BinanceChainWallet) {
-      return new BinanceChainWalletProvider(wallet, walletPlugin, events, providerOptions);
-    }
-    if (walletPlugin == WalletPlugin.WalletConnect) {
-      return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
-    } else {
-      return new ClientSideProvider(wallet, walletPlugin, events, providerOptions);
-    }
-  }
-  return null;
-}
 var _Wallet = class {
   constructor(provider, account) {
     this._eventTopicAbi = {};
@@ -1998,13 +1703,8 @@ var _Wallet = class {
   static getClientInstance() {
     return _Wallet.instance;
   }
-  static isInstalled(walletPlugin) {
-    if (walletPlugin == WalletPlugin.WalletConnect)
-      return true;
-    return WalletPluginConfig[walletPlugin] ? WalletPluginConfig[walletPlugin].installed() : false;
-  }
   get isConnected() {
-    return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
+    return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
   }
   async switchNetwork(chainId, onChainChanged) {
     let result;
@@ -2029,21 +1729,20 @@ var _Wallet = class {
       this.provider = rpc;
     }
   }
-  async connect(walletPlugin, events, providerOptions) {
-    this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
+  async connect(clientSideProvider) {
     if (this.clientSideProvider) {
-      await this.clientSideProvider.connect();
-      if (providerOptions && providerOptions.callWithDefaultProvider) {
-        if (providerOptions.infuraId)
-          this._infuraId = providerOptions.infuraId;
-        this.setDefaultProvider();
-      } else {
-        this.provider = this.clientSideProvider.provider;
-      }
-    } else {
-      this.setDefaultProvider();
+      await this.clientSideProvider.disconnect();
     }
-    return this.clientSideProvider;
+    this.clientSideProvider = clientSideProvider;
+    await this.clientSideProvider.connect();
+    const providerOptions = this.clientSideProvider.options;
+    if (providerOptions && providerOptions.callWithDefaultProvider) {
+      if (providerOptions.infuraId)
+        this._infuraId = providerOptions.infuraId;
+      this.setDefaultProvider();
+    } else {
+      this.provider = this.clientSideProvider.provider;
+    }
   }
   async disconnect() {
     if (this.clientSideProvider) {

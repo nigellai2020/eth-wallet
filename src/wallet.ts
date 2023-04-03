@@ -219,8 +219,8 @@ function initWeb3ModalLib(callback: () => void){
 	};
 	export interface IClientWallet extends IWallet {	
 		blockGasLimit(): Promise<number>;
-		clientSideProvider: ClientSideProvider;
-		connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
+		clientSideProvider: IClientSideProvider;
+		connect(clientSideProvider: IClientSideProvider): Promise<any>;
 		disconnect(): Promise<void>;
 		getGasPrice(): Promise<BigNumber>;
 		getTransaction(transactionHash: string): Promise<Transaction>;
@@ -531,132 +531,62 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
 	}
-	export enum WalletPlugin {
-		MetaMask = 'metamask',
-		Coin98 = 'coin98',
-		TrustWallet = 'trustwallet',
-		BinanceChainWallet = 'binancechainwallet',
-		ONTOWallet = 'onto',
-		WalletConnect = 'walletconnect',
-		BitKeepWallet = 'bitkeepwallet',
-		FrontierWallet = 'frontierwallet',
-	}
-	export type WalletPluginConfigType = { [key in WalletPlugin]?: {
-		provider: () => any;
-		installed: () => boolean;
-		homepage?: () => string;
-	} };
-	export const WalletPluginConfig: WalletPluginConfigType = {
-		[WalletPlugin.MetaMask]: {
-			provider: () => {
-				return window['ethereum']
-			},
-			installed: () => {
-				let ethereum = window['ethereum'];
-				return !!ethereum && !!ethereum.isMetaMask;
-			},
-			homepage: () => {
-				return 'https://metamask.io/download.html'
-			}
-		},
-		[WalletPlugin.Coin98]: {
-			provider: () => {
-				return window['ethereum']
-			},
-			installed: () => {
-				let ethereum = window['ethereum'];
-				return !!ethereum && (!!ethereum.isCoin98 || !!window['isCoin98']);
-			},
-			homepage: () => {
-				return 'https://docs.coin98.com/products/coin98-wallet'
-			}
-		},
-		[WalletPlugin.TrustWallet]: {
-			provider: () => {
-				return window['ethereum']
-			},
-			installed: () => {
-				let ethereum = window['ethereum'];
-				return !!ethereum && !!ethereum.isTrust;
-			},
-			homepage: () => {
-				return 'https://link.trustwallet.com/open_url?url=' + window.location.href
-			}
-		},
-		[WalletPlugin.BinanceChainWallet]: {
-			provider: () => {
-				return window['BinanceChain']
-			},
-			installed: () => {
-				return !!window['BinanceChain'];
-			},
-			homepage: () => {
-				return 'https://www.binance.org/en'
-			}
-		},
-		[WalletPlugin.ONTOWallet]: {
-			provider: () => {
-				return window['onto']
-			},
-			installed: () => {
-				return !!window['onto'];
-			},
-			homepage: () => {
-				return 'https://onto.app/en/download/?mode=app'
-			}
-		},
-		[WalletPlugin.BitKeepWallet]: {
-			provider: () => {
-				return window['bitkeep']['ethereum']
-			},
-			installed: () => {
-				return !!window['isBitKeep'];
-			},
-			homepage: () => {
-				return 'https://bitkeep.com/download?type=2'
-			}
-		},
-		[WalletPlugin.FrontierWallet]: {
-			provider: () => {
-				return window['frontier']['ethereum'];
-			},
-			installed: () => {
-				return !!window['frontier'];
-			},
-			homepage: () => {
-				return 'https://www.frontier.xyz/browser-extension';
-			}
-		},
-	}
 	export interface IClientProviderOptions {	
 		infuraId?: string;
 		callWithDefaultProvider?: boolean;
 		[key: string]: any;		
 	}
-	export class ClientSideProvider {
+	export interface IClientSideProvider {
+		name: string;
+		provider: any;
+		homepage?: string;
+		events?: IClientSideProviderEvents;
+		options?: IClientProviderOptions;
+		installed(): boolean;
+		isConnected(): boolean;
+		connect: () => Promise<void>;
+		disconnect: () => Promise<void>;
+		switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+	}
+	export class EthereumProvider implements IClientSideProvider {
 		protected wallet: Wallet;
 		protected _events?: IClientSideProviderEvents;
 		protected _options?: IClientProviderOptions;
 		protected _isConnected: boolean = false;
-		public provider: any;
-		public readonly walletPlugin: WalletPlugin;
 		public onAccountChanged: (account: string) => void;
 		public onChainChanged: (chainId: string) => void;
 		public onConnect: (connectInfo: any) => void;
 		public onDisconnect: (error: any) => void;
 
-		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
+		constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			this.wallet = wallet;
-			this.walletPlugin = walletPlugin;
 			this._events = events;
 			this._options = options;
 		}
-		get installed(): boolean {
-			return WalletPluginConfig[this.walletPlugin].installed();
+
+		get name() {
+			return 'ethereum';
 		}
+
+		get provider() {
+			return window['ethereum'];
+		}
+
+		installed() {
+			return !!window['ethereum'];
+		}
+
+		get events() {
+			return this._events;
+		}
+
+		get options() {
+			return this._options;
+		}
+
 		initEvents() {
 			let self = this;
-			if (this.installed) {
+			if (this.installed()) {
 				this.provider.on('accountsChanged', (accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
@@ -691,7 +621,6 @@ function initWeb3ModalLib(callback: () => void){
 			};
 		}
 		async connect() {
-			this.provider = WalletPluginConfig[this.walletPlugin].provider();
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
 			this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
@@ -703,7 +632,7 @@ function initWeb3ModalLib(callback: () => void){
 			this.initEvents();
 			let self = this;
 			try {
-				if (this.installed) {
+				if (this.installed()) {
 					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
 						let accountAddress;
 						let hasAccounts = accounts && accounts.length > 0;
@@ -734,7 +663,7 @@ function initWeb3ModalLib(callback: () => void){
 			this.wallet.account = null;
 			this._isConnected = false;
 		}
-		get isConnected() {
+		isConnected() {
 			return this._isConnected;
 		}
 		addToken(option: ITokenOption, type?: string): Promise<boolean> {
@@ -834,67 +763,38 @@ function initWeb3ModalLib(callback: () => void){
 			})
 		}
 	}
-	export class BinanceChainWalletProvider extends ClientSideProvider {
-		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
-			let self = this;
-			if (onChainChanged) {
-				this.onChainChanged = onChainChanged;
-			}
-			return new Promise(async function (resolve, reject) {
-				try {
-					let chainIdHex = '0x' + chainId.toString(16);
-					try {
-						let result = await self.provider.request({
-							method: 'wallet_switchEthereumChain',
-							params: [{
-								chainId: chainIdHex
-							}]
-						});
-						resolve(!result);
-					} catch (error) {
-						if (error.code === 4902) {
-							try {
-								let network = self.wallet.networksMap[chainId];
-								if (!network) resolve(false);
-								let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
-								if (!Array.isArray(rpcUrls))
-									rpcUrls = [rpcUrls];
-								if (blockExplorerUrls && !Array.isArray(blockExplorerUrls))
-									blockExplorerUrls = [blockExplorerUrls];
-								if (iconUrls && !Array.isArray(iconUrls))
-									iconUrls = [iconUrls];
-								let result = await self.provider.request({
-									method: 'wallet_addEthereumChain',
-									params: [{
-										chainId: chainIdHex,
-										chainName: chainName,
-										nativeCurrency: nativeCurrency,
-										rpcUrls: rpcUrls,
-										blockExplorerUrls: blockExplorerUrls,
-										iconUrls: iconUrls
-									}]
-								});
-								resolve(!result);
-							} catch (error) {
-								reject(error);
-							}
-						} else
-							reject(error);
-					}
-				}
-				catch (err) {
-					reject(err)
-				}
-			})
+	export class MetaMaskProvider extends EthereumProvider {
+		get name() {
+			return 'metamask';
+		}
+
+		get homepage() {
+			return 'https://metamask.io/download.html'
+		}
+
+		installed() {
+			let ethereum = window['ethereum'];
+			return !!ethereum && !!ethereum.isMetaMask;
 		}
 	}
-	export class Web3ModalProvider extends ClientSideProvider {
+	export class Web3ModalProvider extends EthereumProvider {
 		private web3Modal: any;
-		constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
-			super(wallet, walletPlugin, events);
+		private _provider: any;
+
+		constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
+			super(wallet, events);
 			this.initializeWeb3Modal(options);
 		}
-		get installed(): boolean {
+		get name() {
+			return 'walletconnect';
+		}
+		get provider() {
+			return this._provider;
+		}
+		get homepage() {
+			return null;
+		}
+		installed(): boolean {
 			return true;
 		}
 		private initializeWeb3Modal(options?: IClientProviderOptions): any {
@@ -916,7 +816,7 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		async connect() {
 			await this.disconnect();
-			this.provider = await this.web3Modal.connectTo(WalletPlugin.WalletConnect);
+			this._provider = await this.web3Modal.connectTo('walletconnect');
 			this.wallet.chainId = this.provider.chainId;
 			this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
@@ -958,20 +858,6 @@ function initWeb3ModalLib(callback: () => void){
 			this._isConnected = false;
 		}
 	}
-	export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
-		if (Wallet.isInstalled(walletPlugin)) {
-			if (walletPlugin == WalletPlugin.BinanceChainWallet) {
-				return new BinanceChainWalletProvider(wallet, walletPlugin, events, providerOptions);
-			}
-			if (walletPlugin == WalletPlugin.WalletConnect) {
-				return new Web3ModalProvider(wallet, walletPlugin, events, providerOptions);
-			}
-			else {
-				return new ClientSideProvider(wallet, walletPlugin, events, providerOptions);
-			}
-		}
-		return null;
-	}
 	export interface ISendTxEventsOptions {
 		transactionHash?: (error: Error, receipt?: string) => void;
 		confirmation?: (receipt: any) => void;
@@ -988,7 +874,7 @@ function initWeb3ModalLib(callback: () => void){
 		protected _blockGasLimit: number;
 		private _networksMap: NetworksMapType = {};    
 		public chainId: number;   
-		public clientSideProvider: ClientSideProvider;  
+		public clientSideProvider: IClientSideProvider;  
 		private _infuraId: string;
 		private _utils: IWalletUtils;
 
@@ -1025,13 +911,9 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		static getClientInstance(): IClientWallet {
 			return Wallet.instance;
-		  }
-		static isInstalled(walletPlugin: WalletPlugin) {
-			if (walletPlugin == WalletPlugin.WalletConnect) return true;
-			return WalletPluginConfig[walletPlugin] ? WalletPluginConfig[walletPlugin].installed() : false;
 		}
 		get isConnected() {
-			return this.clientSideProvider ? this.clientSideProvider.isConnected : false;
+			return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
 		}
 		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
 			let result;
@@ -1055,22 +937,21 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = rpc;
 			}
 		}
-		async connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions) {
-			this.clientSideProvider = createClientSideProvider(this, walletPlugin, events, providerOptions);
+		async connect(clientSideProvider: IClientSideProvider) {
 			if (this.clientSideProvider) {
-				await this.clientSideProvider.connect();
-				if (providerOptions && providerOptions.callWithDefaultProvider) {
-					if (providerOptions.infuraId) this._infuraId = providerOptions.infuraId;
-					this.setDefaultProvider();
-				}
-				else {
-					this.provider = this.clientSideProvider.provider;
-				}
+				await this.clientSideProvider.disconnect();
 			}
-			else {
+			this.clientSideProvider = clientSideProvider;
+			await this.clientSideProvider.connect();
+			
+			const providerOptions = this.clientSideProvider.options;
+			if (providerOptions && providerOptions.callWithDefaultProvider) {
+				if (providerOptions.infuraId) this._infuraId = providerOptions.infuraId;
 				this.setDefaultProvider();
 			}
-			return this.clientSideProvider;
+			else {
+				this.provider = this.clientSideProvider.provider;
+			}
 		}
 		async disconnect(){
 			if (this.clientSideProvider) {
