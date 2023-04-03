@@ -1819,13 +1819,17 @@ declare module "wallet" {
     };
     export const DefaultNetworksMap: NetworksMapType;
     export interface IClientProviderOptions {
+        name?: string;
+        image?: string;
         infuraId?: string;
-        callWithDefaultProvider?: boolean;
+        useDefaultProvider?: boolean;
         [key: string]: any;
     }
     export interface IClientSideProvider {
         name: string;
+        displayName: string;
         provider: any;
+        image: string;
         homepage?: string;
         events?: IClientSideProviderEvents;
         options?: IClientProviderOptions;
@@ -1840,13 +1844,17 @@ declare module "wallet" {
         protected _events?: IClientSideProviderEvents;
         protected _options?: IClientProviderOptions;
         protected _isConnected: boolean;
+        protected _name: string;
+        protected _image: string;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;
+        get displayName(): string;
         get provider(): any;
+        get image(): string;
         installed(): boolean;
         get events(): IClientSideProviderEvents;
         get options(): IClientProviderOptions;
@@ -1859,7 +1867,8 @@ declare module "wallet" {
         addNetwork(options: INetwork): Promise<boolean>;
     }
     export class MetaMaskProvider extends EthereumProvider {
-        get name(): string;
+        get displayName(): string;
+        get image(): string;
         get homepage(): string;
         installed(): boolean;
     }
@@ -1868,7 +1877,9 @@ declare module "wallet" {
         private _provider;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;
+        get displayName(): string;
         get provider(): any;
+        get image(): string;
         get homepage(): any;
         installed(): boolean;
         private initializeWeb3Modal;
