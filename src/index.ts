@@ -13,10 +13,13 @@ export {
     TransactionReceipt, 
     ISendTxEventsOptions, 
     IClientProviderOptions,
-    WalletPlugin,
-    WalletPluginConfig,
     IBatchRequestObj,
-    INetwork
+    INetwork,
+    EthereumProvider,
+    MetaMaskProvider,
+    Web3ModalProvider,
+    IClientSideProviderEvents,
+    IClientSideProvider
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';

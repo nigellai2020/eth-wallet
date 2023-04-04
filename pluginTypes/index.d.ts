@@ -1672,8 +1672,8 @@ declare module "wallet" {
     }
     export interface IClientWallet extends IWallet {
         blockGasLimit(): Promise<number>;
-        clientSideProvider: ClientSideProvider;
-        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<any>;
+        clientSideProvider: IClientSideProvider;
+        connect(clientSideProvider: IClientSideProvider): Promise<any>;
         disconnect(): Promise<void>;
         getGasPrice(): Promise<BigNumber>;
         getTransaction(transactionHash: string): Promise<Transaction>;
@@ -1818,62 +1818,74 @@ declare module "wallet" {
         [chainId: number]: INetwork;
     };
     export const DefaultNetworksMap: NetworksMapType;
-    export enum WalletPlugin {
-        MetaMask = "metamask",
-        Coin98 = "coin98",
-        TrustWallet = "trustwallet",
-        BinanceChainWallet = "binancechainwallet",
-        ONTOWallet = "onto",
-        WalletConnect = "walletconnect",
-        BitKeepWallet = "bitkeepwallet",
-        FrontierWallet = "frontierwallet"
-    }
-    export type WalletPluginConfigType = {
-        [key in WalletPlugin]?: {
-            provider: () => any;
-            installed: () => boolean;
-            homepage?: () => string;
-        };
-    };
-    export const WalletPluginConfig: WalletPluginConfigType;
     export interface IClientProviderOptions {
+        name?: string;
+        image?: string;
         infuraId?: string;
-        callWithDefaultProvider?: boolean;
+        useDefaultProvider?: boolean;
         [key: string]: any;
     }
-    export class ClientSideProvider {
+    export interface IClientSideProvider {
+        name: string;
+        displayName: string;
+        provider: any;
+        image: string;
+        homepage?: string;
+        events?: IClientSideProviderEvents;
+        options?: IClientProviderOptions;
+        installed(): boolean;
+        isConnected(): boolean;
+        connect: () => Promise<void>;
+        disconnect: () => Promise<void>;
+        switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+    }
+    export class EthereumProvider implements IClientSideProvider {
         protected wallet: Wallet;
         protected _events?: IClientSideProviderEvents;
         protected _options?: IClientProviderOptions;
         protected _isConnected: boolean;
-        provider: any;
-        readonly walletPlugin: WalletPlugin;
+        protected _name: string;
+        protected _image: string;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
-        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
-        get installed(): boolean;
+        constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
+        get name(): string;
+        get displayName(): string;
+        get provider(): any;
+        get image(): string;
+        installed(): boolean;
+        get events(): IClientSideProviderEvents;
+        get options(): IClientProviderOptions;
         initEvents(): void;
         connect(): Promise<any>;
         disconnect(): Promise<void>;
-        get isConnected(): boolean;
+        isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
         addNetwork(options: INetwork): Promise<boolean>;
     }
-    export class BinanceChainWalletProvider extends ClientSideProvider {
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    export class MetaMaskProvider extends EthereumProvider {
+        get displayName(): string;
+        get image(): string;
+        get homepage(): string;
+        installed(): boolean;
     }
-    export class Web3ModalProvider extends ClientSideProvider {
+    export class Web3ModalProvider extends EthereumProvider {
         private web3Modal;
-        constructor(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
-        get installed(): boolean;
+        private _provider;
+        constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
+        get name(): string;
+        get displayName(): string;
+        get provider(): any;
+        get image(): string;
+        get homepage(): any;
+        installed(): boolean;
         private initializeWeb3Modal;
         connect(): Promise<any>;
         disconnect(): Promise<void>;
     }
-    export function createClientSideProvider(wallet: Wallet, walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): ClientSideProvider;
     export interface ISendTxEventsOptions {
         transactionHash?: (error: Error, receipt?: string) => void;
         confirmation?: (receipt: any) => void;
@@ -1890,18 +1902,17 @@ declare module "wallet" {
         protected _blockGasLimit: number;
         private _networksMap;
         chainId: number;
-        clientSideProvider: ClientSideProvider;
+        clientSideProvider: IClientSideProvider;
         private _infuraId;
         private _utils;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): IWallet;
         static getClientInstance(): IClientWallet;
-        static isInstalled(walletPlugin: WalletPlugin): boolean;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         setDefaultProvider(): void;
-        connect(walletPlugin: WalletPlugin, events?: IClientSideProviderEvents, providerOptions?: IClientProviderOptions): Promise<ClientSideProvider>;
+        connect(clientSideProvider: IClientSideProvider): Promise<void>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
@@ -2009,7 +2020,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, WalletPlugin, WalletPluginConfig, IBatchRequestObj, INetwork } from "wallet";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider } from "wallet";
     export { Contract } from "contract";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "contracts/erc20";
