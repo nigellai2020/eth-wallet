@@ -1920,9 +1920,6 @@ var _Wallet = class {
     }
   }
   async connect(clientSideProvider) {
-    if (this.clientSideProvider) {
-      await this.clientSideProvider.disconnect();
-    }
     this.clientSideProvider = clientSideProvider;
     await this.clientSideProvider.connect();
     const providerOptions = this.clientSideProvider.options;

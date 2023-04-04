@@ -967,9 +967,6 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
 		async connect(clientSideProvider: IClientSideProvider) {
-			if (this.clientSideProvider) {
-				await this.clientSideProvider.disconnect();
-			}
 			this.clientSideProvider = clientSideProvider;
 			await this.clientSideProvider.connect();
 			
