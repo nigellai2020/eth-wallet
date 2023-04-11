@@ -266,6 +266,7 @@ export interface ITokenOption {
     image?: string;
 }
 export interface INetwork {
+    image?: string;
     chainId: number;
     chainName: string;
     nativeCurrency: {
@@ -286,7 +287,6 @@ export interface IClientSideProviderEvents {
 export declare type NetworksMapType = {
     [chainId: number]: INetwork;
 };
-export declare const DefaultNetworksMap: NetworksMapType;
 export interface IClientProviderOptions {
     name?: string;
     image?: string;
@@ -333,7 +333,6 @@ export declare class EthereumProvider implements IClientSideProvider {
     isConnected(): boolean;
     addToken(option: ITokenOption, type?: string): Promise<boolean>;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
-    addNetwork(options: INetwork): Promise<boolean>;
 }
 export declare class MetaMaskProvider extends EthereumProvider {
     get displayName(): string;

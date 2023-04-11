@@ -1797,6 +1797,7 @@ declare module "wallet" {
         image?: string;
     }
     export interface INetwork {
+        image?: string;
         chainId: number;
         chainName: string;
         nativeCurrency: {
@@ -1817,7 +1818,6 @@ declare module "wallet" {
     export type NetworksMapType = {
         [chainId: number]: INetwork;
     };
-    export const DefaultNetworksMap: NetworksMapType;
     export interface IClientProviderOptions {
         name?: string;
         image?: string;
@@ -1864,7 +1864,6 @@ declare module "wallet" {
         isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
-        addNetwork(options: INetwork): Promise<boolean>;
     }
     export class MetaMaskProvider extends EthereumProvider {
         get displayName(): string;
