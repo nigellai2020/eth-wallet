@@ -1232,6 +1232,12 @@ function getMultiCallAddress(chainId) {
     case 80001:
       address = "0x7810eC500061f5469fF6e1485Ab130045B3af6b0";
       break;
+    case 421613:
+      address = "0xee25cCcc02550DdBF4b90eb06b0D796eBE247E1B";
+      break;
+    case 42161:
+      address = "0x11DEE30E710B8d4a8630392781Cc3c0046365d4c";
+      break;
   }
   return address;
 }
