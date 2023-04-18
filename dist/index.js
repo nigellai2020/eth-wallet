@@ -1716,14 +1716,21 @@ var _Wallet = class {
     } else {
       this.chainId = chainId;
       this.setDefaultProvider();
-      onChainChanged("0x" + chainId.toString(16));
+      if (onChainChanged)
+        onChainChanged("0x" + chainId.toString(16));
     }
     return result;
   }
+  initClientWallet(config) {
+    const wallet = _Wallet.instance;
+    wallet.chainId = config.defaultChainId;
+    wallet._infuraId = config.infuraId;
+    wallet._networksMap = {};
+    wallet.setMultipleNetworksInfo(config.networks);
+    wallet.setDefaultProvider();
+  }
   setDefaultProvider() {
     var _a;
-    if (!this.chainId)
-      this.chainId = 56;
     if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
       let rpc = this._networksMap[this.chainId].rpcUrls[0];
       if (rpc.indexOf("{INFURA_ID}")) {

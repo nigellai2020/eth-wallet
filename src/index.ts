@@ -19,7 +19,8 @@ export {
     MetaMaskProvider,
     Web3ModalProvider,
     IClientSideProviderEvents,
-    IClientSideProvider
+    IClientSideProvider,
+    IClientWalletConfig
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';

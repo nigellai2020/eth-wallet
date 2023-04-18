@@ -20,7 +20,8 @@ export {
     MetaMaskProvider,
     Web3ModalProvider,
     IClientSideProviderEvents,
-    IClientSideProvider
+    IClientSideProvider,
+    IClientWalletConfig
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
