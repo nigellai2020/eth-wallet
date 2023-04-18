@@ -142,6 +142,7 @@ export interface IWallet {
 export interface IClientWallet extends IWallet {
     blockGasLimit(): Promise<number>;
     clientSideProvider: IClientSideProvider;
+    initClientWallet(config: IClientWalletConfig): void;
     connect(clientSideProvider: IClientSideProvider): Promise<any>;
     disconnect(): Promise<void>;
     getGasPrice(): Promise<BigNumber>;
@@ -287,6 +288,11 @@ export interface IClientSideProviderEvents {
 export declare type NetworksMapType = {
     [chainId: number]: INetwork;
 };
+export interface IClientWalletConfig {
+    defaultChainId: number;
+    networks: INetwork[];
+    infuraId: string;
+}
 export interface IClientProviderOptions {
     name?: string;
     image?: string;
@@ -379,6 +385,7 @@ export declare class Wallet implements IClientWallet {
     static getClientInstance(): IClientWallet;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+    initClientWallet(config: IClientWalletConfig): void;
     setDefaultProvider(): void;
     connect(clientSideProvider: IClientSideProvider): Promise<void>;
     disconnect(): Promise<void>;

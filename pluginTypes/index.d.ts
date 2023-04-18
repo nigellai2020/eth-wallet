@@ -1673,6 +1673,7 @@ declare module "wallet" {
     export interface IClientWallet extends IWallet {
         blockGasLimit(): Promise<number>;
         clientSideProvider: IClientSideProvider;
+        initClientWallet(config: IClientWalletConfig): void;
         connect(clientSideProvider: IClientSideProvider): Promise<any>;
         disconnect(): Promise<void>;
         getGasPrice(): Promise<BigNumber>;
@@ -1818,6 +1819,11 @@ declare module "wallet" {
     export type NetworksMapType = {
         [chainId: number]: INetwork;
     };
+    export interface IClientWalletConfig {
+        defaultChainId: number;
+        networks: INetwork[];
+        infuraId: string;
+    }
     export interface IClientProviderOptions {
         name?: string;
         image?: string;
@@ -1910,6 +1916,7 @@ declare module "wallet" {
         static getClientInstance(): IClientWallet;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        initClientWallet(config: IClientWalletConfig): void;
         setDefaultProvider(): void;
         connect(clientSideProvider: IClientSideProvider): Promise<void>;
         disconnect(): Promise<void>;
@@ -2019,7 +2026,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider } from "wallet";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig } from "wallet";
     export { Contract } from "contract";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "contracts/erc20";

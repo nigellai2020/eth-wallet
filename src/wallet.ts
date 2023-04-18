@@ -220,6 +220,7 @@ function initWeb3ModalLib(callback: () => void){
 	export interface IClientWallet extends IWallet {	
 		blockGasLimit(): Promise<number>;
 		clientSideProvider: IClientSideProvider;
+		initClientWallet(config: IClientWalletConfig): void;
 		connect(clientSideProvider: IClientSideProvider): Promise<any>;
 		disconnect(): Promise<void>;
 		getGasPrice(): Promise<BigNumber>;
@@ -366,6 +367,11 @@ function initWeb3ModalLib(callback: () => void){
 		onDisconnect?: (error: any)=>void;
 	}
 	export type NetworksMapType = { [chainId: number]: INetwork }
+	export interface IClientWalletConfig {
+		defaultChainId: number;
+		networks: INetwork[];
+		infuraId: string;
+	}
 	export interface IClientProviderOptions {	
 		name?: string;
 		image?: string;
@@ -759,12 +765,19 @@ function initWeb3ModalLib(callback: () => void){
 			else {
 				this.chainId = chainId;
 				this.setDefaultProvider();
-				onChainChanged('0x' + chainId.toString(16));
+				if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
 			}
 			return result;
 		}
+		initClientWallet(config: IClientWalletConfig) {			
+			const wallet = Wallet.instance;
+			wallet.chainId = config.defaultChainId;
+			wallet._infuraId = config.infuraId;
+			wallet._networksMap = {};
+			wallet.setMultipleNetworksInfo(config.networks);
+			wallet.setDefaultProvider();
+		}
 		setDefaultProvider(){
-			if (!this.chainId) this.chainId = 56;	
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
 				let rpc = this._networksMap[this.chainId].rpcUrls[0];
 				if (rpc.indexOf('{INFURA_ID}')) {
