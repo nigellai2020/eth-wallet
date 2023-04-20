@@ -1754,6 +1754,7 @@ var _Wallet = class {
   async disconnect() {
     if (this.clientSideProvider) {
       await this.clientSideProvider.disconnect();
+      this.clientSideProvider = null;
     }
     this.setDefaultProvider();
   }

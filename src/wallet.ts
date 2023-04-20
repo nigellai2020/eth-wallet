@@ -802,6 +802,7 @@ function initWeb3ModalLib(callback: () => void){
 		async disconnect(){
 			if (this.clientSideProvider) {
 				await this.clientSideProvider.disconnect();
+				this.clientSideProvider = null;
 			}
 			this.setDefaultProvider();
 		}
