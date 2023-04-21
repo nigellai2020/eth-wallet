@@ -1464,7 +1464,6 @@ declare module "utils" {
     export function toString(value: any): any;
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
-    export function getMultiCallAddress(chainId: number): any;
 }
 declare module "contracts/erc20" {
     /*!-----------------------------------------------------------
@@ -1816,13 +1815,22 @@ declare module "wallet" {
         onConnect?: (connectInfo: any) => void;
         onDisconnect?: (error: any) => void;
     }
+    export interface IMulticallInfo {
+        chainId: number;
+        contractAddress: string;
+        gasBuffer: string;
+    }
     export type NetworksMapType = {
         [chainId: number]: INetwork;
+    };
+    export type MulticallInfoMapType = {
+        [chainId: number]: IMulticallInfo;
     };
     export interface IClientWalletConfig {
         defaultChainId: number;
         networks: INetwork[];
         infuraId: string;
+        multicalls: IMulticallInfo[];
     }
     export interface IClientProviderOptions {
         name?: string;
@@ -1906,6 +1914,7 @@ declare module "wallet" {
         protected _contracts: {};
         protected _blockGasLimit: number;
         private _networksMap;
+        private _multicallInfoMap;
         chainId: number;
         clientSideProvider: IClientSideProvider;
         private _infuraId;
@@ -2026,7 +2035,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig } from "wallet";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IMulticallInfo } from "wallet";
     export { Contract } from "contract";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "contracts/erc20";

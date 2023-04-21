@@ -1016,7 +1016,6 @@ __export(utils_exports, {
   bytes32ToString: () => bytes32ToString,
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
-  getMultiCallAddress: () => getMultiCallAddress,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
@@ -1204,42 +1203,6 @@ function constructTypedMessageData(domain, customTypes, primaryType, message) {
     message
   };
   return data;
-}
-function getMultiCallAddress(chainId) {
-  let address;
-  switch (chainId) {
-    case 1:
-      address = "0x8d035edd8e09c3283463dade67cc0d49d6868063";
-      break;
-    case 56:
-      address = "0x804708de7af615085203fa2b18eae59c5738e2a9";
-      break;
-    case 97:
-      address = "0xFe482bde67982C73D215032184312E4707B437C1";
-      break;
-    case 137:
-      address = "0x0196e8a9455a90d392b46df8560c867e7df40b34";
-      break;
-    case 250:
-      address = "0xA31bB36c5164B165f9c36955EA4CcBaB42B3B28E";
-      break;
-    case 43113:
-      address = "0x40784b92542649DDA13FF97580e8A021aC57b320";
-      break;
-    case 43114:
-      address = "0xC4A8B7e29E3C8ec560cd4945c1cF3461a85a148d";
-      break;
-    case 80001:
-      address = "0x7810eC500061f5469fF6e1485Ab130045B3af6b0";
-      break;
-    case 421613:
-      address = "0xee25cCcc02550DdBF4b90eb06b0D796eBE247E1B";
-      break;
-    case 42161:
-      address = "0x11DEE30E710B8d4a8630392781Cc3c0046365d4c";
-      break;
-  }
-  return address;
 }
 
 // src/contracts/erc20.ts
@@ -1674,6 +1637,7 @@ var _Wallet = class {
     this._sendTxEventHandler = {};
     this._contracts = {};
     this._networksMap = {};
+    this._multicallInfoMap = {};
     this._abiHashDict = {};
     this._abiContractDict = {};
     this._abiAddressDict = {};
@@ -1728,6 +1692,12 @@ var _Wallet = class {
     wallet._networksMap = {};
     wallet.setMultipleNetworksInfo(config.networks);
     wallet.setDefaultProvider();
+    wallet._multicallInfoMap = {};
+    if (config.multicalls) {
+      for (let multicall of config.multicalls) {
+        wallet._multicallInfoMap[multicall.chainId] = multicall;
+      }
+    }
   }
   setDefaultProvider() {
     var _a;
@@ -2787,13 +2757,13 @@ var _Wallet = class {
   }
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
-    const contractAddress = getMultiCallAddress(chainId);
-    if (!contractAddress)
+    const multicallInfo = this._multicallInfoMap[chainId];
+    if (!multicallInfo)
       return null;
-    const multiCall = new MultiCall(this, contractAddress);
+    const multiCall = new MultiCall(this, multicallInfo.contractAddress);
     const result = await multiCall.multicallWithGasLimitation.call({
       calls,
-      gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : "3000000")
+      gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : multicallInfo.gasBuffer)
     });
     return result;
   }

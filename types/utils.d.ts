@@ -24,5 +24,4 @@ export declare function fromDecimals(value: BigNumber | number | string, decimal
 export declare function toString(value: any): any;
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
 export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
-export declare function getMultiCallAddress(chainId: number): any;
 export {};
