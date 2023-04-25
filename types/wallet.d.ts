@@ -285,13 +285,22 @@ export interface IClientSideProviderEvents {
     onConnect?: (connectInfo: any) => void;
     onDisconnect?: (error: any) => void;
 }
+export interface IMulticallInfo {
+    chainId: number;
+    contractAddress: string;
+    gasBuffer: string;
+}
 export declare type NetworksMapType = {
     [chainId: number]: INetwork;
+};
+export declare type MulticallInfoMapType = {
+    [chainId: number]: IMulticallInfo;
 };
 export interface IClientWalletConfig {
     defaultChainId: number;
     networks: INetwork[];
     infuraId: string;
+    multicalls: IMulticallInfo[];
 }
 export interface IClientProviderOptions {
     name?: string;
@@ -375,6 +384,7 @@ export declare class Wallet implements IClientWallet {
     protected _contracts: {};
     protected _blockGasLimit: number;
     private _networksMap;
+    private _multicallInfoMap;
     chainId: number;
     clientSideProvider: IClientSideProvider;
     private _infuraId;

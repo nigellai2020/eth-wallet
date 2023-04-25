@@ -20,7 +20,8 @@ export {
     Web3ModalProvider,
     IClientSideProviderEvents,
     IClientSideProvider,
-    IClientWalletConfig
+    IClientWalletConfig,
+    IMulticallInfo
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';

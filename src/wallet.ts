@@ -366,11 +366,18 @@ function initWeb3ModalLib(callback: () => void){
 		onConnect?: (connectInfo: any)=>void;
 		onDisconnect?: (error: any)=>void;
 	}
+	export interface IMulticallInfo {
+		chainId: number; 
+		contractAddress: string;
+		gasBuffer: string;
+	}
 	export type NetworksMapType = { [chainId: number]: INetwork }
+	export type MulticallInfoMapType = { [chainId: number]: IMulticallInfo }
 	export interface IClientWalletConfig {
 		defaultChainId: number;
 		networks: INetwork[];
 		infuraId: string;
+		multicalls: IMulticallInfo[];
 	}
 	export interface IClientProviderOptions {	
 		name?: string;
@@ -716,6 +723,7 @@ function initWeb3ModalLib(callback: () => void){
 		protected _contracts = {};
 		protected _blockGasLimit: number;
 		private _networksMap: NetworksMapType = {};    
+		private _multicallInfoMap: MulticallInfoMapType = {};
 		public chainId: number;   
 		public clientSideProvider: IClientSideProvider;  
 		private _infuraId: string;
@@ -776,6 +784,12 @@ function initWeb3ModalLib(callback: () => void){
 			wallet._networksMap = {};
 			wallet.setMultipleNetworksInfo(config.networks);
 			wallet.setDefaultProvider();
+			wallet._multicallInfoMap = {};	
+			if (config.multicalls) {	
+				for (let multicall of config.multicalls) {
+					wallet._multicallInfoMap[multicall.chainId] = multicall;
+				}
+			}
 		}
 		setDefaultProvider(){
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
@@ -802,6 +816,7 @@ function initWeb3ModalLib(callback: () => void){
 		async disconnect(){
 			if (this.clientSideProvider) {
 				await this.clientSideProvider.disconnect();
+				this.clientSideProvider = null;
 			}
 			this.setDefaultProvider();
 		}
@@ -1929,12 +1944,12 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		async multiCall(calls: {to: string; data: string}[], gasBuffer?: string) {
 			const chainId = await this.getChainId();
-			const contractAddress = Utils.getMultiCallAddress(chainId);
-			if (!contractAddress) return null;
-			const multiCall = new MultiCall(this, contractAddress);
+			const multicallInfo = this._multicallInfoMap[chainId];
+			if (!multicallInfo) return null;
+			const multiCall = new MultiCall(this, multicallInfo.contractAddress);
 			const result = await multiCall.multicallWithGasLimitation.call({
 				calls,
-				gasBuffer: new BigNumber(gasBuffer??'3000000')
+				gasBuffer: new BigNumber(gasBuffer ?? multicallInfo.gasBuffer)
 			});
 			return result;
 		}

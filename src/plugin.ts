@@ -21,7 +21,8 @@ export {
     Web3ModalProvider,
     IClientSideProviderEvents,
     IClientSideProvider,
-    IClientWalletConfig
+    IClientWalletConfig,
+    IMulticallInfo
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
