@@ -246,9 +246,10 @@ function initWeb3ModalLib(callback: () => void){
 		registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
 		unregisterWalletEvent(event: IEventBusRegistry): void;
 		destoryRpcWalletInstance(instanceId: string): void;
-		initRpcWallet(instanceId: string, config: IRpcWalletConfig): void;
+		initRpcWallet(config: IRpcWalletConfig): string;
 	};
 	export interface IRpcWallet extends IWallet {
+		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;  
 	}
 	export interface IContractMethod {
 		call: any;
@@ -826,13 +827,24 @@ function initWeb3ModalLib(callback: () => void){
 		destoryRpcWalletInstance(instanceId: string) {
 			delete Wallet._rpcWalletPoolMap[instanceId];
 		}
-		initRpcWallet(instanceId: string, config: IRpcWalletConfig) {
+		generateUUID(): string {
+			return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+				return v.toString(16);
+			});
+		}
+		initRpcWallet(config: IRpcWalletConfig): string {
 			const wallet = new RpcWallet();
 			wallet.chainId = config.networks[0].chainId;
 			wallet._infuraId = config.infuraId;
 			wallet._networksMap = {};
 			wallet.setMultipleNetworksInfo(config.networks);
+			let instanceId = this.generateUUID();
+			while (Wallet._rpcWalletPoolMap[instanceId]) {
+				instanceId = this.generateUUID();
+			}
 			Wallet._rpcWalletPoolMap[instanceId] = wallet;
+			return instanceId;
 		}
 		setDefaultProvider(){
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {

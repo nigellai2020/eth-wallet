@@ -1723,9 +1723,10 @@ declare module "wallet" {
         registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
         unregisterWalletEvent(event: IEventBusRegistry): void;
         destoryRpcWalletInstance(instanceId: string): void;
-        initRpcWallet(instanceId: string, config: IRpcWalletConfig): void;
+        initRpcWallet(config: IRpcWalletConfig): string;
     }
     export interface IRpcWallet extends IWallet {
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     }
     export interface IContractMethod {
         call: any;
@@ -1969,7 +1970,8 @@ declare module "wallet" {
         registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
         unregisterWalletEvent(event: IEventBusRegistry): void;
         destoryRpcWalletInstance(instanceId: string): void;
-        initRpcWallet(instanceId: string, config: IRpcWalletConfig): void;
+        generateUUID(): string;
+        initRpcWallet(config: IRpcWalletConfig): string;
         setDefaultProvider(): void;
         connect(clientSideProvider: IClientSideProvider): Promise<void>;
         disconnect(): Promise<void>;

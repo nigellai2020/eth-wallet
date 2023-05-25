@@ -1760,13 +1760,24 @@ var _Wallet = class {
   destoryRpcWalletInstance(instanceId) {
     delete _Wallet._rpcWalletPoolMap[instanceId];
   }
-  initRpcWallet(instanceId, config) {
+  generateUUID() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+      let r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
+      return v.toString(16);
+    });
+  }
+  initRpcWallet(config) {
     const wallet = new RpcWallet();
     wallet.chainId = config.networks[0].chainId;
     wallet._infuraId = config.infuraId;
     wallet._networksMap = {};
     wallet.setMultipleNetworksInfo(config.networks);
+    let instanceId = this.generateUUID();
+    while (_Wallet._rpcWalletPoolMap[instanceId]) {
+      instanceId = this.generateUUID();
+    }
     _Wallet._rpcWalletPoolMap[instanceId] = wallet;
+    return instanceId;
   }
   setDefaultProvider() {
     var _a;
