@@ -11,6 +11,7 @@ import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
 import * as Utils from "./utils";
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
+import { EventBus, IEventBusRegistry } from './eventBus';
 
 let Web3Modal;
 let WalletConnectProvider;
@@ -241,7 +242,14 @@ function initWeb3ModalLib(callback: () => void){
 		getNetworkInfo(chainId: number): INetwork;
 		setNetworkInfo(network: INetwork): void;
 		setMultipleNetworksInfo(networks: INetwork[]): void;
+		registerClientWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+		registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
+		unregisterWalletEvent(event: IEventBusRegistry): void;
+		destoryRpcWalletInstance(instanceId: string): void;
+		initRpcWallet(instanceId: string, config: IRpcWalletConfig): void;
 	};
+	export interface IRpcWallet extends IWallet {
+	}
 	export interface IContractMethod {
 		call: any;
 		estimateGas(...params:any[]): Promise<number>;
@@ -373,6 +381,10 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export type NetworksMapType = { [chainId: number]: INetwork }
 	export type MulticallInfoMapType = { [chainId: number]: IMulticallInfo }
+	export interface IRpcWalletConfig {
+		networks: INetwork[];
+		infuraId: string;
+	}
 	export interface IClientWalletConfig {
 		defaultChainId: number;
 		networks: INetwork[];
@@ -468,6 +480,7 @@ function initWeb3ModalLib(callback: () => void){
 						};
 					}
 					this._isConnected = hasAccounts;
+					EventBus.getInstance().dispatch('accountsChanged', accountAddress);
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				});
@@ -477,14 +490,17 @@ function initWeb3ModalLib(callback: () => void){
 						if (this._options.infuraId) this.wallet.infuraId = this._options.infuraId;
 						self.wallet.setDefaultProvider();
 					}
+					EventBus.getInstance().dispatch('chainChanged', chainId);
 					if (self.onChainChanged)
 						self.onChainChanged(chainId);
 				});
 				this.provider.on('connect', (connectInfo) => {
+					EventBus.getInstance().dispatch('connect', connectInfo);
 					if (self.onConnect)
 						self.onConnect(connectInfo);
 				});
 				this.provider.on('disconnect', (error) => {
+					EventBus.getInstance().dispatch('disconnect', error);
 					if (self.onDisconnect)
 						self.onDisconnect(error);
 				});
@@ -514,6 +530,7 @@ function initWeb3ModalLib(callback: () => void){
 							};
 						}
 						this._isConnected = hasAccounts;
+						EventBus.getInstance().dispatch('accountsChanged', accountAddress);
 						if (self.onAccountChanged)
 							self.onAccountChanged(accountAddress);
 					});
@@ -689,6 +706,7 @@ function initWeb3ModalLib(callback: () => void){
 						};
 					}
 					this._isConnected = hasAccounts;
+					EventBus.getInstance().dispatch('accountsChanged', accountAddress);
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				});
@@ -728,6 +746,7 @@ function initWeb3ModalLib(callback: () => void){
 		public clientSideProvider: IClientSideProvider;  
 		private _infuraId: string;
 		private _utils: IWalletUtils;
+		private static _rpcWalletPoolMap: Record<string, IRpcWallet> = {};
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			this._provider = provider;		
@@ -762,6 +781,9 @@ function initWeb3ModalLib(callback: () => void){
 		static getClientInstance(): IClientWallet {
 			return Wallet.instance;
 		}
+		static getRpcWalletInstance(instanceId: string): IRpcWallet {
+			return Wallet._rpcWalletPoolMap[instanceId];
+		}
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
 		}
@@ -789,7 +811,28 @@ function initWeb3ModalLib(callback: () => void){
 				for (let multicall of config.multicalls) {
 					wallet._multicallInfoMap[multicall.chainId] = multicall;
 				}
-			}
+			}		
+		}
+		registerClientWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry {
+			return EventBus.getInstance().register(sender, event, callback);
+		}
+		registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry {
+			const eventId = instanceId + event;
+			return EventBus.getInstance().register(sender, eventId, callback);
+		}
+		unregisterWalletEvent(event: IEventBusRegistry) {
+			return event.unregister();
+		}
+		destoryRpcWalletInstance(instanceId: string) {
+			delete Wallet._rpcWalletPoolMap[instanceId];
+		}
+		initRpcWallet(instanceId: string, config: IRpcWalletConfig) {
+			const wallet = new RpcWallet();
+			wallet.chainId = config.networks[0].chainId;
+			wallet._infuraId = config.infuraId;
+			wallet._networksMap = {};
+			wallet.setMultipleNetworksInfo(config.networks);
+			Wallet._rpcWalletPoolMap[instanceId] = wallet;
 		}
 		setDefaultProvider(){
 			if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
@@ -1963,6 +2006,15 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		public get web3(): typeof Web3{
 			return this._web3;
+		}
+	}
+	export class RpcWallet extends Wallet implements IRpcWallet{
+		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
+			this.chainId = chainId;
+			const rpc = this.networksMap[chainId].rpcUrls[0];
+			this._web3.setProvider(rpc);
+			if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
+			return null;
 		}
 	}
 // };
