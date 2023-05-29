@@ -12,3 +12,4 @@ export * as Utils from './utils';
 export * as Contracts from './contracts';
 export * as Types from './types';
 export * as Constants from './constants';
+export { IEventBusRegistry } from './eventBus';

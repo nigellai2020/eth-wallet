@@ -2109,4 +2109,5 @@ declare module "@ijstech/eth-wallet" {
     export * as Contracts from "contracts/index";
     export * as Types from "types";
     export * as Constants from "constants";
+    export { IEventBusRegistry } from "eventBus";
 }

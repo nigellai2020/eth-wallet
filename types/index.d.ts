@@ -14,3 +14,4 @@ export * as Utils from './nodeUtils';
 export * as Contracts from './contracts';
 export * as Types from './nodeTypes';
 export * as Constants from './constants';
+export { IEventBusRegistry } from './eventBus';
