@@ -311,12 +311,13 @@ export declare type MulticallInfoMapType = {
 export interface IRpcWalletConfig {
     networks: INetwork[];
     infuraId: string;
+    multicalls?: IMulticallInfo[];
 }
 export interface IClientWalletConfig {
     defaultChainId: number;
     networks: INetwork[];
     infuraId: string;
-    multicalls: IMulticallInfo[];
+    multicalls?: IMulticallInfo[];
 }
 export interface IClientProviderOptions {
     name?: string;

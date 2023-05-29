@@ -390,12 +390,13 @@ function initWeb3ModalLib(callback: () => void){
 	export interface IRpcWalletConfig {
 		networks: INetwork[];
 		infuraId: string;
+		multicalls?: IMulticallInfo[];
 	}
 	export interface IClientWalletConfig {
 		defaultChainId: number;
 		networks: INetwork[];
 		infuraId: string;
-		multicalls: IMulticallInfo[];
+		multicalls?: IMulticallInfo[];
 	}
 	export interface IClientProviderOptions {	
 		name?: string;
@@ -843,6 +844,12 @@ function initWeb3ModalLib(callback: () => void){
 			wallet._infuraId = config.infuraId;
 			wallet._networksMap = {};
 			wallet.setMultipleNetworksInfo(config.networks);
+			wallet._multicallInfoMap = {};	
+			if (config.multicalls) {	
+				for (let multicall of config.multicalls) {
+					wallet._multicallInfoMap[multicall.chainId] = multicall;
+				}
+			}
 			let instanceId = this.generateUUID();
 			while (Wallet._rpcWalletPoolMap[instanceId]) {
 				instanceId = this.generateUUID();

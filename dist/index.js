@@ -1785,6 +1785,12 @@ var _Wallet = class {
     wallet._infuraId = config.infuraId;
     wallet._networksMap = {};
     wallet.setMultipleNetworksInfo(config.networks);
+    wallet._multicallInfoMap = {};
+    if (config.multicalls) {
+      for (let multicall of config.multicalls) {
+        wallet._multicallInfoMap[multicall.chainId] = multicall;
+      }
+    }
     let instanceId = this.generateUUID();
     while (_Wallet._rpcWalletPoolMap[instanceId]) {
       instanceId = this.generateUUID();
