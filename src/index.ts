@@ -21,7 +21,10 @@ export {
     IClientSideProviderEvents,
     IClientSideProvider,
     IClientWalletConfig,
-    IMulticallInfo
+    IClientWallet,
+    IMulticallInfo,
+    IRpcWalletConfig,
+    IRpcWallet
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';
@@ -38,3 +41,4 @@ export * as Utils from './nodeUtils';
 export * as Contracts from './contracts';
 export * as Types from './nodeTypes';
 export * as Constants from './constants';
+export {IEventBusRegistry} from './eventBus';

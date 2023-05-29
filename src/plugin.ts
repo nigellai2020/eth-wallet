@@ -22,7 +22,10 @@ export {
     IClientSideProviderEvents,
     IClientSideProvider,
     IClientWalletConfig,
-    IMulticallInfo
+    IClientWallet,
+    IMulticallInfo,
+    IRpcWalletConfig,
+    IRpcWallet
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
@@ -31,3 +34,4 @@ export * as Utils from './utils';
 export * as Contracts from './contracts';
 export * as Types from './types';
 export * as Constants from './constants';
+export {IEventBusRegistry} from './eventBus';

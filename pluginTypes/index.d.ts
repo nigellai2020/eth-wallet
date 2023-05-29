@@ -1436,6 +1436,16 @@ declare module "constants" {
         };
         required: string[];
     };
+    export enum ClientWalletEvent {
+        AccountsChanged = "accountsChanged",
+        ChainChanged = "chainChanged",
+        Connect = "connect",
+        Disconnect = "disconnect"
+    }
+    export enum RpcWalletEvent {
+        Connected = "connected",
+        Disconnected = "disconnected"
+    }
 }
 declare module "utils" {
     /*!-----------------------------------------------------------
@@ -1527,6 +1537,31 @@ declare module "contracts/erc20" {
         }
     }
 }
+declare module "eventBus" {
+    export interface IEventBusRegistry {
+        unregister: () => void;
+    }
+    export interface ICallable {
+        [key: string]: Function;
+    }
+    export interface ISubscriber {
+        [key: string]: ICallable;
+    }
+    export interface IEventBus {
+        dispatch<T>(event: string, arg?: T): void;
+        register(sender: any, event: string, callback: Function): IEventBusRegistry;
+    }
+    export class EventBus implements IEventBus {
+        private subscribers;
+        private static nextId;
+        private static instance?;
+        private constructor();
+        static getInstance(): EventBus;
+        dispatch<T>(event: string, arg?: T): void;
+        register(sender: any, event: string, callback: Function): IEventBusRegistry;
+        private getNextId;
+    }
+}
 declare module "wallet" {
     /*!-----------------------------------------------------------
     * Copyright (c) IJS Technologies. All rights reserved.
@@ -1538,6 +1573,7 @@ declare module "wallet" {
     import { BigNumber } from 'bignumber.js';
     import { Erc20 } from "contracts/erc20";
     import { IAbiDefinition, MessageTypes, TypedMessage } from "types";
+    import { IEventBusRegistry } from "eventBus";
     export function toString(value: any): any;
     export function stringToBytes32(value: string | stringArray): string | string[];
     export function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
@@ -1693,6 +1729,17 @@ declare module "wallet" {
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
+        destoryRpcWalletInstance(instanceId: string): void;
+        initRpcWallet(config: IRpcWalletConfig): string;
+    }
+    export interface IRpcWallet extends IWallet {
+        instanceId: string;
+        isConnected: boolean;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
     }
     export interface IContractMethod {
         call: any;
@@ -1826,11 +1873,16 @@ declare module "wallet" {
     export type MulticallInfoMapType = {
         [chainId: number]: IMulticallInfo;
     };
+    export interface IRpcWalletConfig {
+        networks: INetwork[];
+        infuraId: string;
+        multicalls?: IMulticallInfo[];
+    }
     export interface IClientWalletConfig {
         defaultChainId: number;
         networks: INetwork[];
         infuraId: string;
-        multicalls: IMulticallInfo[];
+        multicalls?: IMulticallInfo[];
     }
     export interface IClientProviderOptions {
         name?: string;
@@ -1919,13 +1971,20 @@ declare module "wallet" {
         clientSideProvider: IClientSideProvider;
         private _infuraId;
         private _utils;
+        private static _rpcWalletPoolMap;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): IWallet;
         static getClientInstance(): IClientWallet;
+        static getRpcWalletInstance(instanceId: string): IRpcWallet;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
+        destoryRpcWalletInstance(instanceId: string): void;
+        private generateUUID;
+        initRpcWallet(config: IRpcWalletConfig): string;
         setDefaultProvider(): void;
         connect(clientSideProvider: IClientSideProvider): Promise<void>;
         disconnect(): Promise<void>;
@@ -2027,6 +2086,14 @@ declare module "wallet" {
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
         get web3(): typeof Web3;
     }
+    export class RpcWallet extends Wallet implements IRpcWallet {
+        instanceId: string;
+        private _eventsMap;
+        get isConnected(): boolean;
+        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
+    }
 }
 /// <amd-module name="@ijstech/eth-wallet" />
 declare module "@ijstech/eth-wallet" {
@@ -2035,7 +2102,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IMulticallInfo } from "wallet";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, IRpcWalletConfig, IRpcWallet } from "wallet";
     export { Contract } from "contract";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "contracts/erc20";
@@ -2043,4 +2110,5 @@ declare module "@ijstech/eth-wallet" {
     export * as Contracts from "contracts/index";
     export * as Types from "types";
     export * as Constants from "constants";
+    export { IEventBusRegistry } from "eventBus";
 }

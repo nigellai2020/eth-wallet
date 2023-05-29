@@ -8,6 +8,7 @@ import { IWeb3 } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
+import { IEventBusRegistry } from './eventBus';
 export declare function toString(value: any): any;
 export declare function stringToBytes32(value: string | stringArray): string | string[];
 export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
@@ -163,6 +164,17 @@ export interface IClientWallet extends IWallet {
     getNetworkInfo(chainId: number): INetwork;
     setNetworkInfo(network: INetwork): void;
     setMultipleNetworksInfo(networks: INetwork[]): void;
+    registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+    unregisterWalletEvent(event: IEventBusRegistry): void;
+    destoryRpcWalletInstance(instanceId: string): void;
+    initRpcWallet(config: IRpcWalletConfig): string;
+}
+export interface IRpcWallet extends IWallet {
+    instanceId: string;
+    isConnected: boolean;
+    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+    unregisterWalletEvent(event: IEventBusRegistry): void;
 }
 export interface IContractMethod {
     call: any;
@@ -296,11 +308,16 @@ export declare type NetworksMapType = {
 export declare type MulticallInfoMapType = {
     [chainId: number]: IMulticallInfo;
 };
+export interface IRpcWalletConfig {
+    networks: INetwork[];
+    infuraId: string;
+    multicalls?: IMulticallInfo[];
+}
 export interface IClientWalletConfig {
     defaultChainId: number;
     networks: INetwork[];
     infuraId: string;
-    multicalls: IMulticallInfo[];
+    multicalls?: IMulticallInfo[];
 }
 export interface IClientProviderOptions {
     name?: string;
@@ -389,13 +406,20 @@ export declare class Wallet implements IClientWallet {
     clientSideProvider: IClientSideProvider;
     private _infuraId;
     private _utils;
+    private static _rpcWalletPoolMap;
     constructor(provider?: any, account?: IAccount | IAccount[]);
     private static readonly instance;
     static getInstance(): IWallet;
     static getClientInstance(): IClientWallet;
+    static getRpcWalletInstance(instanceId: string): IRpcWallet;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;
+    registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+    unregisterWalletEvent(event: IEventBusRegistry): void;
+    destoryRpcWalletInstance(instanceId: string): void;
+    private generateUUID;
+    initRpcWallet(config: IRpcWalletConfig): string;
     setDefaultProvider(): void;
     connect(clientSideProvider: IClientSideProvider): Promise<void>;
     disconnect(): Promise<void>;
@@ -496,5 +520,13 @@ export declare class Wallet implements IClientWallet {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     get web3(): typeof Web3;
+}
+export declare class RpcWallet extends Wallet implements IRpcWallet {
+    instanceId: string;
+    private _eventsMap;
+    get isConnected(): boolean;
+    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+    registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+    unregisterWalletEvent(event: IEventBusRegistry): void;
 }
 export {};

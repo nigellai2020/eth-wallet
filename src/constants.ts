@@ -28,3 +28,15 @@ export const TYPED_MESSAGE_SCHEMA = {
     },
     required: ['types', 'primaryType', 'domain', 'message'],
 };
+
+export enum ClientWalletEvent {
+    AccountsChanged = "accountsChanged",
+    ChainChanged = "chainChanged",
+    Connect = "connect",
+    Disconnect = "disconnect"
+}
+
+export enum RpcWalletEvent {
+    Connected = "connected",
+    Disconnected = "disconnected"
+}
