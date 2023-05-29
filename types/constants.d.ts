@@ -35,3 +35,13 @@ export declare const TYPED_MESSAGE_SCHEMA: {
     };
     required: string[];
 };
+export declare enum ClientWalletEvent {
+    AccountsChanged = "accountsChanged",
+    ChainChanged = "chainChanged",
+    Connect = "connect",
+    Disconnect = "disconnect"
+}
+export declare enum RpcWalletEvent {
+    Connected = "connected",
+    Disconnected = "disconnected"
+}

@@ -21,8 +21,10 @@ export {
     IClientSideProviderEvents,
     IClientSideProvider,
     IClientWalletConfig,
+    IClientWallet,
     IMulticallInfo,
-    IRpcWalletConfig
+    IRpcWalletConfig,
+    IRpcWallet
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';

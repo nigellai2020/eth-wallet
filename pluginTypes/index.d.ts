@@ -1436,6 +1436,16 @@ declare module "constants" {
         };
         required: string[];
     };
+    export enum ClientWalletEvent {
+        AccountsChanged = "accountsChanged",
+        ChainChanged = "chainChanged",
+        Connect = "connect",
+        Disconnect = "disconnect"
+    }
+    export enum RpcWalletEvent {
+        Connected = "connected",
+        Disconnected = "disconnected"
+    }
 }
 declare module "utils" {
     /*!-----------------------------------------------------------
@@ -1719,14 +1729,17 @@ declare module "wallet" {
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
-        registerClientWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
         unregisterWalletEvent(event: IEventBusRegistry): void;
         destoryRpcWalletInstance(instanceId: string): void;
         initRpcWallet(config: IRpcWalletConfig): string;
     }
     export interface IRpcWallet extends IWallet {
+        instanceId: string;
+        isConnected: boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
     }
     export interface IContractMethod {
         call: any;
@@ -1966,11 +1979,10 @@ declare module "wallet" {
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
-        registerClientWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
         unregisterWalletEvent(event: IEventBusRegistry): void;
         destoryRpcWalletInstance(instanceId: string): void;
-        generateUUID(): string;
+        private generateUUID;
         initRpcWallet(config: IRpcWalletConfig): string;
         setDefaultProvider(): void;
         connect(clientSideProvider: IClientSideProvider): Promise<void>;
@@ -2074,7 +2086,12 @@ declare module "wallet" {
         get web3(): typeof Web3;
     }
     export class RpcWallet extends Wallet implements IRpcWallet {
+        instanceId: string;
+        private _eventsMap;
+        get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(event: IEventBusRegistry): void;
     }
 }
 /// <amd-module name="@ijstech/eth-wallet" />
@@ -2084,7 +2101,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IMulticallInfo, IRpcWalletConfig } from "wallet";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, IRpcWalletConfig, IRpcWallet } from "wallet";
     export { Contract } from "contract";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "contracts/erc20";
