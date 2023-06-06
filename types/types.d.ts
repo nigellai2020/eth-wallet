@@ -7,7 +7,7 @@ export interface MessageTypeProperty {
     name: string;
     type: string;
 }
-export declare type EIP712TypeMap = {
+export type EIP712TypeMap = {
     [type: string]: MessageTypeProperty[];
 };
 export interface IEIP712Domain {

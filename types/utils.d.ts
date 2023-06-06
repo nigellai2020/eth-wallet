@@ -9,7 +9,7 @@ export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
 export declare function padLeft(string: string, chars: number, sign?: string): string;
 export declare function padRight(string: string, chars: number, sign?: string): string;
-declare type stringArray = string | _stringArray;
+type stringArray = string | _stringArray;
 interface _stringArray extends Array<stringArray> {
 }
 export declare function stringToBytes32(value: string | stringArray): string | string[];

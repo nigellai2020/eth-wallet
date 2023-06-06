@@ -12,7 +12,7 @@ import { IEventBusRegistry } from './eventBus';
 export declare function toString(value: any): any;
 export declare function stringToBytes32(value: string | stringArray): string | string[];
 export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
-export declare type stringArray = string | _stringArray;
+export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
 export interface IWalletUtils {
@@ -302,10 +302,10 @@ export interface IMulticallInfo {
     contractAddress: string;
     gasBuffer: string;
 }
-export declare type NetworksMapType = {
+export type NetworksMapType = {
     [chainId: number]: INetwork;
 };
-export declare type MulticallInfoMapType = {
+export type MulticallInfoMapType = {
     [chainId: number]: IMulticallInfo;
 };
 export interface IRpcWalletConfig {

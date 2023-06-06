@@ -29,7 +29,7 @@ async function build() {
   }).catch(() => process.exit(1));
   let content = await readFile('dist/plugin.js');
   let web3 = await readFile('src/lib/web3/1.9.0/web3.min.js');
-  let bignumber = await readFile('node_modules/bignumber.js/bignumber.min.js');
+  let bignumber = await readFile('node_modules/bignumber.js/bignumber.js');
 //   define("aws-sdk", ()=>{});
 // define("asn1.js", ()=>{});
 // define("bn.js", ()=>{});

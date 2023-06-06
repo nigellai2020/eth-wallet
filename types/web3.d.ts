@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
-export declare type Hex = string | number;
-export declare type Unit = 'noether' | 'wei' | 'kwei' | 'Kwei' | 'babbage' | 'femtoether' | 'mwei' | 'Mwei' | 'lovelace' | 'picoether' | 'gwei' | 'Gwei' | 'shannon' | 'nanoether' | 'nano' | 'szabo' | 'microether' | 'micro' | 'finney' | 'milliether' | 'milli' | 'ether' | 'kether' | 'grand' | 'mether' | 'gether' | 'tether';
-export declare type Mixed = string | number | BigNumber | {
+export type Hex = string | number;
+export type Unit = 'noether' | 'wei' | 'kwei' | 'Kwei' | 'babbage' | 'femtoether' | 'mwei' | 'Mwei' | 'lovelace' | 'picoether' | 'gwei' | 'Gwei' | 'shannon' | 'nanoether' | 'nano' | 'szabo' | 'microether' | 'micro' | 'finney' | 'milliether' | 'milli' | 'ether' | 'kether' | 'grand' | 'mether' | 'gether' | 'tether';
+export type Mixed = string | number | BigNumber | {
     type: string;
     value: string;
 } | {
@@ -182,7 +182,7 @@ export interface AbstractProvider {
     request?(args: RequestArguments): Promise<any>;
     connected?: boolean;
 }
-export declare type provider = HttpProvider | WebsocketProvider | AbstractProvider | string | null;
+export type provider = HttpProvider | WebsocketProvider | AbstractProvider | string | null;
 export interface AbiInput {
     name: string;
     type: string;
@@ -196,8 +196,8 @@ export interface AbiOutput {
     components?: AbiOutput[];
     internalType?: string;
 }
-export declare type AbiType = 'function' | 'constructor' | 'event' | 'fallback' | 'receive';
-export declare type StateMutabilityType = 'pure' | 'view' | 'nonpayable' | 'payable';
+export type AbiType = 'function' | 'constructor' | 'event' | 'fallback' | 'receive';
+export type StateMutabilityType = 'pure' | 'view' | 'nonpayable' | 'payable';
 export interface AbiItem {
     anonymous?: boolean;
     constant?: boolean;
@@ -215,8 +215,8 @@ export interface ContractOptions {
     gas?: number;
     data?: string;
 }
-export declare type chain = 'mainnet' | 'goerli' | 'kovan' | 'rinkeby' | 'ropsten';
-export declare type hardfork = 'chainstart' | 'homestead' | 'dao' | 'tangerineWhistle' | 'spuriousDragon' | 'byzantium' | 'constantinople' | 'petersburg' | 'istanbul';
+export type chain = 'mainnet' | 'goerli' | 'kovan' | 'rinkeby' | 'ropsten';
+export type hardfork = 'chainstart' | 'homestead' | 'dao' | 'tangerineWhistle' | 'spuriousDragon' | 'byzantium' | 'constantinople' | 'petersburg' | 'istanbul';
 export interface CustomChainParams {
     name?: string;
     networkId: number;
@@ -327,7 +327,7 @@ export interface Accounts {
     decrypt(keystoreJsonV3: EncryptedKeystoreV3Json, password: string): Account;
     wallet: WalletBase;
 }
-export declare type BlockNumber = string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+export type BlockNumber = string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
 export interface Options extends ContractOptions {
     address: string;
     jsonInterface: AbiItem[];
@@ -653,7 +653,7 @@ export interface AccessTuple {
     address: string;
     storageKeys: string[];
 }
-export declare type AccessList = AccessTuple[];
+export type AccessList = AccessTuple[];
 export interface Transaction {
     hash: string;
     nonce: number;

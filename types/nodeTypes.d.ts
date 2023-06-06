@@ -8,7 +8,7 @@ export interface MessageTypeProperty {
     name: string;
     type: string;
 }
-export declare type EIP712TypeMap = {
+export type EIP712TypeMap = {
     [type: string]: MessageTypeProperty[];
 };
 export interface IEIP712Domain {
@@ -50,7 +50,7 @@ export interface TransformableToBuffer {
     toBuffer(): Buffer;
     toArray?(): Uint8Array;
 }
-export declare type NestedUint8Array = Array<Uint8Array | NestedUint8Array>;
-export declare type NestedBufferArray = Array<Buffer | NestedBufferArray>;
-export declare type PrefixedHexString = string;
-export declare type ToBufferInputTypes = PrefixedHexString | number | bigint | Buffer | Uint8Array | number[] | TransformableToArray | TransformableToBuffer | null | undefined;
+export type NestedUint8Array = Array<Uint8Array | NestedUint8Array>;
+export type NestedBufferArray = Array<Buffer | NestedBufferArray>;
+export type PrefixedHexString = string;
+export type ToBufferInputTypes = PrefixedHexString | number | bigint | Buffer | Uint8Array | number[] | TransformableToArray | TransformableToBuffer | null | undefined;
