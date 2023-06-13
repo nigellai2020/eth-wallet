@@ -5514,7 +5514,11 @@ var _Wallet = class {
     let _web3 = this._web3;
     let address = this.address;
     let self = this;
-    return new Promise(async function(resolve, reject) {
+    let currentProvider = this.provider;
+    if (typeof window !== "undefined" && this.clientSideProvider) {
+      this.provider = this.clientSideProvider.provider;
+    }
+    let promise = new Promise(async function(resolve, reject) {
       try {
         let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         let result;
@@ -5547,6 +5551,10 @@ var _Wallet = class {
         reject(err);
       }
     });
+    promise.finally(() => {
+      this.provider = currentProvider;
+    });
+    return promise;
   }
   setBlockTime(time) {
     return new Promise((resolve, reject) => {

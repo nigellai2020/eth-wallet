@@ -1731,7 +1731,11 @@ function initWeb3ModalLib(callback: () => void){
         	let _web3 = this._web3;
         	let address = this.address;
         	let self = this;
-        	return new Promise(async function(resolve, reject){
+			let currentProvider = this.provider;
+			if (typeof window !== "undefined" && this.clientSideProvider) {
+				this.provider = this.clientSideProvider.provider;
+			}
+        	let promise = new Promise<TransactionReceipt>(async function(resolve, reject){
         		try{
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
@@ -1766,6 +1770,10 @@ function initWeb3ModalLib(callback: () => void){
         			reject(err);
         		}
         	})
+			promise.finally(() => {
+				this.provider = currentProvider;
+			})
+			return promise;
 		};
 		setBlockTime(time: number): Promise<any>{
 			return new Promise((resolve, reject) => {
