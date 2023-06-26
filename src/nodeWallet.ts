@@ -265,6 +265,7 @@ export class NodeWallet extends Wallet{
         })
     };
     async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
+        this.init();
         let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
         let currentProvider = this.provider;
         try {
@@ -307,6 +308,7 @@ export class NodeWallet extends Wallet{
         return null;
     }
     signMessage(msg: string): Promise<string> {
+        this.init();
         let _web3 = this._web3;
         let address = this.address;
         let self = this;
@@ -345,6 +347,7 @@ export class NodeWallet extends Wallet{
         return promise;
     };
     async signTransaction(tx: any, privateKey?: string): Promise<string>{
+        this.init();
         let _web3 = this._web3;  
         // let gasPrice = tx.gasPrice ||  _web3.utils.numberToHex(await _web3.eth.getGasPrice());     	
         let gas = tx.gas || await _web3.eth.estimateGas({
@@ -433,6 +436,7 @@ export class NodeWallet extends Wallet{
         return promise;
     }	
     recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string {
+        this.init();
         let signer = recoverTypedSignature({
             signature: signature,
             data: data,

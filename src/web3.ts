@@ -2,9 +2,13 @@
 // import { Utils } from 'web3-utils';
 
 import {BigNumber} from 'bignumber.js';
-const eth = require('web3-eth');
-const utils = require('web3-utils');
+let eth: any;
+let utils: any;
 
+if (typeof(module) == 'object' && module['exports']){
+    eth = require('web3-eth');
+    utils = require('web3-utils');
+};
 export type Hex = string | number;
 export type Unit =
     | 'noether'
@@ -101,9 +105,9 @@ export interface Utils {
     hexToUtf8(string: string): string;
     keccak256(value: string | BigNumber): string;
     padLeft(value: string | number, characterAmount: number, sign?: string): string;
-    leftPad(string: string | number, characterAmount: number, sign?: string): string;
-    rightPad(string: string | number, characterAmount: number, sign?: string): string;
     padRight(string: string | number, characterAmount: number, sign?: string): string;
+    leftPad(string: string | number, characterAmount: number, sign?: string): string;
+    rightPad(string: string | number, characterAmount: number, sign?: string): string;    
     sha3(value: string | BigNumber): string | null;
     randomHex(bytesSize: number): string;
     utf8ToHex(string: string): string;
@@ -1294,12 +1298,11 @@ export class Web3 implements IWeb3{
 	static utils: Utils = utils;
 	constructor(provider?: any){
 		this.eth = new eth(provider);
-	}
+	};
 	get currentProvider(): any{
-		return this.eth.currentProvider;
-	}
+        return this.eth.currentProvider;
+	};
 	setProvider(provider: any): boolean{
-		return this.eth.setProvider(provider)
-	}
+        return this.eth.setProvider(provider)
+	};
 };
-module.exports = Web3;

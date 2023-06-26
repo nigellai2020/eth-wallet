@@ -3309,8 +3309,10 @@ __export(web3_exports, {
 var eth, utils, Web3;
 var init_web3 = __esm({
   "src/web3.ts"() {
-    eth = require("web3-eth");
-    utils = require("web3-utils");
+    if (typeof module == "object" && module["exports"]) {
+      eth = require("web3-eth");
+      utils = require("web3-utils");
+    }
     Web3 = class {
       constructor(provider) {
         this.utils = utils;
@@ -3324,7 +3326,6 @@ var init_web3 = __esm({
       }
     };
     Web3.utils = utils;
-    module.exports = Web3;
   }
 });
 
@@ -4010,8 +4011,10 @@ var Web32 = Web3Lib();
 function Web3Lib() {
   if (typeof window !== "undefined" && window["Web3"])
     return window["Web3"];
-  else
-    return init_web3(), web3_exports;
+  else {
+    let { Web3: Web34 } = (init_web3(), web3_exports);
+    return Web34;
+  }
 }
 function sleep(millisecond) {
   return new Promise(function(resolve) {
@@ -4308,7 +4311,8 @@ function initWeb3Lib() {
   if (typeof window !== "undefined" && window["Web3"])
     return window["Web3"];
   else {
-    return init_web3(), web3_exports;
+    let { Web3: Web34 } = (init_web3(), web3_exports);
+    return Web34;
   }
   ;
 }
@@ -4628,26 +4632,13 @@ var _Wallet = class {
     this._abiAddressDict = {};
     this._abiEventDict = {};
     this._provider = provider;
-    this._web3 = new Web33(provider);
-    this._utils = {
-      fromDecimals,
-      fromWei: this._web3.utils.fromWei,
-      hexToUtf8: this._web3.utils.hexToUtf8,
-      sha3: this._web3.utils.sha3,
-      toDecimals,
-      toString,
-      toUtf8: this._web3.utils.toUtf8,
-      toWei: this._web3.utils.toWei,
-      stringToBytes,
-      stringToBytes32
-    };
     if (Array.isArray(account)) {
       this._accounts = account;
       this._account = account[0];
-    } else
+    } else {
       this._account = account;
-    if (this._account && this._account.privateKey && !this._account.address)
-      this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+    }
+    ;
   }
   static getInstance() {
     return _Wallet.instance;
@@ -4657,6 +4648,26 @@ var _Wallet = class {
   }
   static getRpcWalletInstance(instanceId) {
     return _Wallet._rpcWalletPoolMap[instanceId];
+  }
+  init() {
+    if (!this._web3) {
+      this._web3 = new Web33(this._provider);
+      this._utils = {
+        fromDecimals,
+        fromWei: this._web3.utils.fromWei,
+        hexToUtf8: this._web3.utils.hexToUtf8,
+        sha3: this._web3.utils.sha3,
+        toDecimals,
+        toString,
+        toUtf8: this._web3.utils.toUtf8,
+        toWei: this._web3.utils.toWei,
+        stringToBytes,
+        stringToBytes32
+      };
+      if (this._account && this._account.privateKey && !this._account.address)
+        this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+    }
+    ;
   }
   get isConnected() {
     return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
@@ -4707,7 +4718,7 @@ var _Wallet = class {
     const defaultNetwork = config.networks[0];
     wallet.chainId = defaultNetwork.chainId;
     const rpc = defaultNetwork.rpcUrls[0];
-    wallet._web3.setProvider(rpc);
+    wallet.setProvider(rpc);
     wallet._infuraId = config.infuraId;
     wallet._networksMap = {};
     wallet.setMultipleNetworksInfo(config.networks);
@@ -4757,6 +4768,7 @@ var _Wallet = class {
   }
   get accounts() {
     return new Promise((resolve) => {
+      this.init();
       if (this._accounts) {
         let result = [];
         for (let i = 0; i < this._accounts.length; i++) {
@@ -4771,6 +4783,7 @@ var _Wallet = class {
     });
   }
   get address() {
+    this.init();
     if (this._account && this._account.privateKey) {
       if (!this._account.address)
         this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
@@ -4792,6 +4805,7 @@ var _Wallet = class {
     };
   }
   set account(value) {
+    this.init();
     this._web3.eth.defaultAccount = "";
     this._account = value;
   }
@@ -4817,6 +4831,7 @@ var _Wallet = class {
     }
   }
   createAccount() {
+    this.init();
     let acc = this._web3.eth.accounts.create();
     return {
       address: acc.address,
@@ -4827,11 +4842,13 @@ var _Wallet = class {
     return this.web3.eth.abi.decodeLog(inputs, hexString, topics);
   }
   get defaultAccount() {
+    this.init();
     if (this._account)
       return this._account.address;
     return this._web3.eth.defaultAccount;
   }
   set defaultAccount(address) {
+    this.init();
     if (this._accounts) {
       for (let i = 0; i < this._accounts.length; i++) {
         if (!this._accounts[i].address && this._accounts[i].privateKey)
@@ -4847,6 +4864,7 @@ var _Wallet = class {
       this._web3.eth.defaultAccount = address;
   }
   async getChainId() {
+    this.init();
     if (!this.chainId)
       this.chainId = await this._web3.eth.getChainId();
     return this.chainId;
@@ -4855,14 +4873,17 @@ var _Wallet = class {
     return this._provider;
   }
   set provider(value) {
-    this._web3.setProvider(value);
+    if (this._web3)
+      this._web3.setProvider(value);
     this._provider = value;
   }
   sendSignedTransaction(tx) {
+    this.init();
     let _web3 = this._web3;
     return _web3.eth.sendSignedTransaction(tx);
   }
   async signTransaction(tx, privateKey) {
+    this.init();
     let _web3 = this._web3;
     let gas = tx.gas || await _web3.eth.estimateGas({
       from: this.address,
@@ -5048,6 +5069,7 @@ var _Wallet = class {
     return data;
   }
   async _methods(...args) {
+    this.init();
     let _web3 = this._web3;
     let result;
     let value;
@@ -5117,6 +5139,7 @@ var _Wallet = class {
     return tx;
   }
   async methods(...args) {
+    this.init();
     let _web3 = this._web3;
     if (_web3.methods) {
       return _web3.methods.apply(_web3, args);
@@ -5270,6 +5293,7 @@ var _Wallet = class {
     }
   }
   get balance() {
+    this.init();
     let self = this;
     let _web3 = this._web3;
     return new Promise(async function(resolve) {
@@ -5286,6 +5310,7 @@ var _Wallet = class {
     });
   }
   balanceOf(address) {
+    this.init();
     let self = this;
     let _web3 = this._web3;
     return new Promise(async function(resolve) {
@@ -5302,6 +5327,7 @@ var _Wallet = class {
     });
   }
   recoverSigner(msg, signature) {
+    this.init();
     let _web3 = this._web3;
     return new Promise(async function(resolve, reject) {
       try {
@@ -5314,15 +5340,18 @@ var _Wallet = class {
     });
   }
   getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
+    this.init();
     if (returnTransactionObjects) {
       return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", true);
     }
     return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
   }
   getBlockNumber() {
+    this.init();
     return this._web3.eth.getBlockNumber();
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
+    this.init();
     let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
     if (typeof block.timestamp == "string")
       return parseInt(block.timestamp);
@@ -5330,6 +5359,7 @@ var _Wallet = class {
       return block.timestamp;
   }
   set privateKey(value) {
+    this.init();
     if (value) {
       this._web3.eth.defaultAccount = "";
     }
@@ -5339,6 +5369,7 @@ var _Wallet = class {
     };
   }
   registerEvent(abi, eventMap, address, handler) {
+    this.init();
     let hash = "";
     if (typeof abi == "string") {
       hash = this._web3.utils.sha3(abi);
@@ -5353,6 +5384,7 @@ var _Wallet = class {
     }
   }
   getAbiEvents(abi) {
+    this.init();
     let _web3 = this._web3;
     let events = abi.filter((e) => e.type == "event");
     let eventMap = {};
@@ -5363,6 +5395,7 @@ var _Wallet = class {
     return eventMap;
   }
   getAbiTopics(abi, eventNames) {
+    this.init();
     if (!eventNames || eventNames.length == 0)
       eventNames = null;
     let _web3 = this._web3;
@@ -5393,6 +5426,7 @@ var _Wallet = class {
     }
   }
   registerAbi(abi, address, handler) {
+    this.init();
     let hash = "";
     if (typeof abi == "string") {
       hash = this._web3.utils.sha3(abi);
@@ -5453,7 +5487,6 @@ var _Wallet = class {
     return log;
   }
   async decodeEventData(data, events) {
-    let _web3 = this._web3;
     let event;
     if (events)
       event = events[data.topics[0]];
@@ -5471,6 +5504,7 @@ var _Wallet = class {
     return log;
   }
   scanEvents(param1, param2, param3, param4, param5) {
+    this.init();
     let fromBlock;
     let toBlock;
     let topics;
@@ -5511,6 +5545,7 @@ var _Wallet = class {
     });
   }
   send(to, amount) {
+    this.init();
     let _web3 = this._web3;
     let address = this.address;
     let self = this;
@@ -5557,6 +5592,7 @@ var _Wallet = class {
     return promise;
   }
   setBlockTime(time) {
+    this.init();
     return new Promise((resolve, reject) => {
       let method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
       this._web3.currentProvider.send({
@@ -5586,6 +5622,7 @@ var _Wallet = class {
   }
   increaseBlockTime(value) {
     return new Promise((resolve, reject) => {
+      this.init();
       this._web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
@@ -5604,6 +5641,7 @@ var _Wallet = class {
     });
   }
   signMessage(msg) {
+    this.init();
     let _web3 = this._web3;
     let address = this.address;
     let self = this;
@@ -5677,9 +5715,12 @@ var _Wallet = class {
     };
   }
   get utils() {
+    if (!this._utils)
+      this.init();
     return this._utils;
   }
   verifyMessage(account, msg, signature) {
+    this.init();
     let _web3 = this._web3;
     return new Promise(async function(resolve, reject) {
       try {
@@ -5693,6 +5734,7 @@ var _Wallet = class {
   }
   blockGasLimit() {
     return new Promise(async (resolve, reject) => {
+      this.init();
       try {
         if (!this._gasLimit)
           this._gasLimit = (await this._web3.eth.getBlock("latest")).gasLimit;
@@ -5703,12 +5745,15 @@ var _Wallet = class {
     });
   }
   getGasPrice() {
+    this.init();
     return (async () => new import_bignumber3.BigNumber(await this._web3.eth.getGasPrice()))();
   }
   transactionCount() {
+    this.init();
     return (async () => await this._web3.eth.getTransactionCount(this.address))();
   }
   async sendTransaction(transaction) {
+    this.init();
     let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     let currentProvider = this.provider;
     try {
@@ -5744,6 +5789,7 @@ var _Wallet = class {
     }
   }
   async getTransaction(transactionHash) {
+    this.init();
     let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
     return {
       from: web3Receipt.from,
@@ -5756,20 +5802,25 @@ var _Wallet = class {
     };
   }
   getTransactionReceipt(transactionHash) {
+    this.init();
     return this._web3.eth.getTransactionReceipt(transactionHash);
   }
   call(transaction) {
+    this.init();
     let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     return this._web3.eth.call(_transaction);
   }
   newContract(abi, address) {
+    this.init();
     return new this._web3.eth.Contract(abi, address);
   }
   decodeErrorMessage(msg) {
+    this.init();
     return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
   }
   async newBatchRequest() {
     return new Promise((resolve, reject) => {
+      this.init();
       try {
         resolve({
           batch: new this._web3.eth.BatchRequest(),
@@ -5785,9 +5836,11 @@ var _Wallet = class {
     });
   }
   soliditySha3(...val) {
+    this.init();
     return this._web3.utils.soliditySha3(...val);
   }
   toChecksumAddress(address) {
+    this.init();
     return this._web3.utils.toChecksumAddress(address);
   }
   async multiCall(calls, gasBuffer) {
@@ -5803,10 +5856,12 @@ var _Wallet = class {
     return result;
   }
   encodeFunctionCall(contract, methodName, params) {
+    this.init();
     const abi = contract._abi.find((v) => v.name == methodName);
     return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
   }
   get web3() {
+    this.init();
     return this._web3;
   }
 };
@@ -5818,11 +5873,15 @@ var RpcWallet = class extends Wallet {
     super(...arguments);
     this._eventsMap = new WeakMap();
   }
+  setProvider(provider) {
+    this._provider = provider;
+  }
   get isConnected() {
     const clientWallet = Wallet.getClientInstance();
     return clientWallet.isConnected && this.chainId === clientWallet.chainId;
   }
   async switchNetwork(chainId, onChainChanged) {
+    this.init();
     this.chainId = chainId;
     const rpc = this.networksMap[chainId].rpcUrls[0];
     this._web3.setProvider(rpc);

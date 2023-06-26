@@ -63,9 +63,9 @@ declare module "web3" {
         hexToUtf8(string: string): string;
         keccak256(value: string | BigNumber): string;
         padLeft(value: string | number, characterAmount: number, sign?: string): string;
+        padRight(string: string | number, characterAmount: number, sign?: string): string;
         leftPad(string: string | number, characterAmount: number, sign?: string): string;
         rightPad(string: string | number, characterAmount: number, sign?: string): string;
-        padRight(string: string | number, characterAmount: number, sign?: string): string;
         sha3(value: string | BigNumber): string | null;
         randomHex(bytesSize: number): string;
         utf8ToHex(string: string): string;
@@ -1568,7 +1568,7 @@ declare module "wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    const Web3: any;
+    let Web3: any;
     import { IWeb3 } from "web3";
     import { BigNumber } from 'bignumber.js';
     import { Erc20 } from "contracts/erc20";
@@ -1959,7 +1959,7 @@ declare module "wallet" {
         protected _web3: IWeb3;
         protected _account: IAccount;
         private _accounts;
-        private _provider;
+        protected _provider: any;
         private _eventTopicAbi;
         private _eventHandler;
         protected _sendTxEventHandler: ISendTxEventsOptions;
@@ -1970,13 +1970,14 @@ declare module "wallet" {
         chainId: number;
         clientSideProvider: IClientSideProvider;
         private _infuraId;
-        private _utils;
+        protected _utils: IWalletUtils;
         private static _rpcWalletPoolMap;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): IWallet;
         static getClientInstance(): IClientWallet;
         static getRpcWalletInstance(instanceId: string): IRpcWallet;
+        protected init(): void;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
@@ -2089,6 +2090,7 @@ declare module "wallet" {
     export class RpcWallet extends Wallet implements IRpcWallet {
         instanceId: string;
         private _eventsMap;
+        setProvider(provider: any): void;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;

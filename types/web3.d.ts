@@ -62,9 +62,9 @@ export interface Utils {
     hexToUtf8(string: string): string;
     keccak256(value: string | BigNumber): string;
     padLeft(value: string | number, characterAmount: number, sign?: string): string;
+    padRight(string: string | number, characterAmount: number, sign?: string): string;
     leftPad(string: string | number, characterAmount: number, sign?: string): string;
     rightPad(string: string | number, characterAmount: number, sign?: string): string;
-    padRight(string: string | number, characterAmount: number, sign?: string): string;
     sha3(value: string | BigNumber): string | null;
     randomHex(bytesSize: number): string;
     utf8ToHex(string: string): string;
