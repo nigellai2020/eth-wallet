@@ -2,7 +2,6 @@ const dependencies = require('./package.json').dependencies || {};
 const packageName = require('./package.json').name;
 
 const Fs = require('fs');
-const { promises: fs } = require("fs")
 
 async function readFile(fileName) {
   return new Promise((resolve, reject) => {
@@ -59,5 +58,6 @@ if (typeof(define) == 'function')
 
   Fs.writeFileSync('dist/plugin.js', content);
   Fs.renameSync('dist/plugin.js', 'dist/index.js');
+  // Fs.copyFileSync('src/lib/web3/1.9.0/web3.min.js', 'dist/web3.js');
 };
 build();
