@@ -373,7 +373,7 @@ export declare class MetaMaskProvider extends EthereumProvider {
     installed(): boolean;
 }
 export declare class Web3ModalProvider extends EthereumProvider {
-    private web3Modal;
+    private web3ModalOptions;
     private _provider;
     constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
     get name(): string;
