@@ -1938,7 +1938,7 @@ declare module "wallet" {
         installed(): boolean;
     }
     export class Web3ModalProvider extends EthereumProvider {
-        private web3Modal;
+        private web3ModalOptions;
         private _provider;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;

@@ -4301,7 +4301,6 @@ EventBus.instance = void 0;
 // src/wallet.ts
 var Web33 = initWeb3Lib();
 var Web3Modal;
-var WalletConnectProvider;
 var RequireJS = {
   require(reqs, callback) {
     window.require(reqs, callback);
@@ -4318,9 +4317,8 @@ function initWeb3Lib() {
 }
 function initWeb3ModalLib(callback) {
   if (typeof window !== "undefined") {
-    RequireJS.require(["WalletConnectProvider", "Web3Modal"], (walletconnect, web3modal) => {
-      window["WalletConnectProvider"] = walletconnect;
-      window["Web3Modal"] = web3modal;
+    RequireJS.require(["@ijstech/eth-wallet-web3modal"], (web3modal) => {
+      window["@ijstech/eth-wallet-web3modal"] = web3modal;
       callback();
     });
   }
@@ -4537,7 +4535,7 @@ var MetaMaskProvider = class extends EthereumProvider {
 var Web3ModalProvider = class extends EthereumProvider {
   constructor(wallet, events, options) {
     super(wallet, events);
-    this.initializeWeb3Modal(options);
+    this.web3ModalOptions = options;
   }
   get name() {
     return "walletconnect";
@@ -4559,24 +4557,23 @@ var Web3ModalProvider = class extends EthereumProvider {
   }
   initializeWeb3Modal(options) {
     let func = () => {
-      WalletConnectProvider = window["WalletConnectProvider"];
-      const providerOptions = {
-        walletconnect: {
-          package: WalletConnectProvider.default,
-          options
-        }
-      };
-      Web3Modal = window["Web3Modal"];
-      this.web3Modal = new Web3Modal.default({
-        cacheProvider: false,
-        providerOptions
-      });
+      console.log("initializeWeb3Modal");
+      Web3Modal = window["@ijstech/eth-wallet-web3modal"].EthereumProvider;
     };
     initWeb3ModalLib(func);
   }
   async connect() {
+    if (!this._provider) {
+      this.initializeWeb3Modal(this.web3ModalOptions);
+    }
     await this.disconnect();
-    this._provider = await this.web3Modal.connectTo("walletconnect");
+    this._provider = await Web3Modal.init(__spreadValues({
+      showQrModal: true,
+      qrModalOptions: { themeMode: "light" },
+      methods: ["eth_sendTransaction", "personal_sign"],
+      events: ["chainChanged", "accountsChanged"]
+    }, this.web3ModalOptions));
+    await this._provider.enable();
     this.wallet.chainId = this.provider.chainId;
     this.wallet.web3.setProvider(this.provider);
     if (this._events) {
@@ -5549,7 +5546,11 @@ var _Wallet = class {
     let _web3 = this._web3;
     let address = this.address;
     let self = this;
-    return new Promise(async function(resolve, reject) {
+    let currentProvider = this.provider;
+    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+      this.provider = this.clientSideProvider.provider;
+    }
+    let promise = new Promise(async function(resolve, reject) {
       try {
         let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         let result;
@@ -5582,6 +5583,12 @@ var _Wallet = class {
         reject(err);
       }
     });
+    promise.finally(() => {
+      if (this.provider !== currentProvider) {
+        this.provider = currentProvider;
+      }
+    });
+    return promise;
   }
   setBlockTime(time) {
     this.init();
@@ -5638,7 +5645,7 @@ var _Wallet = class {
     let address = this.address;
     let self = this;
     let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider) {
+    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
       this.provider = this.clientSideProvider.provider;
     }
     let promise = new Promise(async function(resolve, reject) {
@@ -5659,14 +5666,18 @@ var _Wallet = class {
       }
     });
     promise.finally(() => {
-      this.provider = currentProvider;
+      if (this.provider !== currentProvider) {
+        this.provider = currentProvider;
+      }
     });
     return promise;
   }
   signTypedDataV4(data) {
     let self = this;
     let currentProvider = this.provider;
-    this.provider = this.clientSideProvider.provider;
+    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+      this.provider = this.clientSideProvider.provider;
+    }
     let promise = new Promise(async (resolve, reject) => {
       try {
         self._web3.currentProvider.send({
@@ -5690,7 +5701,9 @@ var _Wallet = class {
       }
     });
     promise.finally(() => {
-      this.provider = currentProvider;
+      if (this.provider !== currentProvider) {
+        this.provider = currentProvider;
+      }
     });
     return promise;
   }
@@ -5749,7 +5762,7 @@ var _Wallet = class {
     let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     let currentProvider = this.provider;
     try {
-      if (typeof window !== "undefined" && this.clientSideProvider) {
+      if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
         this.provider = this.clientSideProvider.provider;
       }
       if (this._account && this._account.privateKey) {
@@ -5777,7 +5790,9 @@ var _Wallet = class {
     } catch (err) {
       throw err;
     } finally {
-      this.provider = currentProvider;
+      if (this.provider !== currentProvider) {
+        this.provider = currentProvider;
+      }
     }
   }
   async getTransaction(transactionHash) {

@@ -36,9 +36,8 @@ function initWeb3Lib(){
 };
 function initWeb3ModalLib(callback: () => void){
 	if (typeof window !== "undefined") {
-		RequireJS.require(['WalletConnectProvider', 'Web3Modal'], (walletconnect, web3modal) => {
-			window["WalletConnectProvider"] = walletconnect;
-			window["Web3Modal"] = web3modal;
+		RequireJS.require(['@ijstech/eth-wallet-web3modal'], (web3modal) => {
+			window["@ijstech/eth-wallet-web3modal"] = web3modal;
 			callback();
 		})		
 	}
@@ -651,12 +650,12 @@ function initWeb3ModalLib(callback: () => void){
 		}
 	}
 	export class Web3ModalProvider extends EthereumProvider {
-		private web3Modal: any;
+		private web3ModalOptions: IClientProviderOptions;
 		private _provider: any;
 
 		constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			super(wallet, events);
-			this.initializeWeb3Modal(options);
+			this.web3ModalOptions = options;
 		}
 		get name() {
 			return 'walletconnect';
@@ -678,24 +677,24 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		private initializeWeb3Modal(options?: IClientProviderOptions): any {
 			let func = () => {
-				WalletConnectProvider = window["WalletConnectProvider"];
-				const providerOptions = {
-					walletconnect: {
-						package: WalletConnectProvider.default,
-						options
-					}
-				};
-				Web3Modal = window["Web3Modal"]
-				this.web3Modal = new Web3Modal.default({
-					cacheProvider: false,
-					providerOptions,
-				});
+				console.log('initializeWeb3Modal')
+				Web3Modal = window["@ijstech/eth-wallet-web3modal"].EthereumProvider;
 			}
 			initWeb3ModalLib(func);
 		}
 		async connect() {
+			if (!this._provider) {
+				this.initializeWeb3Modal(this.web3ModalOptions);
+			}			
 			await this.disconnect();
-			this._provider = await this.web3Modal.connectTo('walletconnect');
+			this._provider = await Web3Modal.init({
+				showQrModal: true,
+				qrModalOptions: { themeMode: "light" },
+				methods: ["eth_sendTransaction", "personal_sign"],
+				events: ["chainChanged", "accountsChanged"],
+				...this.web3ModalOptions
+			});
+			await this._provider.enable();
 			this.wallet.chainId = this.provider.chainId;
 			this.wallet.web3.setProvider(this.provider);
 			if (this._events) {
@@ -1767,7 +1766,11 @@ function initWeb3ModalLib(callback: () => void){
         	let _web3 = this._web3;
         	let address = this.address;
         	let self = this;
-        	return new Promise(async function(resolve, reject){
+			let currentProvider = this.provider;
+			if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+				this.provider = this.clientSideProvider.provider;
+			}
+        	let promise = new Promise<TransactionReceipt>(async function(resolve, reject){
         		try{
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
@@ -1802,6 +1805,12 @@ function initWeb3ModalLib(callback: () => void){
         			reject(err);
         		}
         	})
+			promise.finally(() => {
+				if (this.provider !== currentProvider) {
+					this.provider = currentProvider;
+				}
+			})
+			return promise;
 		};
 		setBlockTime(time: number): Promise<any>{
 			this.init();
@@ -1860,7 +1869,7 @@ function initWeb3ModalLib(callback: () => void){
 			let address = this.address;
 			let self = this;
 			let currentProvider = this.provider;
-			if (typeof window !== "undefined" && this.clientSideProvider) {
+			if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
 				this.provider = this.clientSideProvider.provider;
 			}
 			let promise = new Promise<string>(async function(resolve, reject){
@@ -1884,14 +1893,18 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			})
 			promise.finally(() => {
-				this.provider = currentProvider;
+				if (this.provider !== currentProvider) {
+					this.provider = currentProvider;
+				}
 			})
 			return promise;
         };	
 		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
 			let self = this;
 			let currentProvider = this.provider;
-			this.provider = this.clientSideProvider.provider;
+			if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+				this.provider = this.clientSideProvider.provider;
+			}
 			let promise = new Promise<string>(async (resolve, reject) => {
 				try {
 					((<any>self._web3.currentProvider)).send({
@@ -1915,7 +1928,9 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			});
 			promise.finally(() => {
-				this.provider = currentProvider;
+				if (this.provider !== currentProvider) {
+					this.provider = currentProvider;
+				}
 			})
 			return promise;
 		}			
@@ -1976,7 +1991,7 @@ function initWeb3ModalLib(callback: () => void){
 			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
 			let currentProvider = this.provider;
 			try {
-				if (typeof window !== "undefined" && this.clientSideProvider) {
+				if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
 					this.provider = this.clientSideProvider.provider;
 				}
 				if (this._account && this._account.privateKey){
@@ -2006,7 +2021,9 @@ function initWeb3ModalLib(callback: () => void){
 			catch(err) {
 				throw err;
 			} finally {
-				this.provider = currentProvider;
+				if (this.provider !== currentProvider) {
+					this.provider = currentProvider;
+				}
 			}
 		}
 		async getTransaction(transactionHash: string): Promise<Transaction> {
