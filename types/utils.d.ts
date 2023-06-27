@@ -5,6 +5,7 @@
 *-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
+export declare function initWeb3Lib(): any;
 export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
 export declare function padLeft(string: string, chars: number, sign?: string): string;

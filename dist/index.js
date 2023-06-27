@@ -3937,6 +3937,7 @@ __export(utils_exports, {
   bytes32ToString: () => bytes32ToString,
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
+  initWeb3Lib: () => initWeb3Lib,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
@@ -4001,9 +4002,9 @@ var RpcWalletEvent;
 })(RpcWalletEvent || (RpcWalletEvent = {}));
 
 // src/utils.ts
-var Web32 = Web3Lib();
-function Web3Lib() {
-  if (typeof window !== "undefined" && window["Web3"])
+var Web32 = initWeb3Lib();
+function initWeb3Lib() {
+  if (typeof window !== "undefined")
     return window["Web3"];
   else {
     let { Web3: Web34 } = (init_web3(), web3_exports);
@@ -4293,7 +4294,7 @@ EventBus.nextId = 0;
 EventBus.instance = void 0;
 
 // src/wallet.ts
-var Web33 = initWeb3Lib();
+var Web33 = initWeb3Lib2();
 var Web3Modal;
 var RequireJS = {
   require(reqs, callback) {
@@ -4304,7 +4305,7 @@ var currentModuleDir;
 if (typeof window !== "undefined" && window["application"]) {
   currentModuleDir = window["application"].currentModuleDir;
 }
-function initWeb3Lib() {
+function initWeb3Lib2() {
   if (typeof window !== "undefined")
     return window["Web3"];
   else {
@@ -4637,6 +4638,8 @@ var _Wallet = class {
       this._account = account;
     }
     ;
+    if (Web33)
+      this.init();
   }
   static getInstance() {
     return _Wallet.instance;
@@ -4647,11 +4650,20 @@ var _Wallet = class {
   static getRpcWalletInstance(instanceId) {
     return _Wallet._rpcWalletPoolMap[instanceId];
   }
+  static async initWeb3() {
+    if (!Web33 && currentModuleDir && !window["Web3"]) {
+      await window["application"].loadScript(currentModuleDir + "/web3.js");
+      Web33 = initWeb3Lib2();
+      initWeb3Lib();
+    }
+    ;
+  }
   async init() {
     if (!this._web3) {
-      if (currentModuleDir && !window["Web3"]) {
+      if (!Web33 && currentModuleDir && !window["Web3"]) {
         await window["application"].loadScript(currentModuleDir + "/web3.js");
-        Web33 = initWeb3Lib();
+        Web33 = initWeb3Lib2();
+        initWeb3Lib();
       }
       ;
       this._web3 = new Web33(this._provider);
@@ -4771,8 +4783,8 @@ var _Wallet = class {
     this.setDefaultProvider();
   }
   get accounts() {
-    return new Promise((resolve) => {
-      this.init();
+    return new Promise(async (resolve) => {
+      await this.init();
       if (this._accounts) {
         let result = [];
         for (let i = 0; i < this._accounts.length; i++) {
@@ -4787,21 +4799,24 @@ var _Wallet = class {
     });
   }
   get address() {
-    this.init();
-    if (this._account && this._account.privateKey) {
-      if (!this._account.address)
-        this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-      return this._account.address;
-    } else if (this._web3.selectedAddress) {
-      return this._web3.selectedAddress;
-    } else if (this._web3.eth.defaultAccount) {
-      return this._web3.eth.defaultAccount;
+    if (this._web3) {
+      if (this._account && this._account.privateKey) {
+        if (!this._account.address)
+          this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+        return this._account.address;
+      } else if (this._web3.selectedAddress) {
+        return this._web3.selectedAddress;
+      } else if (this._web3.eth.defaultAccount) {
+        return this._web3.eth.defaultAccount;
+      }
+      if (!this._account) {
+        this._account = this.createAccount();
+        return this._account.address;
+      } else
+        return this._account.address;
     }
-    if (!this._account) {
-      this._account = this.createAccount();
-      return this._account.address;
-    } else
-      return this._account.address;
+    ;
+    return "";
   }
   get account() {
     return {
@@ -4809,8 +4824,8 @@ var _Wallet = class {
     };
   }
   set account(value) {
-    this.init();
-    this._web3.eth.defaultAccount = "";
+    if (this._web3)
+      this._web3.eth.defaultAccount = "";
     this._account = value;
   }
   get infuraId() {
@@ -4835,27 +4850,28 @@ var _Wallet = class {
     }
   }
   createAccount() {
-    this.init();
-    let acc = this._web3.eth.accounts.create();
-    return {
-      address: acc.address,
-      privateKey: acc.privateKey
-    };
+    if (this._web3) {
+      let acc = this._web3.eth.accounts.create();
+      return {
+        address: acc.address,
+        privateKey: acc.privateKey
+      };
+    }
+    ;
   }
   decodeLog(inputs, hexString, topics) {
     return this.web3.eth.abi.decodeLog(inputs, hexString, topics);
   }
   get defaultAccount() {
-    this.init();
     if (this._account)
       return this._account.address;
-    return this._web3.eth.defaultAccount;
+    else if (this._web3)
+      return this._web3.eth.defaultAccount;
   }
   set defaultAccount(address) {
-    this.init();
     if (this._accounts) {
       for (let i = 0; i < this._accounts.length; i++) {
-        if (!this._accounts[i].address && this._accounts[i].privateKey)
+        if (!this._accounts[i].address && this._accounts[i].privateKey && this._web3)
           this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
         if (this._accounts[i].address && this._accounts[i].address.toLowerCase() == address.toLowerCase()) {
           this._account = this._accounts[i];
@@ -4864,11 +4880,11 @@ var _Wallet = class {
       }
     } else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()) {
       return;
-    } else
+    } else if (this._web3)
       this._web3.eth.defaultAccount = address;
   }
   async getChainId() {
-    this.init();
+    await this.init();
     if (!this.chainId)
       this.chainId = await this._web3.eth.getChainId();
     return this.chainId;
@@ -4881,13 +4897,13 @@ var _Wallet = class {
       this._web3.setProvider(value);
     this._provider = value;
   }
-  sendSignedTransaction(tx) {
-    this.init();
+  async sendSignedTransaction(tx) {
+    await this.init();
     let _web3 = this._web3;
     return _web3.eth.sendSignedTransaction(tx);
   }
   async signTransaction(tx, privateKey) {
-    this.init();
+    await this.init();
     let _web3 = this._web3;
     let gas = tx.gas || await _web3.eth.estimateGas({
       from: this.address,
@@ -5073,7 +5089,7 @@ var _Wallet = class {
     return data;
   }
   async _methods(...args) {
-    this.init();
+    await this.init();
     let _web3 = this._web3;
     let result;
     let value;
@@ -5143,7 +5159,7 @@ var _Wallet = class {
     return tx;
   }
   async methods(...args) {
-    this.init();
+    await this.init();
     let _web3 = this._web3;
     if (_web3.methods) {
       return _web3.methods.apply(_web3, args);
@@ -5297,10 +5313,10 @@ var _Wallet = class {
     }
   }
   get balance() {
-    this.init();
     let self = this;
-    let _web3 = this._web3;
     return new Promise(async function(resolve) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let network = self._networksMap[self.chainId];
         let decimals = 18;
@@ -5314,10 +5330,10 @@ var _Wallet = class {
     });
   }
   balanceOf(address) {
-    this.init();
     let self = this;
-    let _web3 = this._web3;
     return new Promise(async function(resolve) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let network = self._networksMap[self.chainId];
         let decimals = 18;
@@ -5331,9 +5347,10 @@ var _Wallet = class {
     });
   }
   recoverSigner(msg, signature) {
-    this.init();
-    let _web3 = this._web3;
+    let self = this;
     return new Promise(async function(resolve, reject) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let signing_address = await _web3.eth.accounts.recover(msg, signature);
         resolve(signing_address);
@@ -5343,19 +5360,19 @@ var _Wallet = class {
       ;
     });
   }
-  getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
-    this.init();
+  async getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
+    await this.init();
     if (returnTransactionObjects) {
       return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", true);
     }
     return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
   }
-  getBlockNumber() {
-    this.init();
+  async getBlockNumber() {
+    await this.init();
     return this._web3.eth.getBlockNumber();
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
-    this.init();
+    await this.init();
     let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
     if (typeof block.timestamp == "string")
       return parseInt(block.timestamp);
@@ -5363,8 +5380,7 @@ var _Wallet = class {
       return block.timestamp;
   }
   set privateKey(value) {
-    this.init();
-    if (value) {
+    if (value && this._web3) {
       this._web3.eth.defaultAccount = "";
     }
     this._account = {
@@ -5372,8 +5388,8 @@ var _Wallet = class {
       privateKey: value
     };
   }
-  registerEvent(abi, eventMap, address, handler) {
-    this.init();
+  async registerEvent(abi, eventMap, address, handler) {
+    await this.init();
     let hash = "";
     if (typeof abi == "string") {
       hash = this._web3.utils.sha3(abi);
@@ -5388,32 +5404,36 @@ var _Wallet = class {
     }
   }
   getAbiEvents(abi) {
-    this.init();
-    let _web3 = this._web3;
-    let events = abi.filter((e) => e.type == "event");
-    let eventMap = {};
-    for (let i = 0; i < events.length; i++) {
-      let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-      eventMap[topic] = events[i];
+    if (this._web3) {
+      let _web3 = this._web3;
+      let events = abi.filter((e) => e.type == "event");
+      let eventMap = {};
+      for (let i = 0; i < events.length; i++) {
+        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+        eventMap[topic] = events[i];
+      }
+      return eventMap;
     }
-    return eventMap;
+    ;
   }
   getAbiTopics(abi, eventNames) {
-    this.init();
-    if (!eventNames || eventNames.length == 0)
-      eventNames = null;
-    let _web3 = this._web3;
-    let result = [];
-    let events = abi.filter((e) => e.type == "event");
-    for (let i = 0; i < events.length; i++) {
-      if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
-        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
-        result.push(topic);
+    if (this._web3) {
+      if (!eventNames || eventNames.length == 0)
+        eventNames = null;
+      let _web3 = this._web3;
+      let result = [];
+      let events = abi.filter((e) => e.type == "event");
+      for (let i = 0; i < events.length; i++) {
+        if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
+          let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+          result.push(topic);
+        }
       }
+      if (result.length == 0 && eventNames && eventNames.length > 0)
+        return ["NULL"];
+      return [result];
     }
-    if (result.length == 0 && eventNames && eventNames.length > 0)
-      return ["NULL"];
-    return [result];
+    ;
   }
   getContractAbi(address) {
     return this._abiAddressDict[address];
@@ -5430,26 +5450,28 @@ var _Wallet = class {
     }
   }
   registerAbi(abi, address, handler) {
-    this.init();
-    let hash = "";
-    if (typeof abi == "string") {
-      hash = this._web3.utils.sha3(abi);
-      abi = JSON.parse(abi);
-    } else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
-    }
-    if (!address && !handler && this._abiHashDict[hash])
+    if (this._web3) {
+      let hash = "";
+      if (typeof abi == "string") {
+        hash = this._web3.utils.sha3(abi);
+        abi = JSON.parse(abi);
+      } else {
+        hash = this._web3.utils.sha3(JSON.stringify(abi));
+      }
+      if (!address && !handler && this._abiHashDict[hash])
+        return hash;
+      let eventMap;
+      eventMap = this.getAbiEvents(abi);
+      this._eventTopicAbi[hash] = {};
+      for (let topic in eventMap) {
+        this._eventTopicAbi[hash][topic] = eventMap[topic];
+      }
+      this._abiHashDict[hash] = abi;
+      if (address)
+        this.registerAbiContracts(hash, address, handler);
       return hash;
-    let eventMap;
-    eventMap = this.getAbiEvents(abi);
-    this._eventTopicAbi[hash] = {};
-    for (let topic in eventMap) {
-      this._eventTopicAbi[hash][topic] = eventMap[topic];
     }
-    this._abiHashDict[hash] = abi;
-    if (address)
-      this.registerAbiContracts(hash, address, handler);
-    return hash;
+    ;
   }
   registerAbiContracts(abiHash, address, handler) {
     if (address) {
@@ -5508,7 +5530,6 @@ var _Wallet = class {
     return log;
   }
   scanEvents(param1, param2, param3, param4, param5) {
-    this.init();
     let fromBlock;
     let toBlock;
     let topics;
@@ -5528,8 +5549,9 @@ var _Wallet = class {
       address = param1.address;
     }
     ;
-    let _web3 = this._web3;
     return new Promise(async (resolve, reject) => {
+      await this.init();
+      let _web3 = this._web3;
       try {
         let logs = await _web3.eth.getPastLogs({
           fromBlock,
@@ -5549,8 +5571,6 @@ var _Wallet = class {
     });
   }
   send(to, amount) {
-    this.init();
-    let _web3 = this._web3;
     let address = this.address;
     let self = this;
     let currentProvider = this.provider;
@@ -5558,6 +5578,8 @@ var _Wallet = class {
       this.provider = this.clientSideProvider.provider;
     }
     let promise = new Promise(async function(resolve, reject) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         let result;
@@ -5598,8 +5620,8 @@ var _Wallet = class {
     return promise;
   }
   setBlockTime(time) {
-    this.init();
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      await this.init();
       let method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
       this._web3.currentProvider.send({
         jsonrpc: "2.0",
@@ -5627,8 +5649,8 @@ var _Wallet = class {
     });
   }
   increaseBlockTime(value) {
-    return new Promise((resolve, reject) => {
-      this.init();
+    return new Promise(async (resolve, reject) => {
+      await this.init();
       this._web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
@@ -5647,8 +5669,6 @@ var _Wallet = class {
     });
   }
   signMessage(msg) {
-    this.init();
-    let _web3 = this._web3;
     let address = this.address;
     let self = this;
     let currentProvider = this.provider;
@@ -5656,6 +5676,8 @@ var _Wallet = class {
       this.provider = this.clientSideProvider.provider;
     }
     let promise = new Promise(async function(resolve, reject) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let result;
         if (self._account && self._account.privateKey) {
@@ -5727,14 +5749,13 @@ var _Wallet = class {
     };
   }
   get utils() {
-    if (!this._utils)
-      this.init();
     return this._utils;
   }
   verifyMessage(account, msg, signature) {
-    this.init();
-    let _web3 = this._web3;
+    let self = this;
     return new Promise(async function(resolve, reject) {
+      await self.init();
+      let _web3 = self._web3;
       try {
         let signing_address = await _web3.eth.accounts.recover(msg, signature);
         resolve(signing_address && account.toLowerCase() == signing_address.toLowerCase());
@@ -5745,8 +5766,9 @@ var _Wallet = class {
     });
   }
   blockGasLimit() {
+    let self = this;
     return new Promise(async (resolve, reject) => {
-      this.init();
+      await self.init();
       try {
         if (!this._gasLimit)
           this._gasLimit = (await this._web3.eth.getBlock("latest")).gasLimit;
@@ -5757,15 +5779,27 @@ var _Wallet = class {
     });
   }
   getGasPrice() {
-    this.init();
-    return (async () => new import_bignumber3.BigNumber(await this._web3.eth.getGasPrice()))();
+    return new Promise(async (resolve, reject) => {
+      await this.init();
+      try {
+        resolve(new import_bignumber3.BigNumber(await this._web3.eth.getGasPrice()));
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
   transactionCount() {
-    this.init();
-    return (async () => await this._web3.eth.getTransactionCount(this.address))();
+    return new Promise(async (resolve, reject) => {
+      await this.init();
+      try {
+        resolve(await this._web3.eth.getTransactionCount(this.address));
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
   async sendTransaction(transaction) {
-    this.init();
+    await this.init();
     let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     let currentProvider = this.provider;
     try {
@@ -5803,7 +5837,7 @@ var _Wallet = class {
     }
   }
   async getTransaction(transactionHash) {
-    this.init();
+    await this.init();
     let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
     return {
       from: web3Receipt.from,
@@ -5815,26 +5849,26 @@ var _Wallet = class {
       value: new import_bignumber3.BigNumber(web3Receipt.value)
     };
   }
-  getTransactionReceipt(transactionHash) {
-    this.init();
+  async getTransactionReceipt(transactionHash) {
+    await this.init();
     return this._web3.eth.getTransactionReceipt(transactionHash);
   }
-  call(transaction) {
-    this.init();
+  async call(transaction) {
+    await this.init();
     let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     return this._web3.eth.call(_transaction);
   }
   newContract(abi, address) {
-    this.init();
-    return new this._web3.eth.Contract(abi, address);
+    if (this._web3)
+      return new this._web3.eth.Contract(abi, address);
   }
   decodeErrorMessage(msg) {
-    this.init();
-    return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
+    if (this._web3)
+      return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
   }
   async newBatchRequest() {
-    return new Promise((resolve, reject) => {
-      this.init();
+    return new Promise(async (resolve, reject) => {
+      await this.init();
       try {
         resolve({
           batch: new this._web3.eth.BatchRequest(),
@@ -5850,12 +5884,12 @@ var _Wallet = class {
     });
   }
   soliditySha3(...val) {
-    this.init();
-    return this._web3.utils.soliditySha3(...val);
+    if (this._web3)
+      return this._web3.utils.soliditySha3(...val);
   }
   toChecksumAddress(address) {
-    this.init();
-    return this._web3.utils.toChecksumAddress(address);
+    if (this._web3)
+      return this._web3.utils.toChecksumAddress(address);
   }
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
@@ -5870,12 +5904,12 @@ var _Wallet = class {
     return result;
   }
   encodeFunctionCall(contract, methodName, params) {
-    this.init();
-    const abi = contract._abi.find((v) => v.name == methodName);
-    return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+    if (this._web3) {
+      const abi = contract._abi.find((v) => v.name == methodName);
+      return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+    }
   }
   get web3() {
-    this.init();
     return this._web3;
   }
 };

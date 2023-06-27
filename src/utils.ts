@@ -7,10 +7,10 @@
 import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
-const Web3 = Web3Lib(); // tslint:disable-line
+let Web3 = initWeb3Lib(); // tslint:disable-line
 
-function Web3Lib() {
-    if (typeof window !== "undefined" && window["Web3"])
+export function initWeb3Lib() {
+    if (typeof window !== "undefined")
         return window["Web3"]
     else{
         let {Web3} = require("./web3");

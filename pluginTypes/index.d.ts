@@ -1455,6 +1455,7 @@ declare module "utils" {
     *-----------------------------------------------------------*/
     import { BigNumber } from "bignumber.js";
     import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "types";
+    export function initWeb3Lib(): any;
     export function sleep(millisecond: number): Promise<unknown>;
     export function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
     export function padLeft(string: string, chars: number, sign?: string): string;
@@ -1977,6 +1978,7 @@ declare module "wallet" {
         static getInstance(): IWallet;
         static getClientInstance(): IClientWallet;
         static getRpcWalletInstance(instanceId: string): IRpcWallet;
+        static initWeb3(): Promise<void>;
         init(): Promise<void>;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
@@ -1999,7 +2001,7 @@ declare module "wallet" {
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
-        createAccount(): IAccount;
+        createAccount(): IAccount | undefined;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         get defaultAccount(): string;
         set defaultAccount(address: string);
@@ -2029,7 +2031,7 @@ declare module "wallet" {
         set privateKey(value: string);
         registerEvent(abi: any, eventMap: {
             [topics: string]: any;
-        }, address: string, handler: any): void;
+        }, address: string, handler: any): Promise<void>;
         private _abiHashDict;
         private _abiContractDict;
         private _abiAddressDict;

@@ -770,6 +770,8 @@ function initWeb3ModalLib(callback: () => void){
 			else{
             	this._account = account;
 			};
+			if (Web3)
+				this.init();
 		};	
 		private static readonly instance: Wallet = new Wallet();
 		static getInstance(): IWallet {
@@ -781,11 +783,19 @@ function initWeb3ModalLib(callback: () => void){
 		static getRpcWalletInstance(instanceId: string): IRpcWallet {
 			return Wallet._rpcWalletPoolMap[instanceId];
 		}
+		static async initWeb3(){
+			if (!Web3 && currentModuleDir && !window['Web3']){
+				await window['application'].loadScript(currentModuleDir + '/web3.js');
+				Web3 = initWeb3Lib();
+				Utils.initWeb3Lib();
+			};
+		};
 		async init(){
 			if (!this._web3){
-				if (currentModuleDir && !window['Web3']){
+				if (!Web3 && currentModuleDir && !window['Web3']){
 					await window['application'].loadScript(currentModuleDir + '/web3.js');
 					Web3 = initWeb3Lib();
+					Utils.initWeb3Lib();
 				};
 				this._web3 = new Web3(this._provider);
 				this._utils = {
@@ -903,8 +913,8 @@ function initWeb3ModalLib(callback: () => void){
 			this.setDefaultProvider();
 		}
 		get accounts(): Promise<string[]>{
-			return new Promise((resolve)=>{
-				this.init();
+			return new Promise(async (resolve)=>{
+				await this.init();
 				if (this._accounts){
 					let result = [];
 					for (let i = 0; i < this._accounts.length; i ++){
@@ -920,24 +930,26 @@ function initWeb3ModalLib(callback: () => void){
 			});
 		}
 		get address(): string{
-			this.init();		
-        	if (this._account && this._account.privateKey){
-				if (!this._account.address)
-					this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
-        		return this._account.address;
-        	}
-			else if ((<any>this._web3).selectedAddress){				
-				return (<any>this._web3).selectedAddress
-			}
-			else if (this._web3.eth.defaultAccount){
-				return this._web3.eth.defaultAccount;
-			}
-			if (!this._account){        
-				this._account = this.createAccount();
-				return this._account.address;
-			}
-        	else
-        		return this._account.address;
+			if (this._web3){
+				if (this._account && this._account.privateKey){
+					if (!this._account.address)
+						this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+					return this._account.address;
+				}
+				else if ((<any>this._web3).selectedAddress){				
+					return (<any>this._web3).selectedAddress
+				}
+				else if (this._web3.eth.defaultAccount){
+					return this._web3.eth.defaultAccount;
+				}
+				if (!this._account){        
+					this._account = this.createAccount();
+					return this._account.address;
+				}
+				else
+					return this._account.address;
+			};
+        	return '';
         }
 		get account(): IAccount{
 			return {
@@ -945,8 +957,8 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
         set account(value: IAccount){
-			this.init();
-			this._web3.eth.defaultAccount = '';
+			if (this._web3)
+				this._web3.eth.defaultAccount = '';
             this._account = value;
         }
 		get infuraId() {
@@ -970,28 +982,28 @@ function initWeb3ModalLib(callback: () => void){
 				this.setNetworkInfo(network);
 			}
 		}
-        createAccount(): IAccount{
-			this.init();
-        	let acc = this._web3.eth.accounts.create();
-        	return {
-        		address: acc.address,
-        		privateKey: acc.privateKey
-        	};
+        createAccount():IAccount | undefined{
+			if (this._web3){
+				let acc = this._web3.eth.accounts.create();
+				return {
+					address: acc.address,
+					privateKey: acc.privateKey
+				};
+			};
         };
 		decodeLog(inputs: any, hexString: string, topics: any): any{
 			return this.web3.eth.abi.decodeLog(inputs, hexString, topics)
 		};
 		get defaultAccount(): string{
-			this.init();
 			if (this._account)
 				return this._account.address
-			return this._web3.eth.defaultAccount;
+			else if(this._web3)
+				return this._web3.eth.defaultAccount;
 		}
 		set defaultAccount(address: string){
-			this.init();
 			if (this._accounts){
 				for (let i = 0; i < this._accounts.length; i ++){
-					if (!this._accounts[i].address && this._accounts[i].privateKey)
+					if (!this._accounts[i].address && this._accounts[i].privateKey && this._web3)
 						this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
 					if (this._accounts[i].address && this._accounts[i].address.toLowerCase() == address.toLowerCase()){
 						this._account = this._accounts[i];
@@ -1002,11 +1014,11 @@ function initWeb3ModalLib(callback: () => void){
 			else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()){
 				return;
 			}
-			else
+			else if (this._web3)
 				this._web3.eth.defaultAccount = address;
 		}
 		async getChainId(){
-			this.init();
+			await this.init();
 			if (!this.chainId)
 				this.chainId = await this._web3.eth.getChainId();
 			return this.chainId;
@@ -1019,13 +1031,13 @@ function initWeb3ModalLib(callback: () => void){
 				this._web3.setProvider(value);
 			this._provider = value;
 		}
-		sendSignedTransaction(tx: string): Promise<TransactionReceipt>{
-			this.init();
+		async sendSignedTransaction(tx: string): Promise<TransactionReceipt>{
+			await this.init();
 			let _web3 = this._web3;        	
 			return _web3.eth.sendSignedTransaction(tx);
 		}
 		async signTransaction(tx: any, privateKey?: string): Promise<string>{
-			this.init();
+			await this.init();
 			let _web3 = this._web3;  
 			// let gasPrice = tx.gasPrice ||  _web3.utils.numberToHex(await _web3.eth.getGasPrice());     	
 			let gas = tx.gas || await _web3.eth.estimateGas({
@@ -1220,7 +1232,7 @@ function initWeb3ModalLib(callback: () => void){
 			return data;
 		}
 		async _methods(...args){
-			this.init();
+			await this.init();
 			let _web3 = this._web3;        	
 			let result: any;
 			let value: any;
@@ -1299,7 +1311,7 @@ function initWeb3ModalLib(callback: () => void){
         }
 		// rollback
 		async methods(...args: any): Promise<any>{
-			this.init();
+			await this.init();
         	let _web3 = this._web3;
         	if ((<any>_web3).methods){
         		return (<any>_web3).methods.apply(_web3, args);
@@ -1462,11 +1474,11 @@ function initWeb3ModalLib(callback: () => void){
         	}
         };
 		// end of rollback
-		get balance(): Promise<BigNumber>{
-			this.init();
-			let self = this;
-            let _web3 = this._web3;
+		get balance(): Promise<BigNumber>{			
+			let self = this;            
 			return new Promise(async function(resolve){
+				await self.init();
+				let _web3 = self._web3;
 				try{
 					let network = self._networksMap[self.chainId];
 					let decimals = 18;
@@ -1481,11 +1493,11 @@ function initWeb3ModalLib(callback: () => void){
 				}	
 			})
 		};
-		balanceOf(address: string): Promise<BigNumber>{
-			this.init();
+		balanceOf(address: string): Promise<BigNumber>{			
 			let self = this;
-            let _web3 = this._web3;
 			return new Promise(async function(resolve){
+				await self.init();
+				let _web3 = self._web3;
 				try{
 					let network = self._networksMap[self.chainId];
 					let decimals = 18;
@@ -1501,9 +1513,10 @@ function initWeb3ModalLib(callback: () => void){
 			})
 		};
 		recoverSigner(msg: string, signature: string): Promise<string>{
-			this.init();
-			let _web3 = this._web3;
+			let self = this;
 			return new Promise(async function(resolve, reject){
+				await self.init();
+				let _web3 = self._web3;
 				try{
 					let signing_address = await _web3.eth.accounts.recover(msg, signature);
 	        		resolve(signing_address);
@@ -1513,19 +1526,19 @@ function initWeb3ModalLib(callback: () => void){
 				};	
 			})
         };
-		getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>{
-			this.init();
+		async getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>{
+			await this.init();
 			if (returnTransactionObjects) {
 				return <any>this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', true);
 			}
 			return <any>this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', false);
 		};
-		getBlockNumber(): Promise<number>{
-			this.init();
+		async getBlockNumber(): Promise<number>{
+			await this.init();
 			return this._web3.eth.getBlockNumber();
 		};		
 		async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{	
-			this.init();
+			await this.init();
 			let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || 'latest', false);
 			if (typeof(block.timestamp) == 'string')
 				return parseInt(block.timestamp)
@@ -1533,8 +1546,7 @@ function initWeb3ModalLib(callback: () => void){
 				return <number>block.timestamp
 		};
         set privateKey(value: string){
-			this.init();
-			if (value){
+			if (value && this._web3){
 				this._web3.eth.defaultAccount = '';
 			}			
         	this._account = {
@@ -1542,8 +1554,8 @@ function initWeb3ModalLib(callback: () => void){
 				privateKey: value
 			}
         };
-		registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any) {
-			this.init();
+		async registerEvent(abi: any, eventMap:{[topics:string]:any}, address: string, handler: any): Promise<void> {
+			await this.init();
 			let hash = '';			
 			if (typeof(abi) == 'string'){
 				hash = this._web3.utils.sha3(abi);
@@ -1563,33 +1575,35 @@ function initWeb3ModalLib(callback: () => void){
 		private _abiAddressDict: IDictionary = {};
 		private _abiEventDict: IDictionary = {};
         getAbiEvents(abi: any[]): any {
-			this.init();
-        	let _web3 = this._web3;
-		    let events = abi.filter(e => e.type=="event");    
-		    let eventMap = {};
-		
-		    for (let i = 0 ; i < events.length ; i++) {
-		        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
-		        eventMap[topic] = events[i];
-		    }
-		    return eventMap;
+			if (this._web3){
+				let _web3 = this._web3;
+				let events = abi.filter(e => e.type=="event");    
+				let eventMap = {};
+			
+				for (let i = 0 ; i < events.length ; i++) {
+					let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
+					eventMap[topic] = events[i];
+				}
+				return eventMap;
+			};        	
 		};
         getAbiTopics(abi: any[], eventNames?: string[]): any[]{
-			this.init();
-			if (!eventNames || eventNames.length == 0)
-				eventNames = null;
-			let _web3 = this._web3;
-			let result = [];
-			let events = abi.filter(e => e.type=="event");			
-			for (let i = 0 ; i < events.length ; i++) {
-				if (!eventNames || eventNames.indexOf(events[i].name) >= 0){
-					let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
-					result.push(topic);
+			if (this._web3){
+				if (!eventNames || eventNames.length == 0)
+					eventNames = null;
+				let _web3 = this._web3;
+				let result = [];
+				let events = abi.filter(e => e.type=="event");			
+				for (let i = 0 ; i < events.length ; i++) {
+					if (!eventNames || eventNames.indexOf(events[i].name) >= 0){
+						let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map(e=>e.type=="tuple" ? "("+(e.components.map(f=>f.type)) +")" : e.type).join(",") + ")");
+						result.push(topic);
+					}
 				}
-		    }
-			if (result.length == 0 && eventNames && eventNames.length > 0)
-				return ['NULL']
-		    return [result];
+				if (result.length == 0 && eventNames && eventNames.length > 0)
+					return ['NULL']
+				return [result];
+			};			
 		};
 		getContractAbi(address: string){
 			return this._abiAddressDict[address];
@@ -1606,27 +1620,28 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		};
 		registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string{
-			this.init();
-			let hash = '';			
-			if (typeof(abi) == 'string'){
-				hash = this._web3.utils.sha3(abi);
-				abi = JSON.parse(abi);
-			}else{
-				hash = this._web3.utils.sha3(JSON.stringify(abi));
-			}
-			if (!address && !handler && this._abiHashDict[hash])
-				return hash;
+			if (this._web3){
+				let hash = '';			
+				if (typeof(abi) == 'string'){
+					hash = this._web3.utils.sha3(abi);
+					abi = JSON.parse(abi);
+				}else{
+					hash = this._web3.utils.sha3(JSON.stringify(abi));
+				}
+				if (!address && !handler && this._abiHashDict[hash])
+					return hash;
 
-			let eventMap: any;
-			eventMap = this.getAbiEvents(<any[]>abi);
-			this._eventTopicAbi[hash] = {};
-			for (let topic in eventMap){
-				this._eventTopicAbi[hash][topic] = eventMap[topic];
-			}
-			this._abiHashDict[hash] = abi;
-			if (address)
-				this.registerAbiContracts(hash, address, handler);
-			return hash;
+				let eventMap: any;
+				eventMap = this.getAbiEvents(<any[]>abi);
+				this._eventTopicAbi[hash] = {};
+				for (let topic in eventMap){
+					this._eventTopicAbi[hash][topic] = eventMap[topic];
+				}
+				this._abiHashDict[hash] = abi;
+				if (address)
+					this.registerAbiContracts(hash, address, handler);
+				return hash;
+			};
 		};
 		registerAbiContracts(abiHash: string, address: string|string[], handler?: any){			
 			if (address){
@@ -1687,8 +1702,7 @@ function initWeb3ModalLib(callback: () => void){
 		};
 		scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
         scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
-		scanEvents(param1: any, param2?: any | string, param3?: any, param4?: any, param5?: string|string[]): Promise<Event[]>{
-			this.init();
+		scanEvents(param1: any, param2?: any | string, param3?: any, param4?: any, param5?: string|string[]): Promise<Event[]>{			
 			let fromBlock: number;
 			let toBlock: number | string;
 			let topics: any 
@@ -1708,9 +1722,10 @@ function initWeb3ModalLib(callback: () => void){
 				topics = param1.topics
 				events = param1.events
 				address = param1.address
-			};
-        	let _web3 = this._web3;        	
+			};	
         	return new Promise(async (resolve, reject)=>{
+				await this.init();
+				let _web3 = this._web3;     
         		try{
         			let logs = await _web3.eth.getPastLogs({
 		                fromBlock: fromBlock,   
@@ -1764,9 +1779,7 @@ function initWeb3ModalLib(callback: () => void){
         		}
         	})
         };
-        send(to: string, amount: number|BigNumber): Promise<TransactionReceipt>{
-			this.init();
-        	let _web3 = this._web3;
+        send(to: string, amount: number|BigNumber): Promise<TransactionReceipt>{			
         	let address = this.address;
         	let self = this;
 			let currentProvider = this.provider;
@@ -1774,6 +1787,8 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = this.clientSideProvider.provider;
 			}
         	let promise = new Promise<TransactionReceipt>(async function(resolve, reject){
+				await self.init();
+        		let _web3 = self._web3;
         		try{
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
@@ -1816,8 +1831,8 @@ function initWeb3ModalLib(callback: () => void){
 			return promise;
 		};
 		setBlockTime(time: number): Promise<any>{
-			this.init();
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				await this.init();
 				let method = time > 1000000000 ? 'evm_mine' : 'evm_increaseTime'; 
 				(<any>this._web3.currentProvider).send({
 					jsonrpc: '2.0',
@@ -1847,8 +1862,8 @@ function initWeb3ModalLib(callback: () => void){
 			});
 		};
 	    increaseBlockTime(value: number): Promise<any>{
-			return new Promise((resolve, reject) => {
-				this.init();
+			return new Promise(async (resolve, reject) => {
+				await this.init();
 				(<any>this._web3.currentProvider).send({
 					jsonrpc: "2.0",
 					method: "evm_increaseTime",
@@ -1867,8 +1882,6 @@ function initWeb3ModalLib(callback: () => void){
 			});
 		}			
 		signMessage(msg: string): Promise<string> {
-			this.init();
-			let _web3 = this._web3;
 			let address = this.address;
 			let self = this;
 			let currentProvider = this.provider;
@@ -1876,6 +1889,8 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = this.clientSideProvider.provider;
 			}
 			let promise = new Promise<string>(async function(resolve, reject){
+				await self.init();
+				let _web3 = self._web3;
 				try{
 					let result;					
 					if (self._account && self._account.privateKey){
@@ -1950,14 +1965,13 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		};
         get utils(): IWalletUtils{
-			if (!this._utils)
-				this.init();
             return this._utils;
         };
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>{
-			this.init();
-			let _web3 = this._web3;
+			let self = this;
 			return new Promise(async function(resolve, reject){
+				await self.init();
+				let _web3 = self._web3;
 				try{
 					let signing_address = await _web3.eth.accounts.recover(msg, signature);
 	        		resolve(signing_address && account.toLowerCase() == signing_address.toLowerCase());
@@ -1970,8 +1984,9 @@ function initWeb3ModalLib(callback: () => void){
 
 		private _gasLimit: number;
 		blockGasLimit(): Promise<number> {
+			let self = this;
 			return new Promise(async (resolve,reject)=>{
-				this.init();
+				await self.init();
 				try{
 					if (!this._gasLimit)
 						this._gasLimit = (await this._web3.eth.getBlock('latest')).gasLimit;
@@ -1982,15 +1997,27 @@ function initWeb3ModalLib(callback: () => void){
 			});
 		};
 		getGasPrice(): Promise<BigNumber> {
-			this.init();
-			return (async ()=>(new BigNumber(await this._web3.eth.getGasPrice())))();
+			return new Promise(async (resolve,reject)=>{
+				await this.init();
+				try{					
+					resolve(new BigNumber(await this._web3.eth.getGasPrice()));
+				}catch(e){
+					reject(e);
+				}
+			});
 		}
 		transactionCount(): Promise<number> {
-			this.init();
-			return (async ()=>(await this._web3.eth.getTransactionCount(this.address)))();
+			return new Promise(async (resolve,reject)=>{
+				await this.init();
+				try{					
+					resolve(await this._web3.eth.getTransactionCount(this.address));
+				}catch(e){
+					reject(e);
+				}
+			});
 		}
 		async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
-			this.init();
+			await this.init();
 			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
 			let currentProvider = this.provider;
 			try {
@@ -2030,7 +2057,7 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
 		async getTransaction(transactionHash: string): Promise<Transaction> {
-			this.init();
+			await this.init();
 			let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
 			return {
 				from: web3Receipt.from,
@@ -2042,26 +2069,26 @@ function initWeb3ModalLib(callback: () => void){
 				value: new BigNumber(web3Receipt.value)
 			}
 		}
-		getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
-			this.init();
+		async getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
+			await this.init();
 			return this._web3.eth.getTransactionReceipt(transactionHash);
 		}
-		call(transaction: Transaction): Promise<any> {
-			this.init();
+		async call(transaction: Transaction): Promise<any> {
+			await this.init();
 			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
 			return this._web3.eth.call(_transaction);
 		}
 		newContract(abi:any, address?:string): IContract {
-			this.init();
-			return new this._web3.eth.Contract(abi, address);
+			if (this._web3)
+				return new this._web3.eth.Contract(abi, address);
 		}
 		decodeErrorMessage(msg: string): any {
-			this.init();
-			return this._web3.eth.abi.decodeParameter('string', "0x"+msg.substring(10));
+			if (this._web3)
+				return this._web3.eth.abi.decodeParameter('string', "0x"+msg.substring(10));
 		}
         async newBatchRequest(): Promise<IBatchRequestObj> {
-            return new Promise((resolve, reject) => {
-				this.init();
+            return new Promise(async (resolve, reject) => {
+				await this.init();
                 try {            
                     resolve({
                         batch: new this._web3.eth.BatchRequest(),
@@ -2077,12 +2104,12 @@ function initWeb3ModalLib(callback: () => void){
             });
         }		
 		soliditySha3(...val: any[]) {
-			this.init();
-			return this._web3.utils.soliditySha3(...val);
+			if (this._web3)
+				return this._web3.utils.soliditySha3(...val);
 		}
 		toChecksumAddress(address: string) {
-			this.init();
-			return this._web3.utils.toChecksumAddress(address);
+			if (this._web3)
+				return this._web3.utils.toChecksumAddress(address);
 		}
 		async multiCall(calls: {to: string; data: string}[], gasBuffer?: string) {
 			const chainId = await this.getChainId();
@@ -2100,12 +2127,12 @@ function initWeb3ModalLib(callback: () => void){
 			methodName: F, 
 			params: string[]
 		) {
-			this.init();
-			const abi = contract._abi.find(v => v.name == methodName);
-			return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
+			if (this._web3){
+				const abi = contract._abi.find(v => v.name == methodName);
+				return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
+			}
 		}
 		public get web3(): typeof Web3{
-			this.init();
 			return this._web3;
 		}
 	}

@@ -412,6 +412,7 @@ export declare class Wallet implements IClientWallet {
     static getInstance(): IWallet;
     static getClientInstance(): IClientWallet;
     static getRpcWalletInstance(instanceId: string): IRpcWallet;
+    static initWeb3(): Promise<void>;
     init(): Promise<void>;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
@@ -434,7 +435,7 @@ export declare class Wallet implements IClientWallet {
     getNetworkInfo(chainId: number): INetwork;
     setNetworkInfo(network: INetwork): void;
     setMultipleNetworksInfo(networks: INetwork[]): void;
-    createAccount(): IAccount;
+    createAccount(): IAccount | undefined;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     get defaultAccount(): string;
     set defaultAccount(address: string);
@@ -464,7 +465,7 @@ export declare class Wallet implements IClientWallet {
     set privateKey(value: string);
     registerEvent(abi: any, eventMap: {
         [topics: string]: any;
-    }, address: string, handler: any): void;
+    }, address: string, handler: any): Promise<void>;
     private _abiHashDict;
     private _abiContractDict;
     private _abiAddressDict;

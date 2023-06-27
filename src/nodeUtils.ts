@@ -12,7 +12,7 @@ import { EIP712DomainAbi } from "./constants";
 const Web3 = Web3Lib();// tslint:disable-line
 
 function Web3Lib() {
-    if (typeof window !== "undefined" && window["Web3"])
+    if (typeof window !== "undefined")
         return window["Web3"]
     else{
         let {Web3} = require("./web3");
