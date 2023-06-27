@@ -4575,7 +4575,8 @@ var Web3ModalProvider = class extends EthereumProvider {
     }, this.web3ModalOptions));
     await this._provider.enable();
     this.wallet.chainId = this.provider.chainId;
-    this.wallet.web3.setProvider(this.provider);
+    this.wallet.provider = this.provider;
+    await this.wallet.init();
     if (this._events) {
       this.onAccountChanged = this._events.onAccountChanged;
       this.onChainChanged = this._events.onChainChanged;
@@ -4749,6 +4750,7 @@ var _Wallet = class {
     }
   }
   async connect(clientSideProvider) {
+    await this.init();
     this.clientSideProvider = clientSideProvider;
     await this.clientSideProvider.connect();
     const providerOptions = this.clientSideProvider.options;
@@ -5893,7 +5895,7 @@ var RpcWallet = class extends Wallet {
     return clientWallet.isConnected && this.chainId === clientWallet.chainId;
   }
   async switchNetwork(chainId, onChainChanged) {
-    this.init();
+    await this.init();
     this.chainId = chainId;
     const rpc = this.networksMap[chainId].rpcUrls[0];
     this._web3.setProvider(rpc);
