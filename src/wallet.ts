@@ -697,7 +697,8 @@ function initWeb3ModalLib(callback: () => void){
 			});
 			await this._provider.enable();
 			this.wallet.chainId = this.provider.chainId;
-			this.wallet.web3.setProvider(this.provider);
+			this.wallet.provider = this.provider;
+			await this.wallet.init();
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
@@ -880,6 +881,7 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
 		async connect(clientSideProvider: IClientSideProvider) {
+			await this.init();
 			this.clientSideProvider = clientSideProvider;
 			await this.clientSideProvider.connect();
 			
@@ -2119,7 +2121,7 @@ function initWeb3ModalLib(callback: () => void){
 			return clientWallet.isConnected && this.chainId === clientWallet.chainId;
 		};
 		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
-			this.init();
+			await this.init();
 			this.chainId = chainId;
 			const rpc = this.networksMap[chainId].rpcUrls[0];
 			this._web3.setProvider(rpc);
