@@ -412,7 +412,7 @@ export declare class Wallet implements IClientWallet {
     static getInstance(): IWallet;
     static getClientInstance(): IClientWallet;
     static getRpcWalletInstance(instanceId: string): IRpcWallet;
-    protected init(): void;
+    init(): Promise<void>;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;

@@ -26,12 +26,34 @@ async function build() {
     ],
     plugins: [],
   }).catch(() => process.exit(1));
-  let content = await readFile('dist/plugin.js');
+  let plugin = await readFile('dist/plugin.js');
   let web3 = await readFile('src/lib/web3/1.9.0/web3.min.js');
   let bignumber = await readFile('node_modules/bignumber.js/bignumber.js');
 //   define("aws-sdk", ()=>{});
 // define("asn1.js", ()=>{});
 // define("bn.js", ()=>{});
+  let content = `
+var __defineAmdValue;
+if (typeof(define) == 'function'){
+  __defineAmdValue = define.amd;
+  define.amd = null;
+};
+${bignumber}
+define("ethereumjs-tx", ()=>{});
+define("ethereumjs-util", ()=>{});
+define("ethereum-cryptography/keccak", ()=>{});
+define("bignumber.js", (require,exports)=>{
+  exports['BigNumber'] = window["BigNumber"];
+});
+define("@ijstech/eth-wallet",(require, exports)=>{
+${plugin}
+});
+if (typeof(define) == 'function')
+  define.amd = __defineAmdValue;
+`;
+  Fs.writeFileSync('dist/plugin.js', content);
+  Fs.renameSync('dist/plugin.js', 'dist/index.js');
+
   content = `
 var __defineAmdValue;
 if (typeof(define) == 'function'){
@@ -39,25 +61,13 @@ if (typeof(define) == 'function'){
   define.amd = null;
 };
 ${web3}
-${bignumber}
-define("ethereumjs-tx", ()=>{});
-define("ethereumjs-util", ()=>{});
-define("ethereum-cryptography/keccak", ()=>{});
 define("web3", (require,exports)=>{
     exports['web3'] = window["Web3"];
 });
-define("bignumber.js", (require,exports)=>{
-    exports['BigNumber'] = window["BigNumber"];
-});
-define("@ijstech/eth-wallet",(require, exports)=>{
-${content}
-});
 if (typeof(define) == 'function')
   define.amd = __defineAmdValue;
-`
-
-  Fs.writeFileSync('dist/plugin.js', content);
-  Fs.renameSync('dist/plugin.js', 'dist/index.js');
+`;
+  Fs.writeFileSync('dist/web3.js', content);
   // Fs.copyFileSync('src/lib/web3/1.9.0/web3.min.js', 'dist/web3.js');
 };
 build();

@@ -22,12 +22,12 @@ const RequireJS = {
         (<any>window.require)(reqs, callback);
     }
 };
-// let currentModuleDir: string;
-// if (typeof window !== "undefined" && window["application"]){
-// 	currentModuleDir = window["application"].currentModuleDir;
-// };
+let currentModuleDir: string;
+if (typeof window !== "undefined" && window["application"]){
+	currentModuleDir = window["application"].currentModuleDir;
+};
 function initWeb3Lib(){
-	if (typeof window !== "undefined" && window["Web3"])
+	if (typeof window !== "undefined")
         return window["Web3"]
 	else{
 		let {Web3} = require("./web3");
@@ -40,7 +40,7 @@ function initWeb3ModalLib(callback: () => void){
 			window["@ijstech/eth-wallet-web3modal"] = web3modal;
 			callback();
 		})		
-	}
+	};
 };
 // module Wallet{    	
 	export function toString(value: any) {
@@ -519,7 +519,8 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		async connect() {
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
-			this.wallet.web3.setProvider(this.provider);
+			this.wallet.provider = this.provider;
+			await this.wallet.init();
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
@@ -779,12 +780,12 @@ function initWeb3ModalLib(callback: () => void){
 		static getRpcWalletInstance(instanceId: string): IRpcWallet {
 			return Wallet._rpcWalletPoolMap[instanceId];
 		}
-		protected init(){
+		async init(){
 			if (!this._web3){
-				// if (currentModuleDir && !window['Web3']){
-				// 	await window['application'].loadScript(currentModuleDir + '/web3.js');
-				// 	Web3 = initWeb3Lib();
-				// };
+				if (currentModuleDir && !window['Web3']){
+					await window['application'].loadScript(currentModuleDir + '/web3.js');
+					Web3 = initWeb3Lib();
+				};
 				this._web3 = new Web3(this._provider);
 				this._utils = {
 					fromDecimals: Utils.fromDecimals,
@@ -833,7 +834,7 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry {
 			return EventBus.getInstance().register(sender, event, callback);
-		}
+		};
 		unregisterWalletEvent(event: IEventBusRegistry) {
 			return event.unregister();
 		}
