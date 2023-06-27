@@ -27,8 +27,10 @@ if (typeof window !== "undefined" && window["application"]){
 	currentModuleDir = window["application"].currentModuleDir;
 };
 function initWeb3Lib(){
-	if (typeof window !== "undefined")
+	if (typeof window !== "undefined"){
+		Web3 = window["Web3"];
         return window["Web3"]
+	}
 	else{
 		let {Web3} = require("./web3");
 		return Web3;

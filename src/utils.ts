@@ -10,12 +10,14 @@ import { EIP712DomainAbi } from "./constants";
 let Web3 = initWeb3Lib(); // tslint:disable-line
 
 export function initWeb3Lib() {
-    if (typeof window !== "undefined")
+    if (typeof window !== "undefined"){
+        Web3 = window["Web3"];
         return window["Web3"]
+    }
     else{
         let {Web3} = require("./web3");
         return Web3;
-    }
+    };
 };
 export function sleep(millisecond: number) {
     return new Promise(function (resolve) {

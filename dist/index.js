@@ -4004,12 +4004,14 @@ var RpcWalletEvent;
 // src/utils.ts
 var Web32 = initWeb3Lib();
 function initWeb3Lib() {
-  if (typeof window !== "undefined")
+  if (typeof window !== "undefined") {
+    Web32 = window["Web3"];
     return window["Web3"];
-  else {
+  } else {
     let { Web3: Web34 } = (init_web3(), web3_exports);
     return Web34;
   }
+  ;
 }
 function sleep(millisecond) {
   return new Promise(function(resolve) {
@@ -4306,9 +4308,10 @@ if (typeof window !== "undefined" && window["application"]) {
   currentModuleDir = window["application"].currentModuleDir;
 }
 function initWeb3Lib2() {
-  if (typeof window !== "undefined")
+  if (typeof window !== "undefined") {
+    Web33 = window["Web3"];
     return window["Web3"];
-  else {
+  } else {
     let { Web3: Web34 } = (init_web3(), web3_exports);
     return Web34;
   }
