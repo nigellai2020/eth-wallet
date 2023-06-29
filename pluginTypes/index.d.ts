@@ -1563,6 +1563,20 @@ declare module "eventBus" {
         private getNextId;
     }
 }
+declare module "providers.json" {
+    const _default_4: {
+        MetaMask: {
+            displayName: string;
+            image: string;
+            homepage: string;
+        };
+        Web3Modal: {
+            displayName: string;
+            image: string;
+        };
+    };
+    export default _default_4;
+}
 declare module "wallet" {
     /*!-----------------------------------------------------------
     * Copyright (c) IJS Technologies. All rights reserved.
@@ -1707,6 +1721,7 @@ declare module "wallet" {
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     }
     export interface IClientWallet extends IWallet {
+        init(): Promise<void>;
         blockGasLimit(): Promise<number>;
         clientSideProvider: IClientSideProvider;
         initClientWallet(config: IClientWalletConfig): void;

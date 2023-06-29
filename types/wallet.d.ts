@@ -141,6 +141,7 @@ export interface IWallet {
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
 }
 export interface IClientWallet extends IWallet {
+    init(): Promise<void>;
     blockGasLimit(): Promise<number>;
     clientSideProvider: IClientSideProvider;
     initClientWallet(config: IClientWalletConfig): void;
