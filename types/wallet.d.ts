@@ -331,6 +331,7 @@ export interface IClientSideProvider {
     name: string;
     displayName: string;
     provider: any;
+    selectedAddress: string;
     image: string;
     homepage?: string;
     events?: IClientSideProviderEvents;
@@ -348,6 +349,7 @@ export declare class EthereumProvider implements IClientSideProvider {
     protected _isConnected: boolean;
     protected _name: string;
     protected _image: string;
+    protected _selectedAddress: string;
     onAccountChanged: (account: string) => void;
     onChainChanged: (chainId: string) => void;
     onConnect: (connectInfo: any) => void;
@@ -360,6 +362,8 @@ export declare class EthereumProvider implements IClientSideProvider {
     installed(): boolean;
     get events(): IClientSideProviderEvents;
     get options(): IClientProviderOptions;
+    get selectedAddress(): string;
+    toChecksumAddress(address: string): string;
     initEvents(): void;
     connect(): Promise<any>;
     disconnect(): Promise<void>;

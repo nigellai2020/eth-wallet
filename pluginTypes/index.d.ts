@@ -1911,6 +1911,7 @@ declare module "wallet" {
         name: string;
         displayName: string;
         provider: any;
+        selectedAddress: string;
         image: string;
         homepage?: string;
         events?: IClientSideProviderEvents;
@@ -1928,6 +1929,7 @@ declare module "wallet" {
         protected _isConnected: boolean;
         protected _name: string;
         protected _image: string;
+        protected _selectedAddress: string;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
@@ -1940,6 +1942,8 @@ declare module "wallet" {
         installed(): boolean;
         get events(): IClientSideProviderEvents;
         get options(): IClientProviderOptions;
+        get selectedAddress(): string;
+        toChecksumAddress(address: string): string;
         initEvents(): void;
         connect(): Promise<any>;
         disconnect(): Promise<void>;

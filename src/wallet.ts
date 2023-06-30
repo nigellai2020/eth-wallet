@@ -416,6 +416,7 @@ function initWeb3ModalLib(callback: () => void){
 		name: string;
 		displayName: string;
 		provider: any;
+		selectedAddress: string;
 		image: string;
 		homepage?: string;
 		events?: IClientSideProviderEvents;
@@ -433,6 +434,7 @@ function initWeb3ModalLib(callback: () => void){
 		protected _isConnected: boolean = false;
 		protected _name: string;
 		protected _image: string;
+		protected _selectedAddress: string;
 		public onAccountChanged: (account: string) => void;
 		public onChainChanged: (chainId: string) => void;
 		public onConnect: (connectInfo: any) => void;
@@ -480,6 +482,27 @@ function initWeb3ModalLib(callback: () => void){
 			return this._options;
 		}
 
+		get selectedAddress() {
+			return this._selectedAddress;
+		}
+
+		toChecksumAddress(address: string) {
+			address = address.toLowerCase().replace('0x','');
+			let sha3 = window['sha3'];
+			let hash = sha3.keccak256(address);
+			let ret = '0x';
+			
+			for (let i = 0; i < address.length; i++) {
+			  if (parseInt(hash[i], 16) >= 8) {
+				ret += address[i].toUpperCase();
+			  } else {
+				ret += address[i];
+			  }
+			}
+		  
+			return ret;
+		}
+
 		initEvents() {
 			let self = this;
 			if (this.installed()) {
@@ -487,8 +510,11 @@ function initWeb3ModalLib(callback: () => void){
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
-						accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
-						(<any>self.wallet.web3).selectedAddress = accountAddress;
+						this._selectedAddress = self.toChecksumAddress(accounts[0]);
+						accountAddress = this._selectedAddress;
+						if (self.wallet.web3) {
+							(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
+						}
 						self.wallet.account = {
 							address: accountAddress
 						};
@@ -523,7 +549,6 @@ function initWeb3ModalLib(callback: () => void){
 		async connect() {
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
 			this.wallet.provider = this.provider;
-			await this.wallet.init();
 			if (this._events) {
 				this.onAccountChanged = this._events.onAccountChanged;
 				this.onChainChanged = this._events.onChainChanged;
@@ -538,8 +563,11 @@ function initWeb3ModalLib(callback: () => void){
 						let accountAddress;
 						let hasAccounts = accounts && accounts.length > 0;
 						if (hasAccounts) {
-							accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
-							(<any>self.wallet.web3).selectedAddress = accountAddress;
+							this._selectedAddress = self.toChecksumAddress(accounts[0]);
+							accountAddress = this._selectedAddress;
+							if (self.wallet.web3) {
+								(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
+							}
 							self.wallet.account = {
 								address: accountAddress
 							};
@@ -710,12 +738,15 @@ function initWeb3ModalLib(callback: () => void){
 			this.initEvents();
 			let self = this;
 			try {
-				await this.wallet.web3.eth.getAccounts((err, accounts) => {
+				await this._provider.getAccounts((err, accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
-						accountAddress = self.wallet.web3.utils.toChecksumAddress(accounts[0]);
-						(<any>self.wallet.web3).selectedAddress = accountAddress;
+						this._selectedAddress = self.toChecksumAddress(accounts[0]);
+						accountAddress = this._selectedAddress;
+						if (self.wallet.web3) {
+							(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
+						}
 						this.wallet.account = {
 							address: accountAddress
 						};
@@ -893,7 +924,6 @@ function initWeb3ModalLib(callback: () => void){
 			}
 		}
 		async connect(clientSideProvider: IClientSideProvider) {
-			await this.init();
 			this.clientSideProvider = clientSideProvider;
 			await this.clientSideProvider.connect();
 			
@@ -932,7 +962,10 @@ function initWeb3ModalLib(callback: () => void){
 			});
 		}
 		get address(): string{
-			if (this._web3){
+			if (this.clientSideProvider) {
+				return this.clientSideProvider.selectedAddress;
+			}
+			else if (this._web3){
 				if (this._account && this._account.privateKey){
 					if (!this._account.address)
 						this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
@@ -950,7 +983,7 @@ function initWeb3ModalLib(callback: () => void){
 				}
 				else
 					return this._account.address;
-			};
+			}
         	return '';
         }
 		get account(): IAccount{
@@ -1476,38 +1509,40 @@ function initWeb3ModalLib(callback: () => void){
         	}
         };
 		// end of rollback
-		get balance(): Promise<BigNumber>{			
-			let self = this;            
-			return new Promise(async function(resolve){
-				await self.init();
-				let _web3 = self._web3;
-				try{
-					let network = self._networksMap[self.chainId];
-					let decimals = 18;
-					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
-						decimals = network.nativeCurrency.decimals;
-					
-					let result = await _web3.eth.getBalance(self.address);	
-					resolve(new BigNumber(result).div(10 ** decimals));
-				}
-				catch(err){
-					resolve(new BigNumber(0));
-				}	
-			})
+		get balance(): Promise<BigNumber>{			       
+			return this.balanceOf(this.address);
 		};
 		balanceOf(address: string): Promise<BigNumber>{			
 			let self = this;
 			return new Promise(async function(resolve){
-				await self.init();
-				let _web3 = self._web3;
 				try{
 					let network = self._networksMap[self.chainId];
+					if (!network) {	
+						resolve(new BigNumber(0));
+					}
 					let decimals = 18;
-					if (network && network.nativeCurrency && network.nativeCurrency.decimals)
+					if (network.nativeCurrency && network.nativeCurrency.decimals) {
 						decimals = network.nativeCurrency.decimals;
-					
-					let result = await _web3.eth.getBalance(address);	
-					resolve(new BigNumber(result).div(10 ** decimals));
+					}
+					const url = network.rpcUrls[0];
+					const data = {
+						id: 1,
+						jsonrpc: '2.0',
+						method: 'eth_getBalance',
+						params: [address, 'latest'],
+					};		
+					const response = await fetch(url, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(data),
+					});		
+					const json = await response.json();		
+					if (json.error) {
+						resolve(new BigNumber(0));
+					}	
+					resolve(new BigNumber(json.result).div(10 ** decimals));
 				}
 				catch(err){
 					resolve(new BigNumber(0));
