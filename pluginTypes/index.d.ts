@@ -1958,7 +1958,6 @@ declare module "wallet" {
         installed(): boolean;
     }
     export class Web3ModalProvider extends EthereumProvider {
-        private web3ModalOptions;
         private _provider;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;
@@ -1967,6 +1966,7 @@ declare module "wallet" {
         get image(): string;
         get homepage(): any;
         installed(): boolean;
+        get options(): IClientProviderOptions;
         private initializeWeb3Modal;
         connect(): Promise<any>;
         disconnect(): Promise<void>;

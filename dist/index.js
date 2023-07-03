@@ -5236,8 +5236,7 @@ var MetaMaskProvider = class extends EthereumProvider {
 };
 var Web3ModalProvider = class extends EthereumProvider {
   constructor(wallet, events, options) {
-    super(wallet, events);
-    this.web3ModalOptions = options;
+    super(wallet, events, options);
   }
   get name() {
     return "walletconnect";
@@ -5257,6 +5256,9 @@ var Web3ModalProvider = class extends EthereumProvider {
   installed() {
     return true;
   }
+  get options() {
+    return this._options;
+  }
   initializeWeb3Modal(options) {
     let func = () => {
       Web3Modal = window["@ijstech/eth-wallet-web3modal"].EthereumProvider;
@@ -5265,7 +5267,7 @@ var Web3ModalProvider = class extends EthereumProvider {
   }
   async connect() {
     if (!this._provider) {
-      this.initializeWeb3Modal(this.web3ModalOptions);
+      this.initializeWeb3Modal(this._options);
     }
     await this.disconnect();
     this._provider = await Web3Modal.init(__spreadValues({
@@ -5273,7 +5275,7 @@ var Web3ModalProvider = class extends EthereumProvider {
       qrModalOptions: { themeMode: "light" },
       methods: ["eth_sendTransaction", "personal_sign"],
       events: ["chainChanged", "accountsChanged"]
-    }, this.web3ModalOptions));
+    }, this._options));
     await this._provider.enable();
     this.wallet.chainId = this.provider.chainId;
     this.wallet.provider = this.provider;
@@ -5287,24 +5289,21 @@ var Web3ModalProvider = class extends EthereumProvider {
     this.initEvents();
     let self = this;
     try {
-      await this._provider.getAccounts((err, accounts) => {
-        let accountAddress;
-        let hasAccounts = accounts && accounts.length > 0;
-        if (hasAccounts) {
-          this._selectedAddress = self.toChecksumAddress(accounts[0]);
-          accountAddress = this._selectedAddress;
-          if (self.wallet.web3) {
-            self.wallet.web3.selectedAddress = this._selectedAddress;
-          }
-          this.wallet.account = {
-            address: accountAddress
-          };
+      let hasAccounts = this._provider.accounts && this._provider.accounts.length > 0;
+      this._isConnected = hasAccounts;
+      if (hasAccounts) {
+        let accountAddress = this._provider.accounts[0];
+        this._selectedAddress = self.toChecksumAddress(accountAddress);
+        if (self.wallet.web3) {
+          self.wallet.web3.selectedAddress = this._selectedAddress;
         }
-        this._isConnected = hasAccounts;
+        this.wallet.account = {
+          address: accountAddress
+        };
         EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
         if (self.onAccountChanged)
           self.onAccountChanged(accountAddress);
-      });
+      }
     } catch (error) {
       console.error(error);
     }
