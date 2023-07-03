@@ -1515,32 +1515,37 @@ function initWeb3ModalLib(callback: () => void){
 			return new Promise(async function(resolve){
 				try{
 					let network = self._networksMap[self.chainId];
-					if (!network) {	
-						resolve(new BigNumber(0));
-					}
 					let decimals = 18;
-					if (network.nativeCurrency && network.nativeCurrency.decimals) {
-						decimals = network.nativeCurrency.decimals;
+					if (network) {
+						if (network.nativeCurrency && network.nativeCurrency.decimals) {
+							decimals = network.nativeCurrency.decimals;
+						}
+						const url = network.rpcUrls[0];
+						const data = {
+							id: 1,
+							jsonrpc: '2.0',
+							method: 'eth_getBalance',
+							params: [address, 'latest'],
+						};		
+						const response = await fetch(url, {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+							},
+							body: JSON.stringify(data),
+						});		
+						const json = await response.json();		
+						if (json.error) {
+							resolve(new BigNumber(0));
+						}	
+						resolve(new BigNumber(json.result).div(10 ** decimals));
 					}
-					const url = network.rpcUrls[0];
-					const data = {
-						id: 1,
-						jsonrpc: '2.0',
-						method: 'eth_getBalance',
-						params: [address, 'latest'],
-					};		
-					const response = await fetch(url, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: JSON.stringify(data),
-					});		
-					const json = await response.json();		
-					if (json.error) {
-						resolve(new BigNumber(0));
-					}	
-					resolve(new BigNumber(json.result).div(10 ** decimals));
+					else {
+						await self.init();
+						let _web3 = self._web3;
+						let result = await _web3.eth.getBalance(address);
+						resolve(new BigNumber(result).div(10 ** decimals));
+					}
 				}
 				catch(err){
 					resolve(new BigNumber(0));
