@@ -230,7 +230,7 @@ function initWeb3ModalLib(callback: () => void){
 		blockGasLimit(): Promise<number>;
 		clientSideProvider: IClientSideProvider;
 		initClientWallet(config: IClientWalletConfig): void;
-		connect(clientSideProvider: IClientSideProvider): Promise<any>;
+		connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<any>;
 		disconnect(): Promise<void>;
 		getGasPrice(): Promise<BigNumber>;
 		getTransaction(transactionHash: string): Promise<Transaction>;
@@ -423,7 +423,7 @@ function initWeb3ModalLib(callback: () => void){
 		options?: IClientProviderOptions;
 		installed(): boolean;
 		isConnected(): boolean;
-		connect: () => Promise<void>;
+		connect: (eventPayload?: Record<string, any>) => Promise<void>;
 		disconnect: () => Promise<void>;
 		switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
 	}
@@ -520,7 +520,10 @@ function initWeb3ModalLib(callback: () => void){
 						};
 					}
 					this._isConnected = hasAccounts;
-					EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+					EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+						account: accountAddress
+					});
+					//TODO: Check if this is needed
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				});
@@ -546,7 +549,7 @@ function initWeb3ModalLib(callback: () => void){
 				});
 			};
 		}
-		async connect() {
+		async connect(eventPayload?: Record<string, any>) {
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
 			this.wallet.provider = this.provider;
 			if (this._events) {
@@ -573,7 +576,11 @@ function initWeb3ModalLib(callback: () => void){
 							};
 						}
 						this._isConnected = hasAccounts;
-						EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+						EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+							...eventPayload,
+							account: accountAddress
+						});
+						//TODO: check if this is needed
 						if (self.onAccountChanged)
 							self.onAccountChanged(accountAddress);
 					});
@@ -714,7 +721,7 @@ function initWeb3ModalLib(callback: () => void){
 			}
 			initWeb3ModalLib(func);
 		}
-		async connect() {
+		async connect(eventPayload?: Record<string, any>) {
 			if (!this._provider) {
 				this.initializeWeb3Modal(this._options);
 			}			
@@ -750,7 +757,11 @@ function initWeb3ModalLib(callback: () => void){
 					this.wallet.account = {
 						address: accountAddress
 					};
-					EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+					EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+						...eventPayload,
+						account: accountAddress
+					});
+					//TODO: check if this is needed
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
 				}
@@ -921,9 +932,9 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = rpc;
 			}
 		}
-		async connect(clientSideProvider: IClientSideProvider) {
+		async connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>) {
 			this.clientSideProvider = clientSideProvider;
-			await this.clientSideProvider.connect();
+			await this.clientSideProvider.connect(eventPayload);
 			
 			const providerOptions = this.clientSideProvider.options;
 			if (providerOptions && providerOptions.useDefaultProvider) {
@@ -938,7 +949,9 @@ function initWeb3ModalLib(callback: () => void){
 			if (this.clientSideProvider) {
 				await this.clientSideProvider.disconnect();
 				this.clientSideProvider = null;
-				EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, null);
+				EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+					account: null
+				});
 			}
 			this.setDefaultProvider();
 		}
@@ -2200,7 +2213,7 @@ function initWeb3ModalLib(callback: () => void){
 			const eventBus = EventBus.getInstance();
 			const registry = eventBus.register(sender, eventId, callback);
 			if (event == RpcWalletEvent.Connected) {
-				const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (account: string) => {
+				const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload: Record<string, any>) => {
 					eventBus.dispatch(eventId, this.isConnected);
 				});
 				const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex: string) => {

@@ -5072,7 +5072,9 @@ var EthereumProvider = class {
           };
         }
         this._isConnected = hasAccounts;
-        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+          account: accountAddress
+        });
         if (self.onAccountChanged)
           self.onAccountChanged(accountAddress);
       });
@@ -5100,7 +5102,7 @@ var EthereumProvider = class {
     }
     ;
   }
-  async connect() {
+  async connect(eventPayload) {
     this.wallet.chainId = parseInt(this.provider.chainId, 16);
     this.wallet.provider = this.provider;
     if (this._events) {
@@ -5127,7 +5129,9 @@ var EthereumProvider = class {
             };
           }
           this._isConnected = hasAccounts;
-          EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+          EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
+            account: accountAddress
+          }));
           if (self.onAccountChanged)
             self.onAccountChanged(accountAddress);
         });
@@ -5265,7 +5269,7 @@ var Web3ModalProvider = class extends EthereumProvider {
     };
     initWeb3ModalLib(func);
   }
-  async connect() {
+  async connect(eventPayload) {
     if (!this._provider) {
       this.initializeWeb3Modal(this._options);
     }
@@ -5300,7 +5304,9 @@ var Web3ModalProvider = class extends EthereumProvider {
         this.wallet.account = {
           address: accountAddress
         };
-        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, accountAddress);
+        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
+          account: accountAddress
+        }));
         if (self.onAccountChanged)
           self.onAccountChanged(accountAddress);
       }
@@ -5463,9 +5469,9 @@ var _Wallet = class {
       this.provider = rpc;
     }
   }
-  async connect(clientSideProvider) {
+  async connect(clientSideProvider, eventPayload) {
     this.clientSideProvider = clientSideProvider;
-    await this.clientSideProvider.connect();
+    await this.clientSideProvider.connect(eventPayload);
     const providerOptions = this.clientSideProvider.options;
     if (providerOptions && providerOptions.useDefaultProvider) {
       if (providerOptions.infuraId)
@@ -5479,7 +5485,9 @@ var _Wallet = class {
     if (this.clientSideProvider) {
       await this.clientSideProvider.disconnect();
       this.clientSideProvider = null;
-      EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, null);
+      EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+        account: null
+      });
     }
     this.setDefaultProvider();
   }
@@ -6653,7 +6661,7 @@ var RpcWallet = class extends Wallet {
     const eventBus = EventBus.getInstance();
     const registry = eventBus.register(sender, eventId, callback);
     if (event == RpcWalletEvent.Connected) {
-      const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (account) => {
+      const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload) => {
         eventBus.dispatch(eventId, this.isConnected);
       });
       const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex) => {

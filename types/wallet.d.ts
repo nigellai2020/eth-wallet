@@ -145,7 +145,7 @@ export interface IClientWallet extends IWallet {
     blockGasLimit(): Promise<number>;
     clientSideProvider: IClientSideProvider;
     initClientWallet(config: IClientWalletConfig): void;
-    connect(clientSideProvider: IClientSideProvider): Promise<any>;
+    connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<any>;
     disconnect(): Promise<void>;
     getGasPrice(): Promise<BigNumber>;
     getTransaction(transactionHash: string): Promise<Transaction>;
@@ -338,7 +338,7 @@ export interface IClientSideProvider {
     options?: IClientProviderOptions;
     installed(): boolean;
     isConnected(): boolean;
-    connect: () => Promise<void>;
+    connect: (eventPayload?: Record<string, any>) => Promise<void>;
     disconnect: () => Promise<void>;
     switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
 }
@@ -365,7 +365,7 @@ export declare class EthereumProvider implements IClientSideProvider {
     get selectedAddress(): string;
     toChecksumAddress(address: string): string;
     initEvents(): void;
-    connect(): Promise<any>;
+    connect(eventPayload?: Record<string, any>): Promise<any>;
     disconnect(): Promise<void>;
     isConnected(): boolean;
     addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -388,7 +388,7 @@ export declare class Web3ModalProvider extends EthereumProvider {
     installed(): boolean;
     get options(): IClientProviderOptions;
     private initializeWeb3Modal;
-    connect(): Promise<any>;
+    connect(eventPayload?: Record<string, any>): Promise<any>;
     disconnect(): Promise<void>;
 }
 export interface ISendTxEventsOptions {
@@ -428,7 +428,7 @@ export declare class Wallet implements IClientWallet {
     private generateUUID;
     initRpcWallet(config: IRpcWalletConfig): string;
     setDefaultProvider(): void;
-    connect(clientSideProvider: IClientSideProvider): Promise<void>;
+    connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<void>;
     disconnect(): Promise<void>;
     get accounts(): Promise<string[]>;
     get address(): string;
