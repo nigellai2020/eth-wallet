@@ -643,14 +643,20 @@
 
   if (COMMON_JS) {
     module.exports = methods;
-  } else {
+  } 
+  else {
+    // for (i = 0; i < methodNames.length; ++i) {
+    //   root[methodNames[i]] = methods[methodNames[i]];
+    // }
+    // if (AMD) {
+    //   // define(function () {
+    //   //   return methods;
+    //   // });
+    // }
+    let sha3 = {};
     for (i = 0; i < methodNames.length; ++i) {
-      root[methodNames[i]] = methods[methodNames[i]];
+      sha3[methodNames[i]] = methods[methodNames[i]];
     }
-    if (AMD) {
-      define(function () {
-        return methods;
-      });
-    }
+    root.sha3 = sha3;
   }
 })();

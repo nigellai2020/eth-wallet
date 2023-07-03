@@ -1725,7 +1725,7 @@ declare module "wallet" {
         blockGasLimit(): Promise<number>;
         clientSideProvider: IClientSideProvider;
         initClientWallet(config: IClientWalletConfig): void;
-        connect(clientSideProvider: IClientSideProvider): Promise<any>;
+        connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<any>;
         disconnect(): Promise<void>;
         getGasPrice(): Promise<BigNumber>;
         getTransaction(transactionHash: string): Promise<Transaction>;
@@ -1911,13 +1911,14 @@ declare module "wallet" {
         name: string;
         displayName: string;
         provider: any;
+        selectedAddress: string;
         image: string;
         homepage?: string;
         events?: IClientSideProviderEvents;
         options?: IClientProviderOptions;
         installed(): boolean;
         isConnected(): boolean;
-        connect: () => Promise<void>;
+        connect: (eventPayload?: Record<string, any>) => Promise<void>;
         disconnect: () => Promise<void>;
         switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
     }
@@ -1928,6 +1929,7 @@ declare module "wallet" {
         protected _isConnected: boolean;
         protected _name: string;
         protected _image: string;
+        protected _selectedAddress: string;
         onAccountChanged: (account: string) => void;
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
@@ -1940,8 +1942,10 @@ declare module "wallet" {
         installed(): boolean;
         get events(): IClientSideProviderEvents;
         get options(): IClientProviderOptions;
+        get selectedAddress(): string;
+        toChecksumAddress(address: string): string;
         initEvents(): void;
-        connect(): Promise<any>;
+        connect(eventPayload?: Record<string, any>): Promise<any>;
         disconnect(): Promise<void>;
         isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -1954,7 +1958,6 @@ declare module "wallet" {
         installed(): boolean;
     }
     export class Web3ModalProvider extends EthereumProvider {
-        private web3ModalOptions;
         private _provider;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;
@@ -1963,8 +1966,9 @@ declare module "wallet" {
         get image(): string;
         get homepage(): any;
         installed(): boolean;
+        get options(): IClientProviderOptions;
         private initializeWeb3Modal;
-        connect(): Promise<any>;
+        connect(eventPayload?: Record<string, any>): Promise<any>;
         disconnect(): Promise<void>;
     }
     export interface ISendTxEventsOptions {
@@ -2004,7 +2008,7 @@ declare module "wallet" {
         private generateUUID;
         initRpcWallet(config: IRpcWalletConfig): string;
         setDefaultProvider(): void;
-        connect(clientSideProvider: IClientSideProvider): Promise<void>;
+        connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<void>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
