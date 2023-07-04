@@ -311,6 +311,7 @@ export type MulticallInfoMapType = {
 };
 export interface IRpcWalletConfig {
     networks: INetwork[];
+    defaultChainId?: number;
     infuraId: string;
     multicalls?: IMulticallInfo[];
 }

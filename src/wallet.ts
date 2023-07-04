@@ -396,6 +396,7 @@ function initWeb3ModalLib(callback: () => void){
 	export type MulticallInfoMapType = { [chainId: number]: IMulticallInfo }
 	export interface IRpcWalletConfig {
 		networks: INetwork[];
+		defaultChainId?: number;
 		infuraId: string;
 		multicalls?: IMulticallInfo[];
 	}
@@ -902,7 +903,7 @@ function initWeb3ModalLib(callback: () => void){
 		}
 		initRpcWallet(config: IRpcWalletConfig): string {
 			const wallet = new RpcWallet();
-			const defaultNetwork = config.networks[0];
+			const defaultNetwork = config.defaultChainId ? config.networks.find(v => v.chainId === config.defaultChainId) : config.networks[0];
 			wallet.chainId = defaultNetwork.chainId;
 			const rpc = defaultNetwork.rpcUrls[0];
 			wallet.setProvider(rpc);
