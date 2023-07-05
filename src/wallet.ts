@@ -257,6 +257,7 @@ function initWeb3ModalLib(callback: () => void){
 		initRpcWallet(config: IRpcWalletConfig): string;
 	};
 	export interface IRpcWallet extends IWallet {
+		init(): Promise<void>;
 		instanceId: string;  
 		isConnected: boolean;
 		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;  
@@ -2193,8 +2194,17 @@ function initWeb3ModalLib(callback: () => void){
 	export class RpcWallet extends Wallet implements IRpcWallet{
 		public instanceId: string;  
 		private _eventsMap: WeakMap<IEventBusRegistry, IEventBusRegistry[]> = new WeakMap();
-
+		private _address: string;
+		get address(): string{
+			return this._address;
+		}
+        set address(value: string){
+			this._address = value;
+        }
 		setProvider(provider: any): void{
+			if (this._web3) {
+				this._web3.setProvider(provider);
+			}
 			this._provider = provider;
 		};
 		get isConnected() {
@@ -2205,7 +2215,7 @@ function initWeb3ModalLib(callback: () => void){
 			await this.init();
 			this.chainId = chainId;
 			const rpc = this.networksMap[chainId].rpcUrls[0];
-			this._web3.setProvider(rpc);
+			this.setProvider(rpc);
 			if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
 			return null;
 		}

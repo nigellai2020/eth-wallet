@@ -6640,7 +6640,16 @@ var RpcWallet = class extends Wallet {
     super(...arguments);
     this._eventsMap = new WeakMap();
   }
+  get address() {
+    return this._address;
+  }
+  set address(value) {
+    this._address = value;
+  }
   setProvider(provider) {
+    if (this._web3) {
+      this._web3.setProvider(provider);
+    }
     this._provider = provider;
   }
   get isConnected() {
@@ -6651,7 +6660,7 @@ var RpcWallet = class extends Wallet {
     await this.init();
     this.chainId = chainId;
     const rpc = this.networksMap[chainId].rpcUrls[0];
-    this._web3.setProvider(rpc);
+    this.setProvider(rpc);
     if (onChainChanged)
       onChainChanged("0x" + chainId.toString(16));
     return null;

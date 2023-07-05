@@ -1751,6 +1751,7 @@ declare module "wallet" {
         initRpcWallet(config: IRpcWalletConfig): string;
     }
     export interface IRpcWallet extends IWallet {
+        init(): Promise<void>;
         instanceId: string;
         isConnected: boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
@@ -2112,6 +2113,9 @@ declare module "wallet" {
     export class RpcWallet extends Wallet implements IRpcWallet {
         instanceId: string;
         private _eventsMap;
+        private _address;
+        get address(): string;
+        set address(value: string);
         setProvider(provider: any): void;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
