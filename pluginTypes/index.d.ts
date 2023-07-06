@@ -1891,6 +1891,7 @@ declare module "wallet" {
     };
     export interface IRpcWalletConfig {
         networks: INetwork[];
+        defaultChainId?: number;
         infuraId: string;
         multicalls?: IMulticallInfo[];
     }
