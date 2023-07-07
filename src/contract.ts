@@ -47,7 +47,7 @@ module Contract {
             let events = this.getAbiEvents();
             let result = [];
             for (let name in receipt.events){
-                let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
+                let events = <any[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
                 events.forEach(e=>{
                     let data = e.raw;
                     let event = events[data.topics[0]];
@@ -63,7 +63,7 @@ module Contract {
             let result = [];
             if (receipt.events) {
                 for (let name in receipt.events){
-                    let events = <EventLog[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
+                    let events = <any[]>( Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]] );
                     events.forEach(event=>{
                         if (topic0 == event.raw.topics[0] && (this.address && this.address==event.address)) {
                             result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));

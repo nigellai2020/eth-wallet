@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 
 let Web3 = initWeb3Lib(); // tslint:disable-line
-import {IWeb3} from './web3';
+import {IWeb3, ConfirmationObject, TransactionReceipt} from './web3';
 import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
@@ -14,6 +14,7 @@ import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 import { EventBus, IEventBusRegistry } from './eventBus';
 import { ClientWalletEvent, RpcWalletEvent } from './constants';
 import Providers from "./providers.json";
+export {TransactionReceipt, ConfirmationObject};
 
 let Web3Modal: any;
 
@@ -265,7 +266,7 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export interface IContractMethod {
 		call: any;
-		estimateGas(...params:any[]): Promise<number>;
+		estimateGas(...params:any[]): Promise<BigInt>;
 		encodeABI(): string;
 	}
 	export interface IContract {
@@ -276,11 +277,11 @@ function initWeb3ModalLib(callback: () => void){
     export interface Event{
 		name: string;
         address: string;
-        blockNumber: number;
-		logIndex: number;
+        blockNumber: BigInt;
+		logIndex: BigInt;
 		topics: string[];
         transactionHash: string;
-        transactionIndex: number;        
+        transactionIndex: BigInt;        
         data: any;
 		rawData: any;
 	}
@@ -288,43 +289,43 @@ function initWeb3ModalLib(callback: () => void){
 	    address: string;
 	    data: string;
 	    topics: Array <string>;
-        logIndex: number;
+        logIndex: BigInt;
 	    transactionHash?: string;
-	    transactionIndex: number;
+	    transactionIndex: BigInt;
 	    blockHash?: string;
 	    type?: string;
-	    blockNumber: number;
+	    blockNumber: BigInt;
 	}
 	export interface EventLog {
 	    event: string
 	    address: string
 	    returnValues: any
-	    logIndex: number
-	    transactionIndex: number
+	    logIndex: BigInt
+	    transactionIndex: BigInt
 	    transactionHash: string
 	    blockHash: string
-	    blockNumber: number
+	    blockNumber: BigInt
 	    raw ? : {
 	        data: string,
 	        topics: string[]
 	    }
 	}
-    export interface TransactionReceipt {
-	    transactionHash: string;
-	    transactionIndex: number;
-	    blockHash: string;
-	    blockNumber: number;
-	    from: string;
-	    to: string;
-	    contractAddress?: string;
-	    cumulativeGasUsed: number;
-	    gasUsed: number;
-	    logs ? : Array <Log>;
-        events ? : {
-            [eventName: string]: EventLog | EventLog[]
-        };
-        status: boolean;
-	}
+    // export interface TransactionReceipt {
+	//     transactionHash: string;
+	//     transactionIndex: number;
+	//     blockHash: string;
+	//     blockNumber: number;
+	//     from: string;
+	//     to: string;
+	//     contractAddress?: string;
+	//     cumulativeGasUsed: number;
+	//     gasUsed: number;
+	//     logs ? : Array <Log>;
+    //     events ? : {
+    //         [eventName: string]: EventLog | EventLog[]
+    //     };
+    //     status: boolean;
+	// }
 	export interface Transaction{
 		from?: string;
 		to?: string;
@@ -336,12 +337,13 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export interface TransactionOptions {
 		from?: string;
+		to?: string;
 		nonce?: number;
 		gas?: number;
 		gasLimit?: number;
-		gasPrice?: BigNumber | number;
+		gasPrice?: string | BigNumber | number;
 		data?: string;
-		value?: BigNumber | number;
+		value?: BigNumber | number | string;
 	}
     export interface IKMS{
 
@@ -1067,7 +1069,7 @@ function initWeb3ModalLib(callback: () => void){
 		async getChainId(){
 			await this.init();
 			if (!this.chainId)
-				this.chainId = await this._web3.eth.getChainId();
+				this.chainId = Number(await this._web3.eth.getChainId());
 			return this.chainId;
 		}
 		get provider(): any{
@@ -1087,11 +1089,11 @@ function initWeb3ModalLib(callback: () => void){
 			await this.init();
 			let _web3 = this._web3;  
 			// let gasPrice = tx.gasPrice ||  _web3.utils.numberToHex(await _web3.eth.getGasPrice());     	
-			let gas = tx.gas || await _web3.eth.estimateGas({
+			let gas = tx.gas || Number(await _web3.eth.estimateGas({
 				from: this.address,				
 				to: tx.to,
 				data: tx.data,
-			})		
+			}))	
 			let gasLimit = tx.gasLimit || gas;				
 			let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
 			if (privateKey || (this._account && this._account.privateKey)){
@@ -1229,7 +1231,8 @@ function initWeb3ModalLib(callback: () => void){
                 tx.gas = options.gas || options.gasLimit;
             } else {
                 try {
-                    tx.gas = await method.estimateGas({ from: this.address, to: address ? address : undefined, value: tx.value });
+					let gas = 
+                    tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : undefined, value: tx.value }));
                     tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
 
                 } catch (e) {
@@ -1269,7 +1272,7 @@ function initWeb3ModalLib(callback: () => void){
             return tx;
         }
 		async _send(abiHash: string, address: string, methodName: string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<TransactionReceipt>{			
-			let tx = await this._txObj(abiHash, address, methodName, params, options);
+			let tx: TransactionOptions = await this._txObj(abiHash, address, methodName, params, options);
             let receipt = await this.sendTransaction(tx);
             return receipt;
 		}
@@ -1438,11 +1441,11 @@ function initWeb3ModalLib(callback: () => void){
 				}				
 
                 if (!this._blockGasLimit) {
-                    this._blockGasLimit = (await _web3.eth.getBlock('latest')).gasLimit;
+                    this._blockGasLimit = Number((await _web3.eth.getBlock('latest')).gasLimit);
                 }
-                let gas;
+                let gas: number;
                 try {
-                    gas = await method.estimateGas({ from: this.address, to: address, value: value });
+                    gas = Number(await method.estimateGas({ from: this.address, to: address, value: value }));
                     gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
                 } catch (e) {
                     if (e.message == "Returned error: out of gas"){ // amino
@@ -1467,10 +1470,10 @@ function initWeb3ModalLib(callback: () => void){
                     }
                 }
 
-                let gasPrice = await _web3.eth.getGasPrice();
+                let gasPrice = Number(await _web3.eth.getGasPrice());
 
 				if (this._account && this._account.privateKey){
-					let tx = {
+					let tx: TransactionOptions = {
 						gas: gas,
                         gasPrice: gasPrice,
 						data: method.encodeABI(),
@@ -1486,7 +1489,7 @@ function initWeb3ModalLib(callback: () => void){
 				}
 				else{					
 					contract.options.address = address;
-					let nonce = await _web3.eth.getTransactionCount(this.address);
+					let nonce = Number(await _web3.eth.getTransactionCount(this.address));
 					let tx = {
 						from: this.address, 
 						nonce,
@@ -1509,9 +1512,9 @@ function initWeb3ModalLib(callback: () => void){
 						if (this._sendTxEventHandler.transactionHash)
 							this._sendTxEventHandler.transactionHash(null, receipt);
 					});
-					promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
-						if (this._sendTxEventHandler.confirmation && confNumber == 1)
-							this._sendTxEventHandler.confirmation(receipt);                
+					promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
+						// if (this._sendTxEventHandler.confirmation && Number(confirmationObj.confirmationNumber) == 1)
+							this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
 					});
 					result = await promiEvent;
 					if (methodName == 'deploy')
@@ -1557,7 +1560,7 @@ function initWeb3ModalLib(callback: () => void){
 					else {
 						await self.init();
 						let _web3 = self._web3;
-						let result = await _web3.eth.getBalance(address);
+						let result = Number(await _web3.eth.getBalance(address));
 						resolve(new BigNumber(result).div(10 ** decimals));
 					}
 				}
@@ -1589,7 +1592,7 @@ function initWeb3ModalLib(callback: () => void){
 		};
 		async getBlockNumber(): Promise<number>{
 			await this.init();
-			return this._web3.eth.getBlockNumber();
+			return Number(this._web3.eth.getBlockNumber());
 		};		
 		async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{	
 			await this.init();
@@ -1597,7 +1600,7 @@ function initWeb3ModalLib(callback: () => void){
 			if (typeof(block.timestamp) == 'string')
 				return parseInt(block.timestamp)
 			else	
-				return <number>block.timestamp
+				return Number(block.timestamp)
 		};
         set privateKey(value: string){
 			if (value && this._web3){
@@ -1847,15 +1850,15 @@ function initWeb3ModalLib(callback: () => void){
         			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         			let result;
         			if ((self._account && self._account.privateKey)){
-						let nonce = await _web3.eth.getTransactionCount(address);        				
-        				let gas = await _web3.eth.estimateGas({
+						let nonce = Number(await _web3.eth.getTransactionCount(address));        				
+        				let gas = Number(await _web3.eth.estimateGas({
 						     from: address,       
 						     nonce: nonce, 
 						     to: to,     
 						     value: value
-						});
-						let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-        				let tx = {
+						}));
+						let price = Number(await _web3.eth.getGasPrice());
+        				let tx: TransactionOptions = {
         					from: address,
 							nonce: nonce,
 							gasPrice: price,
@@ -1956,7 +1959,7 @@ function initWeb3ModalLib(callback: () => void){
 						resolve(result);
 					}
 					else {
-						result = await _web3.eth.sign(msg, address, null);
+						result = await _web3.eth.sign(msg, address);
 						resolve(result);	
 					}
 				}	
@@ -2043,7 +2046,7 @@ function initWeb3ModalLib(callback: () => void){
 				await self.init();
 				try{
 					if (!this._gasLimit)
-						this._gasLimit = (await this._web3.eth.getBlock('latest')).gasLimit;
+						this._gasLimit = Number((await this._web3.eth.getBlock('latest')).gasLimit);
 					resolve(this._gasLimit);
 				}catch(e){
 					reject(e);
@@ -2054,7 +2057,7 @@ function initWeb3ModalLib(callback: () => void){
 			return new Promise(async (resolve,reject)=>{
 				await this.init();
 				try{					
-					resolve(new BigNumber(await this._web3.eth.getGasPrice()));
+					resolve(new BigNumber(Number(await this._web3.eth.getGasPrice())));
 				}catch(e){
 					reject(e);
 				}
@@ -2064,15 +2067,18 @@ function initWeb3ModalLib(callback: () => void){
 			return new Promise(async (resolve,reject)=>{
 				await this.init();
 				try{					
-					resolve(await this._web3.eth.getTransactionCount(this.address));
+					resolve(Number(await this._web3.eth.getTransactionCount(this.address)));
 				}catch(e){
 					reject(e);
 				}
 			});
 		}
-		async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
+		async sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt> {
 			await this.init();
-			let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};
+			let _transaction = {...transaction, 
+				value:typeof(transaction.value)=='string'?transaction.value:transaction.value?transaction.value.toFixed():undefined, 
+				gasPrice:typeof(transaction.gasPrice)=='string'?transaction.gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined
+			};
 			let currentProvider = this.provider;
 			try {
 				if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
@@ -2095,9 +2101,9 @@ function initWeb3ModalLib(callback: () => void){
 						if (this._sendTxEventHandler.transactionHash)
 							this._sendTxEventHandler.transactionHash(null, receipt);
 					});
-					promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
-						if (this._sendTxEventHandler.confirmation && confNumber == 1)
-							this._sendTxEventHandler.confirmation(receipt);                
+					promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
+						// if (this._sendTxEventHandler.confirmation && Number(confNumber) == 1)
+							this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
 					});
 					return await promiEvent;
 				}
@@ -2116,8 +2122,8 @@ function initWeb3ModalLib(callback: () => void){
 			return {
 				from: web3Receipt.from,
 				to: web3Receipt.to,
-				nonce: web3Receipt.nonce,
-				gas: web3Receipt.gas,
+				nonce: Number(web3Receipt.nonce),
+				gas: Number(web3Receipt.gas),
 				gasPrice: new BigNumber(web3Receipt.gasPrice),
 				data: web3Receipt.input,
 				value: new BigNumber(web3Receipt.value)

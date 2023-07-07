@@ -3648,6 +3648,34 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// src/web3.ts
+var web3_exports = {};
+__export(web3_exports, {
+  Web3: () => Web3
+});
+var eth, utils, Web3;
+var init_web3 = __esm({
+  "src/web3.ts"() {
+    if (typeof module == "object" && module["exports"]) {
+      eth = require("web3-eth");
+      utils = require("web3-utils");
+    }
+    Web3 = class {
+      constructor(provider) {
+        this.utils = utils;
+        this.eth = new eth(provider);
+      }
+      get currentProvider() {
+        return this.eth.currentProvider;
+      }
+      setProvider(provider) {
+        return this.eth.setProvider(provider);
+      }
+    };
+    Web3.utils = utils;
+  }
+});
+
 // node_modules/@ijstech/eth-contract/lib/index.js
 var require_lib = __commonJS({
   "node_modules/@ijstech/eth-contract/lib/index.js"(exports) {
@@ -3774,11 +3802,23 @@ var require_lib = __commonJS({
       }
       async _send(methodName, params, options) {
         params = params || [];
-        if (!methodName)
-          params.unshift(this._bytecode);
         return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
       }
       async __deploy(params, options) {
+        var _a, _b;
+        let bytecode = this._bytecode;
+        let libraries = (_a = options) === null || _a === void 0 ? void 0 : _a.libraries;
+        let linkReferences = (_b = options) === null || _b === void 0 ? void 0 : _b.linkReferences;
+        if (libraries && linkReferences) {
+          for (let file in libraries) {
+            for (let contract in libraries[file]) {
+              for (let offset of linkReferences[file][contract]) {
+                bytecode = bytecode.substring(0, offset.start * 2 + 2) + libraries[file][contract].replace("0x", "") + bytecode.substring(offset.start * 2 + 2 + offset.length * 2);
+              }
+            }
+          }
+        }
+        params.unshift(bytecode);
         let receipt = await this._send("", params, options);
         this.address = receipt.contractAddress;
         return this.address;
@@ -3796,7 +3836,7 @@ var require_lib = __commonJS({
           return await this.call(methodName, params);
         } else if (method.stateMutability == "payable") {
           let value = params.pop();
-          return await this.call(methodName, params, { value });
+          return await this.send(methodName, params, { value });
         } else {
           return await this.send(methodName, params);
         }
@@ -3958,34 +3998,6 @@ var require_contract = __commonJS({
   }
 });
 
-// src/web3.ts
-var web3_exports = {};
-__export(web3_exports, {
-  Web3: () => Web3
-});
-var eth, utils, Web3;
-var init_web3 = __esm({
-  "src/web3.ts"() {
-    if (typeof module == "object" && module["exports"]) {
-      eth = require("web3-eth");
-      utils = require("web3-utils");
-    }
-    Web3 = class {
-      constructor(provider) {
-        this.utils = utils;
-        this.eth = new eth(provider);
-      }
-      get currentProvider() {
-        return this.eth.currentProvider;
-      }
-      setProvider(provider) {
-        return this.eth.setProvider(provider);
-      }
-    };
-    Web3.utils = utils;
-  }
-});
-
 // src/contracts/bin/erc20.json
 var require_erc20 = __commonJS({
   "src/contracts/bin/erc20.json"(exports, module2) {
@@ -4012,6 +4024,7 @@ __export(exports, {
 });
 
 // src/wallet.ts
+init_web3();
 var import_bignumber3 = __toModule(require("bignumber.js"));
 
 // src/contracts/index.ts
@@ -5596,7 +5609,7 @@ var _Wallet = class {
   async getChainId() {
     await this.init();
     if (!this.chainId)
-      this.chainId = await this._web3.eth.getChainId();
+      this.chainId = Number(await this._web3.eth.getChainId());
     return this.chainId;
   }
   get provider() {
@@ -5615,11 +5628,11 @@ var _Wallet = class {
   async signTransaction(tx, privateKey) {
     await this.init();
     let _web3 = this._web3;
-    let gas = tx.gas || await _web3.eth.estimateGas({
+    let gas = tx.gas || Number(await _web3.eth.estimateGas({
       from: this.address,
       to: tx.to,
       data: tx.data
-    });
+    }));
     let gasLimit = tx.gasLimit || gas;
     let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
     if (privateKey || this._account && this._account.privateKey) {
@@ -5750,7 +5763,7 @@ var _Wallet = class {
       tx.gas = options.gas || options.gasLimit;
     } else {
       try {
-        tx.gas = await method.estimateGas({ from: this.address, to: address ? address : void 0, value: tx.value });
+        let gas = tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: tx.value }));
         tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
       } catch (e) {
         if (e.message == "Returned error: out of gas") {
@@ -5944,11 +5957,11 @@ var _Wallet = class {
         return method.call({ from: this.address });
       }
       if (!this._blockGasLimit) {
-        this._blockGasLimit = (await _web3.eth.getBlock("latest")).gasLimit;
+        this._blockGasLimit = Number((await _web3.eth.getBlock("latest")).gasLimit);
       }
       let gas;
       try {
-        gas = await method.estimateGas({ from: this.address, to: address, value });
+        gas = Number(await method.estimateGas({ from: this.address, to: address, value }));
         gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
       } catch (e) {
         if (e.message == "Returned error: out of gas") {
@@ -5972,7 +5985,7 @@ var _Wallet = class {
           throw e;
         }
       }
-      let gasPrice = await _web3.eth.getGasPrice();
+      let gasPrice = Number(await _web3.eth.getGasPrice());
       if (this._account && this._account.privateKey) {
         let tx = {
           gas,
@@ -5989,7 +6002,7 @@ var _Wallet = class {
         return result;
       } else {
         contract.options.address = address;
-        let nonce = await _web3.eth.getTransactionCount(this.address);
+        let nonce = Number(await _web3.eth.getTransactionCount(this.address));
         let tx = {
           from: this.address,
           nonce,
@@ -6011,9 +6024,8 @@ var _Wallet = class {
           if (this._sendTxEventHandler.transactionHash)
             this._sendTxEventHandler.transactionHash(null, receipt);
         });
-        promiEvent.on("confirmation", (confNumber, receipt) => {
-          if (this._sendTxEventHandler.confirmation && confNumber == 1)
-            this._sendTxEventHandler.confirmation(receipt);
+        promiEvent.once("confirmation", (confirmationObj) => {
+          this._sendTxEventHandler.confirmation(confirmationObj.receipt);
         });
         result = await promiEvent;
         if (methodName == "deploy")
@@ -6057,7 +6069,7 @@ var _Wallet = class {
         } else {
           await self.init();
           let _web3 = self._web3;
-          let result = await _web3.eth.getBalance(address);
+          let result = Number(await _web3.eth.getBalance(address));
           resolve(new import_bignumber3.BigNumber(result).div(10 ** decimals));
         }
       } catch (err) {
@@ -6088,7 +6100,7 @@ var _Wallet = class {
   }
   async getBlockNumber() {
     await this.init();
-    return this._web3.eth.getBlockNumber();
+    return Number(this._web3.eth.getBlockNumber());
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
     await this.init();
@@ -6096,7 +6108,7 @@ var _Wallet = class {
     if (typeof block.timestamp == "string")
       return parseInt(block.timestamp);
     else
-      return block.timestamp;
+      return Number(block.timestamp);
   }
   set privateKey(value) {
     if (value && this._web3) {
@@ -6303,14 +6315,14 @@ var _Wallet = class {
         let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
         let result;
         if (self._account && self._account.privateKey) {
-          let nonce = await _web3.eth.getTransactionCount(address);
-          let gas = await _web3.eth.estimateGas({
+          let nonce = Number(await _web3.eth.getTransactionCount(address));
+          let gas = Number(await _web3.eth.estimateGas({
             from: address,
             nonce,
             to,
             value
-          });
-          let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
+          }));
+          let price = Number(await _web3.eth.getGasPrice());
           let tx = {
             from: address,
             nonce,
@@ -6406,7 +6418,7 @@ var _Wallet = class {
           result = await _web3.eth.personal.sign(msg, address, null);
           resolve(result);
         } else {
-          result = await _web3.eth.sign(msg, address, null);
+          result = await _web3.eth.sign(msg, address);
           resolve(result);
         }
       } catch (err) {
@@ -6490,7 +6502,7 @@ var _Wallet = class {
       await self.init();
       try {
         if (!this._gasLimit)
-          this._gasLimit = (await this._web3.eth.getBlock("latest")).gasLimit;
+          this._gasLimit = Number((await this._web3.eth.getBlock("latest")).gasLimit);
         resolve(this._gasLimit);
       } catch (e) {
         reject(e);
@@ -6501,7 +6513,7 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(new import_bignumber3.BigNumber(await this._web3.eth.getGasPrice()));
+        resolve(new import_bignumber3.BigNumber(Number(await this._web3.eth.getGasPrice())));
       } catch (e) {
         reject(e);
       }
@@ -6511,7 +6523,7 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(await this._web3.eth.getTransactionCount(this.address));
+        resolve(Number(await this._web3.eth.getTransactionCount(this.address)));
       } catch (e) {
         reject(e);
       }
@@ -6519,7 +6531,10 @@ var _Wallet = class {
   }
   async sendTransaction(transaction) {
     await this.init();
-    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
+    let _transaction = __spreadProps(__spreadValues({}, transaction), {
+      value: typeof transaction.value == "string" ? transaction.value : transaction.value ? transaction.value.toFixed() : void 0,
+      gasPrice: typeof transaction.gasPrice == "string" ? transaction.gasPrice : transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0
+    });
     let currentProvider = this.provider;
     try {
       if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
@@ -6541,9 +6556,8 @@ var _Wallet = class {
           if (this._sendTxEventHandler.transactionHash)
             this._sendTxEventHandler.transactionHash(null, receipt);
         });
-        promiEvent.on("confirmation", (confNumber, receipt) => {
-          if (this._sendTxEventHandler.confirmation && confNumber == 1)
-            this._sendTxEventHandler.confirmation(receipt);
+        promiEvent.once("confirmation", (confirmationObj) => {
+          this._sendTxEventHandler.confirmation(confirmationObj.receipt);
         });
         return await promiEvent;
       }
@@ -6561,8 +6575,8 @@ var _Wallet = class {
     return {
       from: web3Receipt.from,
       to: web3Receipt.to,
-      nonce: web3Receipt.nonce,
-      gas: web3Receipt.gas,
+      nonce: Number(web3Receipt.nonce),
+      gas: Number(web3Receipt.gas),
       gasPrice: new import_bignumber3.BigNumber(web3Receipt.gasPrice),
       data: web3Receipt.input,
       value: new import_bignumber3.BigNumber(web3Receipt.value)

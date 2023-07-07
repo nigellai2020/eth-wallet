@@ -1,4 +1,4 @@
-import {IKMS, IAccount, Wallet, TransactionReceipt, Transaction} from './wallet';
+import {IKMS, IAccount, Wallet, TransactionReceipt, Transaction, ConfirmationObject, TransactionOptions} from './wallet';
 import {MessageTypes, SignTypedDataVersion, TypedMessage} from './types';
 import { recoverTypedSignature, signTypedDataWithPrivateKey } from './signTypedData';
 // import {KMS} from './kms';
@@ -110,11 +110,11 @@ export class NodeWallet extends Wallet{
             }				
 
             if (!this._blockGasLimit) {
-                this._blockGasLimit = (await _web3.eth.getBlock('latest')).gasLimit;
+                this._blockGasLimit = Number((await _web3.eth.getBlock('latest')).gasLimit);
             }
             let gas;
             try {
-                gas = await method.estimateGas({ from: this.address, to: address, value: value });
+                gas = Number(await method.estimateGas({ from: this.address, to: address, value: value }));
                 gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
             } catch (e) {
                 if (e.message == "Returned error: out of gas"){ // amino
@@ -139,10 +139,10 @@ export class NodeWallet extends Wallet{
                 }
             }
 
-            let gasPrice = await _web3.eth.getGasPrice();
+            let gasPrice = Number(await _web3.eth.getGasPrice());
 
             if (this._account && this._account.privateKey){
-                let tx = {
+                let tx: TransactionOptions = {
                     gas: gas,
                     gasPrice: gasPrice,
                     data: method.encodeABI(),
@@ -177,8 +177,8 @@ export class NodeWallet extends Wallet{
             // }
             else{					
                 contract.options.address = address;
-                let nonce = await _web3.eth.getTransactionCount(this.address);
-                let tx = {
+                let nonce = Number(await _web3.eth.getTransactionCount(this.address));
+                let tx: TransactionOptions = {
                     from: this.address, 
                     nonce,
                     gasPrice,
@@ -200,9 +200,9 @@ export class NodeWallet extends Wallet{
                     if (this._sendTxEventHandler.transactionHash)
                         this._sendTxEventHandler.transactionHash(null, receipt);
                 });
-                promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
-                    if (this._sendTxEventHandler.confirmation && confNumber == 1)
-                        this._sendTxEventHandler.confirmation(receipt);                
+                promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
+                    // if (this._sendTxEventHandler.confirmation && Number(confNumber) == 1)
+                        this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
                 });
                 result = await promiEvent;
                 if (methodName == 'deploy')
@@ -226,15 +226,15 @@ export class NodeWallet extends Wallet{
                 let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
                 let result;
                 if ((self._account && self._account.privateKey) /*|| self.kms*/){
-                    let nonce = await _web3.eth.getTransactionCount(address);        				
-                    let gas = await _web3.eth.estimateGas({
+                    let nonce = Number(await _web3.eth.getTransactionCount(address));        				
+                    let gas = Number(await _web3.eth.estimateGas({
                          from: address,       
                          nonce: nonce, 
                          to: to,     
                          value: value
-                    });
-                    let price = _web3.utils.numberToHex(await _web3.eth.getGasPrice());
-                    let tx = {
+                    }));
+                    let price = _web3.utils.numberToHex(Number(await _web3.eth.getGasPrice()));
+                    let tx: TransactionOptions = {
                         from: address,
                         nonce: nonce,
                         gasPrice: price,
@@ -290,13 +290,13 @@ export class NodeWallet extends Wallet{
                     if (this._sendTxEventHandler.transactionHash)
                         this._sendTxEventHandler.transactionHash(error);
                 });
-                promiEvent.on('transactionHash', (receipt: string) => {
+                promiEvent.once('transactionHash', (receipt: string) => {
                     if (this._sendTxEventHandler.transactionHash)
                         this._sendTxEventHandler.transactionHash(null, receipt);
                 });
-                promiEvent.on('confirmation', (confNumber: number, receipt: any) => {           
-                    if (this._sendTxEventHandler.confirmation && confNumber == 1)
-                        this._sendTxEventHandler.confirmation(receipt);                
+                promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
+                    // if (this._sendTxEventHandler.confirmation && Number(confNumber) == 1)
+                        this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
                 });
                 return await promiEvent;
             }
@@ -333,7 +333,7 @@ export class NodeWallet extends Wallet{
                     resolve(result);
                 }
                 else {
-                    result = await _web3.eth.sign(msg, address, null);
+                    result = await _web3.eth.sign(msg, address);
                     resolve(result);	
                 }
             }	
@@ -350,11 +350,11 @@ export class NodeWallet extends Wallet{
         this.init();
         let _web3 = this._web3;  
         // let gasPrice = tx.gasPrice ||  _web3.utils.numberToHex(await _web3.eth.getGasPrice());     	
-        let gas = tx.gas || await _web3.eth.estimateGas({
+        let gas = tx.gas || Number(await _web3.eth.estimateGas({
             from: this.address,				
             to: tx.to,
             data: tx.data,
-        })		
+        }))
         let gasLimit = tx.gasLimit || gas;				
         let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
         if (privateKey || (this._account && this._account.privateKey)){

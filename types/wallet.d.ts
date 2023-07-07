@@ -4,11 +4,12 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 declare let Web3: any;
-import { IWeb3 } from './web3';
+import { IWeb3, ConfirmationObject, TransactionReceipt } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 import { IEventBusRegistry } from './eventBus';
+export { TransactionReceipt, ConfirmationObject };
 export declare function toString(value: any): any;
 export declare function stringToBytes32(value: string | stringArray): string | string[];
 export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
@@ -179,7 +180,7 @@ export interface IRpcWallet extends IWallet {
 }
 export interface IContractMethod {
     call: any;
-    estimateGas(...params: any[]): Promise<number>;
+    estimateGas(...params: any[]): Promise<BigInt>;
     encodeABI(): string;
 }
 export interface IContract {
@@ -197,11 +198,11 @@ export interface IContract {
 export interface Event {
     name: string;
     address: string;
-    blockNumber: number;
-    logIndex: number;
+    blockNumber: BigInt;
+    logIndex: BigInt;
     topics: string[];
     transactionHash: string;
-    transactionIndex: number;
+    transactionIndex: BigInt;
     data: any;
     rawData: any;
 }
@@ -209,42 +210,26 @@ export interface Log {
     address: string;
     data: string;
     topics: Array<string>;
-    logIndex: number;
+    logIndex: BigInt;
     transactionHash?: string;
-    transactionIndex: number;
+    transactionIndex: BigInt;
     blockHash?: string;
     type?: string;
-    blockNumber: number;
+    blockNumber: BigInt;
 }
 export interface EventLog {
     event: string;
     address: string;
     returnValues: any;
-    logIndex: number;
-    transactionIndex: number;
+    logIndex: BigInt;
+    transactionIndex: BigInt;
     transactionHash: string;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     raw?: {
         data: string;
         topics: string[];
     };
-}
-export interface TransactionReceipt {
-    transactionHash: string;
-    transactionIndex: number;
-    blockHash: string;
-    blockNumber: number;
-    from: string;
-    to: string;
-    contractAddress?: string;
-    cumulativeGasUsed: number;
-    gasUsed: number;
-    logs?: Array<Log>;
-    events?: {
-        [eventName: string]: EventLog | EventLog[];
-    };
-    status: boolean;
 }
 export interface Transaction {
     from?: string;
@@ -257,12 +242,13 @@ export interface Transaction {
 }
 export interface TransactionOptions {
     from?: string;
+    to?: string;
     nonce?: number;
     gas?: number;
     gasLimit?: number;
-    gasPrice?: BigNumber | number;
+    gasPrice?: string | BigNumber | number;
     data?: string;
-    value?: BigNumber | number;
+    value?: BigNumber | number | string;
 }
 export interface IKMS {
 }
@@ -508,7 +494,7 @@ export declare class Wallet implements IClientWallet {
     blockGasLimit(): Promise<number>;
     getGasPrice(): Promise<BigNumber>;
     transactionCount(): Promise<number>;
-    sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+    sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
     getTransaction(transactionHash: string): Promise<Transaction>;
     getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
     call(transaction: Transaction): Promise<any>;
@@ -538,4 +524,3 @@ export declare class RpcWallet extends Wallet implements IRpcWallet {
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     unregisterWalletEvent(event: IEventBusRegistry): void;
 }
-export {};

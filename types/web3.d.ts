@@ -106,7 +106,12 @@ export interface HttpProviderOptions {
     timeout?: number;
     headers?: HttpHeader[];
     withCredentials?: boolean;
-    agent?: any;
+    agent?: HttpAgent;
+}
+export interface HttpAgent {
+    http?: string;
+    https?: string;
+    baseUrl?: string;
 }
 export interface HttpProvider {
     constructor(host: string, options?: HttpProviderOptions): any;
@@ -278,7 +283,7 @@ export interface EncryptedKeystoreV3Json {
 export interface Account {
     address: string;
     privateKey: string;
-    signTransaction: (transactionConfig: TransactionConfig, callback?: (signTransaction: SignedTransaction) => void) => Promise<SignedTransaction>;
+    signTransaction: (transactionConfig: TransactionConfig) => Promise<SignedTransaction>;
     sign: (data: string) => Sign;
     encrypt: (password: string) => EncryptedKeystoreV3Json;
 }
@@ -316,7 +321,7 @@ export interface Accounts {
     setProvider(provider: provider): boolean;
     create(entropy?: string): Account;
     privateKeyToAccount(privateKey: string, ignoreLength?: boolean): Account;
-    signTransaction(transactionConfig: TransactionConfig, privateKey: string, callback?: (error: Error, signedTransaction: SignedTransaction) => void): Promise<SignedTransaction>;
+    signTransaction(transactionConfig: TransactionConfig, privateKey: string): Promise<SignedTransaction>;
     recoverTransaction(signature: string): string;
     hashMessage(message: string): string;
     sign(data: string, privateKey: string): Sign;
@@ -327,7 +332,7 @@ export interface Accounts {
     decrypt(keystoreJsonV3: EncryptedKeystoreV3Json, password: string): Account;
     wallet: WalletBase;
 }
-export type BlockNumber = string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+export type BlockNumber = BigInt | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
 export interface Options extends ContractOptions {
     address: string;
     jsonInterface: AbiItem[];
@@ -347,11 +352,11 @@ export interface EventLog {
     event: string;
     address: string;
     returnValues: any;
-    logIndex: number;
-    transactionIndex: number;
+    logIndex: BigInt;
+    transactionIndex: BigInt;
     transactionHash: string;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     raw?: {
         data: string;
         topics: any[];
@@ -361,65 +366,70 @@ export interface Log {
     address: string;
     data: string;
     topics: string[];
-    logIndex: number;
-    transactionIndex: number;
+    logIndex: BigInt;
+    transactionIndex: BigInt;
     transactionHash: string;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     removed: boolean;
 }
 export interface TransactionReceipt {
-    status: boolean;
+    status: BigInt;
     transactionHash: string;
-    transactionIndex: number;
+    transactionIndex: BigInt;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     from: string;
     to: string;
     contractAddress?: string;
-    cumulativeGasUsed: number;
-    gasUsed: number;
-    effectiveGasPrice: number;
+    cumulativeGasUsed: BigInt;
+    gasUsed: BigInt;
+    effectiveGasPrice: BigInt;
     logs: Log[];
     logsBloom: string;
     events?: {
         [eventName: string]: EventLog;
     };
 }
+export interface ConfirmationObject {
+    confirmationNumber: BigInt;
+    receipt: TransactionReceipt;
+    latestBlockHash: string;
+}
 export interface PromiEvent<T> extends Promise<T> {
     once(type: 'sending', handler: (payload: object) => void): PromiEvent<T>;
     once(type: 'sent', handler: (payload: object) => void): PromiEvent<T>;
     once(type: 'transactionHash', handler: (transactionHash: string) => void): PromiEvent<T>;
     once(type: 'receipt', handler: (receipt: TransactionReceipt) => void): PromiEvent<T>;
-    once(type: 'confirmation', handler: (confirmationNumber: number, receipt: TransactionReceipt, latestBlockHash?: string) => void): PromiEvent<T>;
+    once(type: 'confirmation', handler: (confirmationObject: ConfirmationObject) => void): PromiEvent<T>;
     once(type: 'error', handler: (error: Error) => void): PromiEvent<T>;
     once(type: 'error' | 'confirmation' | 'receipt' | 'transactionHash' | 'sent' | 'sending', handler: (error: Error | TransactionReceipt | string | object) => void): PromiEvent<T>;
     on(type: 'sending', handler: (payload: object) => void): PromiEvent<T>;
     on(type: 'sent', handler: (payload: object) => void): PromiEvent<T>;
     on(type: 'transactionHash', handler: (receipt: string) => void): PromiEvent<T>;
     on(type: 'receipt', handler: (receipt: TransactionReceipt) => void): PromiEvent<T>;
-    on(type: 'confirmation', handler: (confNumber: number, receipt: TransactionReceipt, latestBlockHash?: string) => void): PromiEvent<T>;
+    on(type: 'confirmation', handler: (confirmationObject: ConfirmationObject) => void): PromiEvent<T>;
     on(type: 'error', handler: (error: Error) => void): PromiEvent<T>;
     on(type: 'error' | 'confirmation' | 'receipt' | 'transactionHash' | 'sent' | 'sending', handler: (error: Error | TransactionReceipt | string | object) => void): PromiEvent<T>;
 }
 export interface CallOptions {
     from?: string;
     gasPrice?: string;
-    gas?: number;
+    gas?: BigInt;
 }
 export interface EstimateGasOptions {
     from?: string;
-    gas?: number;
+    gas?: BigInt;
     value?: number | string | BigNumber;
 }
 export interface ContractSendMethod {
-    send(options: SendOptions, callback?: (err: Error, transactionHash: string) => void): PromiEvent<Contract>;
-    call(options?: CallOptions, callback?: (err: Error, result: any) => void): Promise<any>;
-    estimateGas(options: EstimateGasOptions, callback?: (err: Error, gas: number) => void): Promise<number>;
-    estimateGas(callback: (err: Error, gas: number) => void): Promise<number>;
-    estimateGas(options: EstimateGasOptions, callback: (err: Error, gas: number) => void): Promise<number>;
-    estimateGas(options: EstimateGasOptions): Promise<number>;
-    estimateGas(): Promise<number>;
+    send(options: SendOptions): PromiEvent<Contract>;
+    call(options?: CallOptions): Promise<any>;
+    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
+    estimateGas(): Promise<BigInt>;
+    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
+    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
+    estimateGas(): Promise<BigInt>;
     encodeABI(): string;
 }
 export interface EventData {
@@ -432,11 +442,11 @@ export interface EventData {
     };
     event: string;
     signature: string;
-    logIndex: number;
-    transactionIndex: number;
+    logIndex: BigInt;
+    transactionIndex: BigInt;
     transactionHash: string;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     address: string;
 }
 export interface Filter {
@@ -476,9 +486,9 @@ export interface Contract {
     once(event: string, options: EventOptions, callback: (error: Error, event: EventData) => void): void;
     events: any;
     getPastEvents(event: string): Promise<EventData[]>;
-    getPastEvents(event: string, options: PastEventOptions, callback: (error: Error, events: EventData[]) => void): Promise<EventData[]>;
     getPastEvents(event: string, options: PastEventOptions): Promise<EventData[]>;
-    getPastEvents(event: string, callback: (error: Error, events: EventData[]) => void): Promise<EventData[]>;
+    getPastEvents(event: string, options: PastEventOptions): Promise<EventData[]>;
+    getPastEvents(event: string): Promise<EventData[]>;
 }
 export interface IndirectOptions {
     institution: string;
@@ -547,15 +557,15 @@ export interface Personal {
     BatchRequest: new () => BatchRequest;
     setProvider(provider: provider): boolean;
     extend(extension: Extension): any;
-    newAccount(password: string, callback?: (error: Error, address: string) => void): Promise<string>;
-    sign(dataToSign: string, address: string, password: string, callback?: (error: Error, signature: string) => void): Promise<string>;
-    ecRecover(dataThatWasSigned: string, signature: string, callback?: (error: Error, address: string) => void): Promise<string>;
-    signTransaction(transactionConfig: TransactionConfig, password: string, callback?: (error: Error, RLPEncodedTransaction: RLPEncodedTransaction) => void): Promise<RLPEncodedTransaction>;
-    sendTransaction(transactionConfig: TransactionConfig, password: string, callback?: (error: Error, transactionHash: string) => void): Promise<string>;
-    unlockAccount(address: string, password: string, unlockDuration: number, callback?: (error: Error) => void): Promise<boolean>;
-    lockAccount(address: string, callback?: (error: Error, success: boolean) => void): Promise<boolean>;
-    getAccounts(callback?: (error: Error, accounts: string[]) => void): Promise<string[]>;
-    importRawKey(privateKey: string, password: string, callback?: (error: Error, result: string) => void): Promise<string>;
+    newAccount(password: string): Promise<string>;
+    sign(dataToSign: string, address: string, password: string): Promise<string>;
+    ecRecover(dataThatWasSigned: string, signature: string): Promise<string>;
+    signTransaction(transactionConfig: TransactionConfig, password: string): Promise<RLPEncodedTransaction>;
+    sendTransaction(transactionConfig: TransactionConfig, password: string): Promise<string>;
+    unlockAccount(address: string, password: string, unlockDuration: number): Promise<boolean>;
+    lockAccount(address: string): Promise<boolean>;
+    getAccounts(): Promise<string[]>;
+    importRawKey(privateKey: string, password: string): Promise<string>;
 }
 export interface AbiCoder {
     encodeFunctionSignature(functionName: string | AbiItem): string;
@@ -586,10 +596,7 @@ export interface Network {
     BatchRequest: new () => BatchRequest;
     setProvider(provider: provider): boolean;
     extend(extension: Extension): any;
-    getNetworkType(callback?: (error: Error, returnValue: string) => void): Promise<string>;
-    getId(callback?: (error: Error, id: number) => void): Promise<number>;
-    isListening(callback?: (error: Error, listening: boolean) => void): Promise<boolean>;
-    getPeerCount(callback?: (error: Error, peerCount: number) => void): Promise<number>;
+    getNetworkType(): Promise<string>;
 }
 export interface SubscriptionOptions {
     subscription: string;
@@ -618,7 +625,7 @@ export interface Syncing {
     PulledStates: number;
 }
 export interface BlockHeader {
-    number: number;
+    number: BigInt;
     hash: string;
     parentHash: string;
     nonce: string;
@@ -629,21 +636,21 @@ export interface BlockHeader {
     receiptsRoot: string;
     miner: string;
     extraData: string;
-    gasLimit: number;
-    gasUsed: number;
-    timestamp: number | string;
-    baseFeePerGas?: number;
+    gasLimit: BigInt;
+    gasUsed: BigInt;
+    timestamp: BigInt;
+    baseFeePerGas?: BigInt;
 }
 export interface FeeHistoryResult {
     baseFeePerGas: string[];
     gasUsedRatio: number[];
-    oldestBlock: number;
+    oldestBlock: BigInt;
     reward: string[][];
 }
 export interface BlockTransactionBase extends BlockHeader {
-    size: number;
-    difficulty: number;
-    totalDifficulty: number;
+    size: BigInt;
+    difficulty: BigInt;
+    totalDifficulty: BigInt;
     uncles: string[];
 }
 export interface BlockTransactionString extends BlockTransactionBase {
@@ -656,17 +663,17 @@ export interface AccessTuple {
 export type AccessList = AccessTuple[];
 export interface Transaction {
     hash: string;
-    nonce: number;
+    nonce: BigInt;
     blockHash: string | null;
-    blockNumber: number | null;
-    transactionIndex: number | null;
+    blockNumber: BigInt | null;
+    transactionIndex: BigInt | null;
     from: string;
     to: string | null;
     value: string;
     gasPrice: string;
-    maxPriorityFeePerGas?: number | string | BigNumber;
-    maxFeePerGas?: number | string | BigNumber;
-    gas: number;
+    maxPriorityFeePerGas?: BigInt | string | BigNumber;
+    maxFeePerGas?: BigInt | string | BigNumber;
+    gas: BigInt;
     input: string;
     chainId?: string;
     accessList?: AccessList;
@@ -707,67 +714,67 @@ export interface Eth {
     readonly providers: Providers;
     extend(extension: Extension): any;
     clearSubscriptions(callback: (error: Error, result: boolean) => void): void;
-    subscribe(type: 'logs', options: LogsOptions, callback?: (error: Error, log: Log) => void): Subscription<Log>;
-    subscribe(type: 'syncing', callback?: (error: Error, result: Syncing) => void): Subscription<Syncing>;
-    subscribe(type: 'newBlockHeaders', callback?: (error: Error, blockHeader: BlockHeader) => void): Subscription<BlockHeader>;
-    subscribe(type: 'pendingTransactions', callback?: (error: Error, transactionHash: string) => void): Subscription<string>;
-    getProtocolVersion(callback?: (error: Error, protocolVersion: string) => void): Promise<string>;
-    isSyncing(callback?: (error: Error, syncing: Syncing) => void): Promise<Syncing | boolean>;
-    getCoinbase(callback?: (error: Error, coinbaseAddress: string) => void): Promise<string>;
-    isMining(callback?: (error: Error, mining: boolean) => void): Promise<boolean>;
-    getHashrate(callback?: (error: Error, hashes: number) => void): Promise<number>;
-    getNodeInfo(callback?: (error: Error, version: string) => void): Promise<string>;
-    getChainId(callback?: (error: Error, version: number) => void): Promise<number>;
-    getGasPrice(callback?: (error: Error, gasPrice: string) => void): Promise<string>;
-    getFeeHistory(blockCount: number | BigNumber | BigNumber | string, lastBlock: number | BigNumber | BigNumber | string, rewardPercentiles: number[], callback?: (error: Error, feeHistory: FeeHistoryResult) => void): Promise<FeeHistoryResult>;
-    getAccounts(callback?: (error: Error, accounts: string[]) => void): Promise<string[]>;
-    getBlockNumber(callback?: (error: Error, blockNumber: number) => void): Promise<number>;
-    getBalance(address: string): Promise<string>;
-    getBalance(address: string, defaultBlock: BlockNumber): Promise<string>;
-    getBalance(address: string, callback?: (error: Error, balance: string) => void): Promise<string>;
-    getBalance(address: string, defaultBlock: BlockNumber, callback?: (error: Error, balance: string) => void): Promise<string>;
+    subscribe(type: 'logs', options: LogsOptions): Subscription<Log>;
+    subscribe(type: 'syncing'): Subscription<Syncing>;
+    subscribe(type: 'newBlockHeaders'): Subscription<BlockHeader>;
+    subscribe(type: 'pendingTransactions'): Subscription<string>;
+    getProtocolVersion(): Promise<string>;
+    isSyncing(): Promise<Syncing | boolean>;
+    getCoinbase(): Promise<string>;
+    isMining(): Promise<boolean>;
+    getHashRate(): Promise<number>;
+    getNodeInfo(): Promise<string>;
+    getChainId(): Promise<BigInt>;
+    getGasPrice(): Promise<BigInt>;
+    getFeeHistory(blockCount: number | BigNumber | BigNumber | string, lastBlock: number | BigNumber | BigNumber | string, rewardPercentiles: number[]): Promise<FeeHistoryResult>;
+    getAccounts(): Promise<string[]>;
+    getBlockNumber(): Promise<BigInt>;
+    getBalance(address: string): Promise<BigInt>;
+    getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+    getBalance(address: string): Promise<BigInt>;
+    getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
     getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
     getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
-    getStorageAt(address: string, position: number | BigNumber | string, callback?: (error: Error, storageAt: string) => void): Promise<string>;
-    getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber, callback?: (error: Error, storageAt: string) => void): Promise<string>;
+    getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
+    getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
     getCode(address: string): Promise<string>;
     getCode(address: string, defaultBlock: BlockNumber): Promise<string>;
-    getCode(address: string, callback?: (error: Error, code: string) => void): Promise<string>;
-    getCode(address: string, defaultBlock: BlockNumber, callback?: (error: Error, code: string) => void): Promise<string>;
+    getCode(address: string): Promise<string>;
+    getCode(address: string, defaultBlock: BlockNumber): Promise<string>;
     getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
     getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
     getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
-    getBlock(blockHashOrBlockNumber: BlockNumber | string, callback?: (error: Error, block: BlockTransactionString) => void): Promise<BlockTransactionString>;
-    getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false, callback?: (error: Error, block: BlockTransactionString) => void): Promise<BlockTransactionString>;
-    getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true, callback?: (error: Error, block: BlockTransactionObject) => void): Promise<BlockTransactionObject>;
-    getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string, callback?: (error: Error, numberOfTransactions: number) => void): Promise<number>;
-    getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string, callback?: (error: Error, numberOfTransactions: number) => void): Promise<number>;
+    getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
+    getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
+    getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
+    getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
+    getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
     getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
     getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
-    getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, callback?: (error: Error, uncle: any) => void): Promise<BlockTransactionString>;
-    getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean, callback?: (error: Error, uncle: any) => void): Promise<BlockTransactionObject>;
-    getTransaction(transactionHash: string, callback?: (error: Error, transaction: Transaction) => void): Promise<Transaction>;
-    getPendingTransactions(callback?: (error: Error, result: Transaction[]) => void): Promise<Transaction[]>;
-    getTransactionFromBlock(blockHashOrBlockNumber: BlockNumber | string, indexNumber: number | string | BigNumber, callback?: (error: Error, transaction: Transaction) => void): Promise<Transaction>;
-    getTransactionReceipt(hash: string, callback?: (error: Error, transactionReceipt: TransactionReceipt) => void): Promise<TransactionReceipt>;
-    getTransactionCount(address: string): Promise<number>;
-    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<number>;
-    getTransactionCount(address: string, callback?: (error: Error, count: number) => void): Promise<number>;
-    getTransactionCount(address: string, defaultBlock: BlockNumber, callback?: (error: Error, count: number) => void): Promise<number>;
-    sendTransaction(transactionConfig: TransactionConfig, callback?: (error: Error, hash: string) => void): PromiEvent<TransactionReceipt>;
-    sendSignedTransaction(signedTransactionData: string, callback?: (error: Error, hash: string) => void): PromiEvent<TransactionReceipt>;
-    sign(dataToSign: string, address: string | number, callback?: (error: Error, signature: string) => void): Promise<string>;
-    signTransaction(transactionConfig: TransactionConfig, callback?: (error: Error, signedTransaction: RLPEncodedTransaction) => void): Promise<RLPEncodedTransaction>;
+    getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
+    getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
+    getTransaction(transactionHash: string): Promise<Transaction>;
+    getPendingTransactions(): Promise<Transaction[]>;
+    getTransactionFromBlock(blockHashOrBlockNumber: BlockNumber | string, indexNumber: number | string | BigNumber): Promise<Transaction>;
+    getTransactionReceipt(hash: string): Promise<TransactionReceipt>;
+    getTransactionCount(address: string): Promise<BigInt>;
+    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+    getTransactionCount(address: string): Promise<BigInt>;
+    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+    sendTransaction(transactionConfig: TransactionConfig): PromiEvent<TransactionReceipt>;
+    sendSignedTransaction(signedTransactionData: string): PromiEvent<TransactionReceipt>;
+    sign(dataToSign: string, address: string | number): Promise<string>;
+    signTransaction(transactionConfig: TransactionConfig): Promise<RLPEncodedTransaction>;
     signTransaction(transactionConfig: TransactionConfig, address: string): Promise<RLPEncodedTransaction>;
-    signTransaction(transactionConfig: TransactionConfig, address: string, callback: (error: Error, signedTransaction: RLPEncodedTransaction) => void): Promise<RLPEncodedTransaction>;
+    signTransaction(transactionConfig: TransactionConfig, address: string): Promise<RLPEncodedTransaction>;
     call(transactionConfig: TransactionConfig): Promise<string>;
     call(transactionConfig: TransactionConfig, defaultBlock?: BlockNumber): Promise<string>;
-    call(transactionConfig: TransactionConfig, callback?: (error: Error, data: string) => void): Promise<string>;
-    call(transactionConfig: TransactionConfig, defaultBlock: BlockNumber, callback: (error: Error, data: string) => void): Promise<string>;
-    estimateGas(transactionConfig: TransactionConfig, callback?: (error: Error, gas: number) => void): Promise<number>;
-    createAccessList(transactionConfig: TransactionConfig, callback?: (error: Error, result: CreateAccessList) => void): Promise<CreateAccessList>;
-    createAccessList(transactionConfig: TransactionConfig, defaultBlock: BlockNumber, callback?: (error: Error, result: CreateAccessList) => void): Promise<CreateAccessList>;
-    getPastLogs(options: PastLogsOptions, callback?: (error: Error, logs: Log[]) => void): Promise<Log[]>;
+    call(transactionConfig: TransactionConfig): Promise<string>;
+    call(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<string>;
+    estimateGas(transactionConfig: TransactionConfig): Promise<BigInt>;
+    createAccessList(transactionConfig: TransactionConfig): Promise<CreateAccessList>;
+    createAccessList(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<CreateAccessList>;
+    getPastLogs(options: PastLogsOptions): Promise<Log[]>;
 }
 export interface IWeb3 {
     eth: Eth;
