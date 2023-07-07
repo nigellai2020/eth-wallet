@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.65",
+    "version": "0.1.66",
     "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {
@@ -16,14 +16,15 @@
     },
     "devDependencies": {
         "@ijstech/eth-contract": "^0.1.5",
-        "@openzeppelin/contracts": "4.9.1",
+        "@openzeppelin/contracts": "4.9.2",
         "@types/mocha": "9.1.1",
         "@types/node": "18.15",
         "esbuild": "0.13.13",
         "ganache": "7.2.0",
         "mocha": "10.0.0",
         "ts-node": "10.1.0",
-        "typescript": "5.0.4"
+        "typescript": "5.0.4",
+        "web3": "4.0.2"
     },
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -rf dist && npm run build:pluginTypes && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
