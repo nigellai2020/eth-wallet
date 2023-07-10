@@ -33,6 +33,8 @@ suite('##Wallet Ganache', async function() {
         );
     })
     test('wallet.setPrivateKey', async function(){
+        let blockNum = await wallet.getBlockNumber();
+        assert.strictEqual(blockNum, 0);
         wallet.defaultAccount = accounts[0];
         assert.strictEqual(wallet.address, accounts[0]);
         let wallet2 = new Wallet(provider);
@@ -40,6 +42,8 @@ suite('##Wallet Ganache', async function() {
         assert.strictEqual(wallet2.address, '0x80E2fE38D90608b4Bc253C940dB372F44f290816');        
         assert.strictEqual((await wallet2.balance).toNumber(), 0);        
         await wallet.send(wallet2.address, 2);
+        blockNum = await wallet.getBlockNumber();
+        assert.strictEqual(blockNum, 1);
         assert.strictEqual((await wallet.balanceOf(wallet2.address)).toNumber(), 2);
         assert.strictEqual((await wallet2.balance).toNumber(), 2);
     })
@@ -75,13 +79,14 @@ suite('##Wallet Ganache', async function() {
         let block2 = await wallet.getBlock('latest');        
         assert.strictEqual((Utils.toNumber(block1.timestamp) + 60), block2.timestamp)
     });
-    test('Erc20.deploy', async function(){        
+    test('Erc20.deploy', async function(){
+        // assert.strictEqual(blockNum, 1);
         wallet.defaultAccount = accounts[0];
         assert.strictEqual(wallet.address, accounts[0]);        
         let erc20 = wallet.token('');// new Erc20(wallet);
         erc20Address = await erc20.deploy({
             name: 'DUMMY Token', symbol: 'DUMMY'
-        });        
+        }); 
         assert.strictEqual(await erc20.symbol, 'DUMMY');
         assert.strictEqual(await erc20.name, 'DUMMY Token');        
         assert.strictEqual(await erc20.decimals, 18);        

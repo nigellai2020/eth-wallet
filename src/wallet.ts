@@ -1592,7 +1592,7 @@ function initWeb3ModalLib(callback: () => void){
 		};
 		async getBlockNumber(): Promise<number>{
 			await this.init();
-			return Number(this._web3.eth.getBlockNumber());
+			return Number(await this._web3.eth.getBlockNumber());
 		};		
 		async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{	
 			await this.init();

@@ -3805,10 +3805,9 @@ var require_lib = __commonJS({
         return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
       }
       async __deploy(params, options) {
-        var _a, _b;
         let bytecode = this._bytecode;
-        let libraries = (_a = options) === null || _a === void 0 ? void 0 : _a.libraries;
-        let linkReferences = (_b = options) === null || _b === void 0 ? void 0 : _b.linkReferences;
+        let libraries = options?.libraries;
+        let linkReferences = options?.linkReferences;
         if (libraries && linkReferences) {
           for (let file in libraries) {
             for (let contract in libraries[file]) {
@@ -6100,7 +6099,7 @@ var _Wallet = class {
   }
   async getBlockNumber() {
     await this.init();
-    return Number(this._web3.eth.getBlockNumber());
+    return Number(await this._web3.eth.getBlockNumber());
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
     await this.init();
