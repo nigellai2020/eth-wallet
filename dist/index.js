@@ -6406,11 +6406,11 @@ var _Wallet = class {
       this.provider = this.clientSideProvider.provider;
     }
     let promise = new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
       try {
         let result;
         if (self._account && self._account.privateKey) {
+          await self.init();
+          let _web3 = self._web3;
           result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
           resolve(result.signature);
         } else if (typeof window !== "undefined" && self.clientSideProvider) {
@@ -6423,6 +6423,8 @@ var _Wallet = class {
           });
           resolve(result);
         } else {
+          await self.init();
+          let _web3 = self._web3;
           result = await _web3.eth.sign(msg, address);
           resolve(result);
         }

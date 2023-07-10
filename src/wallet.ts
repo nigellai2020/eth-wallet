@@ -1946,12 +1946,12 @@ function initWeb3ModalLib(callback: () => void){
 			if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
 				this.provider = this.clientSideProvider.provider;
 			}
-			let promise = new Promise<string>(async function(resolve, reject){
-				await self.init();
-				let _web3 = self._web3;
+			let promise = new Promise<string>(async function(resolve, reject){				
 				try{
 					let result;					
 					if (self._account && self._account.privateKey){
+						await self.init();
+						let _web3 = self._web3;
 						result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
 						resolve(result.signature);
 					}
@@ -1967,6 +1967,8 @@ function initWeb3ModalLib(callback: () => void){
 						resolve(result);
 					}
 					else {
+						await self.init();
+						let _web3 = self._web3;
 						result = await _web3.eth.sign(msg, address);
 						resolve(result);	
 					}
