@@ -258,6 +258,7 @@ function initWeb3ModalLib(callback: () => void){
 		initRpcWallet(config: IRpcWalletConfig): string;
 	};
 	export interface IRpcWallet extends IWallet {
+		init(): Promise<void>;
 		instanceId: string;  
 		isConnected: boolean;
 		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;  
@@ -1945,20 +1946,29 @@ function initWeb3ModalLib(callback: () => void){
 			if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
 				this.provider = this.clientSideProvider.provider;
 			}
-			let promise = new Promise<string>(async function(resolve, reject){
-				await self.init();
-				let _web3 = self._web3;
+			let promise = new Promise<string>(async function(resolve, reject){				
 				try{
 					let result;					
 					if (self._account && self._account.privateKey){
+						await self.init();
+						let _web3 = self._web3;
 						result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
 						resolve(result.signature);
 					}
 					else if (typeof window !== "undefined" && self.clientSideProvider){
-						result = await _web3.eth.personal.sign(msg, address, null);
+						const encoder = new TextEncoder();
+						const msgUint8Array = encoder.encode(msg);
+						const msgHex = '0x' + Array.from(msgUint8Array).map(b => b.toString(16).padStart(2, '0')).join('');
+						result = await self.clientSideProvider.provider.request({
+						  method: 'personal_sign',
+						  params: [msgHex, address],
+						});
+						// result = await _web3.eth.personal.sign(msg, address, null);
 						resolve(result);
 					}
 					else {
+						await self.init();
+						let _web3 = self._web3;
 						result = await _web3.eth.sign(msg, address);
 						resolve(result);	
 					}
@@ -2199,8 +2209,17 @@ function initWeb3ModalLib(callback: () => void){
 	export class RpcWallet extends Wallet implements IRpcWallet{
 		public instanceId: string;  
 		private _eventsMap: WeakMap<IEventBusRegistry, IEventBusRegistry[]> = new WeakMap();
-
+		private _address: string;
+		get address(): string{
+			return this._address;
+		}
+		set address(value: string){
+			this._address = value;
+		}
 		setProvider(provider: any): void{
+			if (this._web3) {
+				this._web3.setProvider(provider);
+			}
 			this._provider = provider;
 		};
 		get isConnected() {
@@ -2221,6 +2240,7 @@ function initWeb3ModalLib(callback: () => void){
 			const registry = eventBus.register(sender, eventId, callback);
 			if (event == RpcWalletEvent.Connected) {
 				const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload: Record<string, any>) => {
+					this.address = payload.account;
 					eventBus.dispatch(eventId, this.isConnected);
 				});
 				const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex: string) => {

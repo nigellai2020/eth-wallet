@@ -6406,17 +6406,25 @@ var _Wallet = class {
       this.provider = this.clientSideProvider.provider;
     }
     let promise = new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
       try {
         let result;
         if (self._account && self._account.privateKey) {
+          await self.init();
+          let _web3 = self._web3;
           result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
           resolve(result.signature);
         } else if (typeof window !== "undefined" && self.clientSideProvider) {
-          result = await _web3.eth.personal.sign(msg, address, null);
+          const encoder = new TextEncoder();
+          const msgUint8Array = encoder.encode(msg);
+          const msgHex = "0x" + Array.from(msgUint8Array).map((b) => b.toString(16).padStart(2, "0")).join("");
+          result = await self.clientSideProvider.provider.request({
+            method: "personal_sign",
+            params: [msgHex, address]
+          });
           resolve(result);
         } else {
+          await self.init();
+          let _web3 = self._web3;
           result = await _web3.eth.sign(msg, address);
           resolve(result);
         }
@@ -6653,7 +6661,16 @@ var RpcWallet = class extends Wallet {
     super(...arguments);
     this._eventsMap = new WeakMap();
   }
+  get address() {
+    return this._address;
+  }
+  set address(value) {
+    this._address = value;
+  }
   setProvider(provider) {
+    if (this._web3) {
+      this._web3.setProvider(provider);
+    }
     this._provider = provider;
   }
   get isConnected() {
@@ -6675,6 +6692,7 @@ var RpcWallet = class extends Wallet {
     const registry = eventBus.register(sender, eventId, callback);
     if (event == RpcWalletEvent.Connected) {
       const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload) => {
+        this.address = payload.account;
         eventBus.dispatch(eventId, this.isConnected);
       });
       const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex) => {
