@@ -5067,10 +5067,25 @@ var EthereumProvider = class {
     }
     return ret;
   }
+  removeListeners() {
+    if (this.handleAccountsChanged) {
+      this.provider.removeListener("accountsChanged", this.handleAccountsChanged);
+    }
+    if (this.handleChainChanged) {
+      this.provider.removeListener("chainChanged", this.handleChainChanged);
+    }
+    if (this.handleConnect) {
+      this.provider.removeListener("connect", this.handleConnect);
+    }
+    if (this.handleDisconnect) {
+      this.provider.removeListener("disconnect", this.handleDisconnect);
+    }
+  }
   initEvents() {
     let self = this;
     if (this.installed()) {
-      this.provider.on("accountsChanged", (accounts) => {
+      this.removeListeners();
+      this.handleAccountsChanged = (accounts) => {
         let accountAddress;
         let hasAccounts = accounts && accounts.length > 0;
         if (hasAccounts) {
@@ -5089,8 +5104,8 @@ var EthereumProvider = class {
         });
         if (self.onAccountChanged)
           self.onAccountChanged(accountAddress);
-      });
-      this.provider.on("chainChanged", (chainId) => {
+      };
+      this.handleChainChanged = (chainId) => {
         self.wallet.chainId = parseInt(chainId);
         if (this._options && this._options.useDefaultProvider) {
           if (this._options.infuraId)
@@ -5100,17 +5115,21 @@ var EthereumProvider = class {
         EventBus.getInstance().dispatch(ClientWalletEvent.ChainChanged, chainId);
         if (self.onChainChanged)
           self.onChainChanged(chainId);
-      });
-      this.provider.on("connect", (connectInfo) => {
+      };
+      this.handleConnect = (connectInfo) => {
         EventBus.getInstance().dispatch(ClientWalletEvent.Connect, connectInfo);
         if (self.onConnect)
           self.onConnect(connectInfo);
-      });
-      this.provider.on("disconnect", (error) => {
+      };
+      this.handleDisconnect = (error) => {
         EventBus.getInstance().dispatch(ClientWalletEvent.Disconnect, error);
         if (self.onDisconnect)
           self.onDisconnect(error);
-      });
+      };
+      this.provider.on("accountsChanged", this.handleAccountsChanged);
+      this.provider.on("chainChanged", this.handleChainChanged);
+      this.provider.on("connect", this.handleConnect);
+      this.provider.on("disconnect", this.handleDisconnect);
     }
     ;
   }
@@ -5737,6 +5756,7 @@ var _Wallet = class {
     return method;
   }
   async _txObj(abiHash, address, methodName, params, options) {
+    var _a;
     let method = this._getMethod(abiHash, address, methodName, params);
     let tx = {};
     tx.from = this.address;
@@ -5762,7 +5782,7 @@ var _Wallet = class {
       tx.gas = options.gas || options.gasLimit;
     } else {
       try {
-        let gas = tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: tx.value }));
+        tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: (_a = tx.value) == null ? void 0 : _a.toFixed() }));
         tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
       } catch (e) {
         if (e.message == "Returned error: out of gas") {

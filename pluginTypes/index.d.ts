@@ -1929,6 +1929,10 @@ declare module "wallet" {
         onChainChanged: (chainId: string) => void;
         onConnect: (connectInfo: any) => void;
         onDisconnect: (error: any) => void;
+        private handleAccountsChanged;
+        private handleChainChanged;
+        private handleConnect;
+        private handleDisconnect;
         constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
         get name(): string;
         get displayName(): string;
@@ -1938,8 +1942,9 @@ declare module "wallet" {
         get events(): IClientSideProviderEvents;
         get options(): IClientProviderOptions;
         get selectedAddress(): string;
-        toChecksumAddress(address: string): string;
-        initEvents(): void;
+        protected toChecksumAddress(address: string): string;
+        protected removeListeners(): void;
+        protected initEvents(): void;
         connect(eventPayload?: Record<string, any>): Promise<any>;
         disconnect(): Promise<void>;
         isConnected(): boolean;

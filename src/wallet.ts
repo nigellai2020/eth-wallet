@@ -443,6 +443,10 @@ function initWeb3ModalLib(callback: () => void){
 		public onChainChanged: (chainId: string) => void;
 		public onConnect: (connectInfo: any) => void;
 		public onDisconnect: (error: any) => void;
+		private handleAccountsChanged: (accounts: string[]) => void;
+		private handleChainChanged: (chainId: string) => void;
+		private handleConnect: (connectInfo: any) => void;
+		private handleDisconnect: (error: any) => void;
 
 		constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions) {
 			this.wallet = wallet;
@@ -490,7 +494,7 @@ function initWeb3ModalLib(callback: () => void){
 			return this._selectedAddress;
 		}
 
-		toChecksumAddress(address: string) {
+		protected toChecksumAddress(address: string) {
 			address = address.toLowerCase().replace('0x','');
 			let sha3 = window['sha3'];
 			let hash = sha3.keccak256(address);
@@ -506,11 +510,25 @@ function initWeb3ModalLib(callback: () => void){
 		  
 			return ret;
 		}
-
-		initEvents() {
+		protected removeListeners() {
+			if (this.handleAccountsChanged) {
+				this.provider.removeListener('accountsChanged', this.handleAccountsChanged);
+			}
+			if (this.handleChainChanged) {
+				this.provider.removeListener('chainChanged', this.handleChainChanged);
+			}
+			if (this.handleConnect) {
+				this.provider.removeListener('connect', this.handleConnect);
+			}
+			if (this.handleDisconnect) {
+				this.provider.removeListener('disconnect', this.handleDisconnect);
+			}
+		}
+		protected initEvents() {
 			let self = this;
 			if (this.installed()) {
-				this.provider.on('accountsChanged', (accounts) => {
+				this.removeListeners();
+				this.handleAccountsChanged = (accounts) => {
 					let accountAddress;
 					let hasAccounts = accounts && accounts.length > 0;
 					if (hasAccounts) {
@@ -530,8 +548,8 @@ function initWeb3ModalLib(callback: () => void){
 					//TODO: Check if this is needed
 					if (self.onAccountChanged)
 						self.onAccountChanged(accountAddress);
-				});
-				this.provider.on('chainChanged', (chainId) => {
+				};
+				this.handleChainChanged = (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
 					if (this._options && this._options.useDefaultProvider) {
 						if (this._options.infuraId) this.wallet.infuraId = this._options.infuraId;
@@ -540,17 +558,21 @@ function initWeb3ModalLib(callback: () => void){
 					EventBus.getInstance().dispatch(ClientWalletEvent.ChainChanged, chainId);
 					if (self.onChainChanged)
 						self.onChainChanged(chainId);
-				});
-				this.provider.on('connect', (connectInfo) => {
+				};
+				this.handleConnect = (connectInfo) => {
 					EventBus.getInstance().dispatch(ClientWalletEvent.Connect, connectInfo);
 					if (self.onConnect)
 						self.onConnect(connectInfo);
-				});
-				this.provider.on('disconnect', (error) => {
+				}
+				this.handleDisconnect = (error) => {
 					EventBus.getInstance().dispatch(ClientWalletEvent.Disconnect, error);
 					if (self.onDisconnect)
 						self.onDisconnect(error);
-				});
+				}
+				this.provider.on('accountsChanged', this.handleAccountsChanged);
+				this.provider.on('chainChanged', this.handleChainChanged);
+				this.provider.on('connect', this.handleConnect);
+				this.provider.on('disconnect', this.handleDisconnect);
 			};
 		}
 		async connect(eventPayload?: Record<string, any>) {
@@ -1232,8 +1254,7 @@ function initWeb3ModalLib(callback: () => void){
                 tx.gas = options.gas || options.gasLimit;
             } else {
                 try {
-					let gas = 
-                    tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : undefined, value: tx.value }));
+                    tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : undefined, value: tx.value?.toFixed() }));
                     tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
 
                 } catch (e) {
