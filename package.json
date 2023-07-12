@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-wallet",
-    "version": "0.1.69",
+    "version": "0.1.70",
     "license": "AGPL-3.0",
     "main": "lib/index.js",
     "bin": {
@@ -28,7 +28,7 @@
     },
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -rf dist && npm run build:pluginTypes && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
-        "build:pluginTypes": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json",
+        "build:pluginTypes": "rm -rf pluginTypes && bash scripts/addAmdModuleName.bash && tsc --P tsconfig.pluginTypes.json && bash scripts/removeAmdModuleName.bash",
         "build:pluginTypes1": "rm -rf pluginTypes && tsc --P tsconfig.pluginTypes.json && cat src/types/bignumber src/types/web3 pluginTypes/index.d.ts > pluginTypes/tmp && mv pluginTypes/tmp pluginTypes/index.d.ts",
         "build:tools": "cd tools && rm -rf bin && tsc && cd ..",
         "build:test": "rm -f test/contracts/*.ts && sol2ts test/test-contracts.json",
