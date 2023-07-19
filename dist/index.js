@@ -3817,6 +3817,7 @@ var require_lib = __commonJS({
             }
           }
         }
+        params = params || [];
         params.unshift(bytecode);
         let receipt = await this._send("", params, options);
         this.address = receipt.contractAddress;
@@ -4934,6 +4935,7 @@ var Erc20 = class extends import_contract.Contract {
 // src/eventBus.ts
 var _EventBus = class {
   constructor() {
+    this.idEventMap = {};
     this.subscribers = {};
   }
   static getInstance() {
@@ -4954,13 +4956,19 @@ var _EventBus = class {
     if (!this.subscribers[event])
       this.subscribers[event] = {};
     this.subscribers[event][id] = callback.bind(sender);
+    this.idEventMap[id] = event;
     return {
-      unregister: () => {
-        delete this.subscribers[event][id];
-        if (Object.keys(this.subscribers[event]).length === 0)
-          delete this.subscribers[event];
-      }
+      id,
+      event,
+      unregister: () => this.unregister(id)
     };
+  }
+  unregister(id) {
+    const event = this.idEventMap[id];
+    delete this.subscribers[event][id];
+    if (Object.keys(this.subscribers[event]).length === 0)
+      delete this.subscribers[event];
+    delete this.idEventMap[id];
   }
   getNextId() {
     return _EventBus.nextId++;
@@ -5365,6 +5373,7 @@ var _Wallet = class {
     this._contracts = {};
     this._networksMap = {};
     this._multicallInfoMap = {};
+    this._walletEventIds = new Set();
     this._abiHashDict = {};
     this._abiContractDict = {};
     this._abiAddressDict = {};
@@ -5406,6 +5415,7 @@ var _Wallet = class {
       }
       ;
       this._web3 = new Web33(this._provider);
+      this._web3.eth.transactionConfirmationBlocks = 1;
       this._utils = {
         fromDecimals,
         fromWei: this._web3.utils.fromWei,
@@ -5453,10 +5463,20 @@ var _Wallet = class {
     }
   }
   registerWalletEvent(sender, event, callback) {
-    return EventBus.getInstance().register(sender, event, callback);
+    const registry = EventBus.getInstance().register(sender, event, callback);
+    this._walletEventIds.add(registry.id);
+    return registry;
   }
-  unregisterWalletEvent(event) {
-    return event.unregister();
+  unregisterWalletEvent(registry) {
+    registry.unregister();
+    this._walletEventIds.delete(registry.id);
+  }
+  unregisterAllWalletEvents() {
+    const eventBus = EventBus.getInstance();
+    this._walletEventIds.forEach((id) => {
+      eventBus.unregister(id);
+    });
+    this._walletEventIds.clear();
   }
   destoryRpcWalletInstance(instanceId) {
     delete _Wallet._rpcWalletPoolMap[instanceId];
@@ -5488,6 +5508,7 @@ var _Wallet = class {
     }
     wallet.instanceId = instanceId;
     _Wallet._rpcWalletPoolMap[instanceId] = wallet;
+    wallet.initWalletEvents();
     return instanceId;
   }
   setDefaultProvider() {
@@ -6677,10 +6698,6 @@ var Wallet = _Wallet;
 Wallet._rpcWalletPoolMap = {};
 Wallet.instance = new _Wallet();
 var RpcWallet = class extends Wallet {
-  constructor() {
-    super(...arguments);
-    this._eventsMap = new WeakMap();
-  }
   get address() {
     return this._address;
   }
@@ -6706,29 +6723,25 @@ var RpcWallet = class extends Wallet {
       onChainChanged("0x" + chainId.toString(16));
     return null;
   }
+  initWalletEvents() {
+    const eventId = `${this.instanceId}:${RpcWalletEvent.Connected}`;
+    const eventBus = EventBus.getInstance();
+    const accountsChangedRegistry = eventBus.register(this, ClientWalletEvent.AccountsChanged, (payload) => {
+      this.address = payload.account;
+      eventBus.dispatch(eventId, this.isConnected);
+    });
+    const chainChangedRegistry = eventBus.register(this, ClientWalletEvent.ChainChanged, (chainIdHex) => {
+      eventBus.dispatch(eventId, this.isConnected);
+    });
+    this._walletEventIds.add(accountsChangedRegistry.id);
+    this._walletEventIds.add(chainChangedRegistry.id);
+  }
   registerWalletEvent(sender, event, callback) {
     const eventId = `${this.instanceId}:${event}`;
     const eventBus = EventBus.getInstance();
     const registry = eventBus.register(sender, eventId, callback);
-    if (event == RpcWalletEvent.Connected) {
-      const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload) => {
-        this.address = payload.account;
-        eventBus.dispatch(eventId, this.isConnected);
-      });
-      const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex) => {
-        eventBus.dispatch(eventId, this.isConnected);
-      });
-      this._eventsMap.set(registry, [accountsChangedRegistry, chainChangedRegistry]);
-    }
+    this._walletEventIds.add(registry.id);
     return registry;
-  }
-  unregisterWalletEvent(event) {
-    if (this._eventsMap.has(event)) {
-      const events = this._eventsMap.get(event);
-      events.forEach((e) => e.unregister());
-      this._eventsMap.delete(event);
-    }
-    return event.unregister();
   }
 };
 

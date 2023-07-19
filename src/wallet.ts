@@ -253,7 +253,8 @@ function initWeb3ModalLib(callback: () => void){
 		setMultipleNetworksInfo(networks: INetwork[]): void;
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
 		// registerRpcWalletEvent(sender: any, instanceId: string, event: string, callback: Function): IEventBusRegistry;
-		unregisterWalletEvent(event: IEventBusRegistry): void;
+		unregisterWalletEvent(registry: IEventBusRegistry): void;
+		unregisterAllWalletEvents(): void;
 		destoryRpcWalletInstance(instanceId: string): void;
 		initRpcWallet(config: IRpcWalletConfig): string;
 	};
@@ -263,7 +264,8 @@ function initWeb3ModalLib(callback: () => void){
 		isConnected: boolean;
 		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;  
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-		unregisterWalletEvent(event: IEventBusRegistry): void;
+		unregisterAllWalletEvents(): void;
+		unregisterWalletEvent(registry: IEventBusRegistry): void;
 	}
 	export interface IContractMethod {
 		call: any;
@@ -828,6 +830,7 @@ function initWeb3ModalLib(callback: () => void){
 		private _infuraId: string;
 		protected _utils: IWalletUtils;
 		private static _rpcWalletPoolMap: Record<string, IRpcWallet> = {};
+		protected _walletEventIds: Set<number> = new Set<number>();
 
 		constructor(provider?: any, account?: IAccount|IAccount[]){
 			this._provider = provider;	
@@ -866,6 +869,7 @@ function initWeb3ModalLib(callback: () => void){
 					Utils.initWeb3Lib();
 				};
 				this._web3 = new Web3(this._provider);
+				this._web3.eth.transactionConfirmationBlocks = 1;
 				this._utils = {
 					fromDecimals: Utils.fromDecimals,
 					fromWei: this._web3.utils.fromWei,
@@ -912,10 +916,20 @@ function initWeb3ModalLib(callback: () => void){
 			}		
 		}
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry {
-			return EventBus.getInstance().register(sender, event, callback);
+			const registry = EventBus.getInstance().register(sender, event, callback);
+			this._walletEventIds.add(registry.id);
+			return registry;
 		};
-		unregisterWalletEvent(event: IEventBusRegistry) {
-			return event.unregister();
+		unregisterWalletEvent(registry: IEventBusRegistry) {
+			registry.unregister();
+			this._walletEventIds.delete(registry.id);
+		}
+		unregisterAllWalletEvents() {
+			const eventBus = EventBus.getInstance();
+			this._walletEventIds.forEach(id => {
+				eventBus.unregister(id);
+			});
+			this._walletEventIds.clear();
 		}
 		destoryRpcWalletInstance(instanceId: string) {
 			delete Wallet._rpcWalletPoolMap[instanceId];
@@ -947,6 +961,7 @@ function initWeb3ModalLib(callback: () => void){
 			}
 			wallet.instanceId = instanceId;
 			Wallet._rpcWalletPoolMap[instanceId] = wallet;
+			wallet.initWalletEvents();
 			return instanceId;
 		}
 		setDefaultProvider(){
@@ -2139,7 +2154,7 @@ function initWeb3ModalLib(callback: () => void){
 					return await promiEvent;
 				}
 			}
-			catch(err) {
+			catch (err) {
 				throw err;
 			} finally {
 				if (this.provider !== currentProvider) {
@@ -2229,7 +2244,6 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export class RpcWallet extends Wallet implements IRpcWallet{
 		public instanceId: string;  
-		private _eventsMap: WeakMap<IEventBusRegistry, IEventBusRegistry[]> = new WeakMap();
 		private _address: string;
 		get address(): string{
 			return this._address;
@@ -2255,29 +2269,25 @@ function initWeb3ModalLib(callback: () => void){
 			if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
 			return null;
 		}
+		initWalletEvents() {
+			const eventId = `${this.instanceId}:${RpcWalletEvent.Connected}`;
+			const eventBus = EventBus.getInstance();
+			const accountsChangedRegistry = eventBus.register(this, ClientWalletEvent.AccountsChanged, (payload: Record<string, any>) => {
+				this.address = payload.account;
+				eventBus.dispatch(eventId, this.isConnected);
+			});
+			const chainChangedRegistry = eventBus.register(this, ClientWalletEvent.ChainChanged, (chainIdHex: string) => {
+				eventBus.dispatch(eventId, this.isConnected);
+			});	
+			this._walletEventIds.add(accountsChangedRegistry.id);
+			this._walletEventIds.add(chainChangedRegistry.id);
+		}
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry {
 			const eventId = `${this.instanceId}:${event}`;
 			const eventBus = EventBus.getInstance();
 			const registry = eventBus.register(sender, eventId, callback);
-			if (event == RpcWalletEvent.Connected) {
-				const accountsChangedRegistry = eventBus.register(sender, ClientWalletEvent.AccountsChanged, (payload: Record<string, any>) => {
-					this.address = payload.account;
-					eventBus.dispatch(eventId, this.isConnected);
-				});
-				const chainChangedRegistry = eventBus.register(sender, ClientWalletEvent.ChainChanged, (chainIdHex: string) => {
-					eventBus.dispatch(eventId, this.isConnected);
-				});	
-				this._eventsMap.set(registry, [accountsChangedRegistry, chainChangedRegistry]);
-			}
+			this._walletEventIds.add(registry.id);
 			return registry;
-		}
-		unregisterWalletEvent(event: IEventBusRegistry) {
-			if (this._eventsMap.has(event)) {
-				const events = this._eventsMap.get(event);
-				events.forEach(e => e.unregister());
-				this._eventsMap.delete(event);
-			} 
-			return event.unregister();
 		}
 	}
 // };
