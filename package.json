@@ -24,7 +24,7 @@
         "mocha": "10.0.0",
         "ts-node": "10.1.0",
         "typescript": "5.0.4",
-        "web3": "4.0.2"
+        "web3": "4.0.3"
     },
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -rf dist && npm run build:pluginTypes && tsc && cp -r ./src/contracts/bin ./lib/contracts/bin && node esbuild.bundle.js",
