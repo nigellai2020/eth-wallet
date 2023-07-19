@@ -1,5 +1,7 @@
 //From https://github.com/luixaviles/event-bus-typescript
 export interface IEventBusRegistry {
+    id: number;
+    event: string;
     unregister: () => void;
 }
 
@@ -20,6 +22,7 @@ export class EventBus implements IEventBus {
     private subscribers: ISubscriber;
     private static nextId = 0;
     private static instance?: EventBus = undefined;
+    private idEventMap: { [key: number]: string } = {};
 
     private constructor() {
         this.subscribers = {};
@@ -48,14 +51,20 @@ export class EventBus implements IEventBus {
         if (!this.subscribers[event]) this.subscribers[event] = {};
 
         this.subscribers[event][id] = callback.bind(sender);
-
+        this.idEventMap[id] = event;
         return {
-            unregister: () => {
-                delete this.subscribers[event][id];
-                if (Object.keys(this.subscribers[event]).length === 0)
-                    delete this.subscribers[event];
-            },
+            id: id,
+            event: event,
+            unregister: () => this.unregister(id)
         };
+    }
+
+    public unregister(id: number) {
+        const event = this.idEventMap[id];
+        delete this.subscribers[event][id];
+        if (Object.keys(this.subscribers[event]).length === 0)
+            delete this.subscribers[event];
+        delete this.idEventMap[id];
     }
 
     private getNextId(): number {

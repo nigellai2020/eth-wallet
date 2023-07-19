@@ -167,7 +167,8 @@ export interface IClientWallet extends IWallet {
     setNetworkInfo(network: INetwork): void;
     setMultipleNetworksInfo(networks: INetwork[]): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-    unregisterWalletEvent(event: IEventBusRegistry): void;
+    unregisterWalletEvent(registry: IEventBusRegistry): void;
+    unregisterAllWalletEvents(): void;
     destoryRpcWalletInstance(instanceId: string): void;
     initRpcWallet(config: IRpcWalletConfig): string;
 }
@@ -177,7 +178,8 @@ export interface IRpcWallet extends IWallet {
     isConnected: boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-    unregisterWalletEvent(event: IEventBusRegistry): void;
+    unregisterAllWalletEvents(): void;
+    unregisterWalletEvent(registry: IEventBusRegistry): void;
 }
 export interface IContractMethod {
     call: any;
@@ -405,6 +407,7 @@ export declare class Wallet implements IClientWallet {
     private _infuraId;
     protected _utils: IWalletUtils;
     private static _rpcWalletPoolMap;
+    protected _walletEventIds: Set<number>;
     constructor(provider?: any, account?: IAccount | IAccount[]);
     private static readonly instance;
     static getInstance(): IWallet;
@@ -416,7 +419,8 @@ export declare class Wallet implements IClientWallet {
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-    unregisterWalletEvent(event: IEventBusRegistry): void;
+    unregisterWalletEvent(registry: IEventBusRegistry): void;
+    unregisterAllWalletEvents(): void;
     destoryRpcWalletInstance(instanceId: string): void;
     private generateUUID;
     initRpcWallet(config: IRpcWalletConfig): string;
@@ -523,13 +527,12 @@ export declare class Wallet implements IClientWallet {
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {
     instanceId: string;
-    private _eventsMap;
     private _address;
     get address(): string;
     set address(value: string);
     setProvider(provider: any): void;
     get isConnected(): boolean;
     switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+    initWalletEvents(): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-    unregisterWalletEvent(event: IEventBusRegistry): void;
 }

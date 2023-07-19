@@ -1555,6 +1555,8 @@ declare module "@ijstech/eth-wallet/contracts/erc20.ts" {
 /// <amd-module name="@ijstech/eth-wallet/eventBus.ts" />
 declare module "@ijstech/eth-wallet/eventBus.ts" {
     export interface IEventBusRegistry {
+        id: number;
+        event: string;
         unregister: () => void;
     }
     export interface ICallable {
@@ -1571,10 +1573,12 @@ declare module "@ijstech/eth-wallet/eventBus.ts" {
         private subscribers;
         private static nextId;
         private static instance?;
+        private idEventMap;
         private constructor();
         static getInstance(): EventBus;
         dispatch<T>(event: string, arg?: T): void;
         register(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregister(id: number): void;
         private getNextId;
     }
 }
@@ -1764,7 +1768,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        unregisterWalletEvent(event: IEventBusRegistry): void;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
+        unregisterAllWalletEvents(): void;
         destoryRpcWalletInstance(instanceId: string): void;
         initRpcWallet(config: IRpcWalletConfig): string;
     }
@@ -1774,7 +1779,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         isConnected: boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        unregisterWalletEvent(event: IEventBusRegistry): void;
+        unregisterAllWalletEvents(): void;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
     }
     export interface IContractMethod {
         call: any;
@@ -2002,6 +2008,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         private _infuraId;
         protected _utils: IWalletUtils;
         private static _rpcWalletPoolMap;
+        protected _walletEventIds: Set<number>;
         constructor(provider?: any, account?: IAccount | IAccount[]);
         private static readonly instance;
         static getInstance(): IWallet;
@@ -2013,7 +2020,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        unregisterWalletEvent(event: IEventBusRegistry): void;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
+        unregisterAllWalletEvents(): void;
         destoryRpcWalletInstance(instanceId: string): void;
         private generateUUID;
         initRpcWallet(config: IRpcWalletConfig): string;
@@ -2120,15 +2128,14 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export class RpcWallet extends Wallet implements IRpcWallet {
         instanceId: string;
-        private _eventsMap;
         private _address;
         get address(): string;
         set address(value: string);
         setProvider(provider: any): void;
         get isConnected(): boolean;
         switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        initWalletEvents(): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
-        unregisterWalletEvent(event: IEventBusRegistry): void;
     }
 }
 /// <amd-module name="@ijstech/eth-wallet" />
