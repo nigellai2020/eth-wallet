@@ -304,7 +304,9 @@ export class NodeWallet extends Wallet{
         catch(err) {
             throw err;
         }
-        this.provider = currentProvider;
+        finally {
+            this.provider = currentProvider;
+        }
         return null;
     }
     signMessage(msg: string): Promise<string> {
@@ -393,6 +395,22 @@ export class NodeWallet extends Wallet{
         let promise;
         if (typeof window !== "undefined" && this.clientSideProvider) {
             this.provider = this.clientSideProvider.provider;
+        }
+        if (this._account && this._account.privateKey){
+            promise = new Promise<string>(async (resolve, reject) => {
+                try {
+                    let signature = signTypedDataWithPrivateKey({
+                        privateKey: this._account.privateKey,
+                        data: data,
+                        version: SignTypedDataVersion.V4
+                    });
+                    resolve(signature);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+        else {
             promise = new Promise<string>(async (resolve, reject) => {
                 try {
                     ((<any>self._web3.currentProvider)).send({
@@ -400,7 +418,7 @@ export class NodeWallet extends Wallet{
                         method: 'eth_signTypedData_v4',
                         params: [
                             self.defaultAccount,
-                            JSON.stringify(data)
+                            data
                         ],
                         id: Date.now()
                     }, function (err: Error, result: any) {
@@ -415,24 +433,10 @@ export class NodeWallet extends Wallet{
                     reject(e);
                 }
             });
-            promise.finally(() => {
-                this.provider = currentProvider;
-            })
         }
-        else {
-            promise = new Promise<string>(async (resolve, reject) => {
-                try {
-                    let signature = signTypedDataWithPrivateKey({
-                        privateKey: this._account.privateKey,
-                        data: data,
-                        version: SignTypedDataVersion.V4
-                    });
-                    resolve(signature);
-                } catch (e) {
-                    reject(e);
-                }
-            });
-        }
+        promise.finally(() => {
+            this.provider = currentProvider;
+        })
         return promise;
     }	
     recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): string {
