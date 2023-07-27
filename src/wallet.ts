@@ -1992,12 +1992,9 @@ function initWeb3ModalLib(callback: () => void){
 						resolve(result.signature);
 					}
 					else if (typeof window !== "undefined" && self.clientSideProvider){
-						const encoder = new TextEncoder();
-						const msgUint8Array = encoder.encode(msg);
-						const msgHex = '0x' + Array.from(msgUint8Array).map(b => b.toString(16).padStart(2, '0')).join('');
 						result = await self.clientSideProvider.provider.request({
 						  method: 'personal_sign',
-						  params: [msgHex, address],
+						  params: [msg, address],
 						});
 						// result = await _web3.eth.personal.sign(msg, address, null);
 						resolve(result);
