@@ -1456,7 +1456,8 @@ declare module "@ijstech/eth-wallet/constants.ts" {
     }
     export enum RpcWalletEvent {
         Connected = "connected",
-        Disconnected = "disconnected"
+        Disconnected = "disconnected",
+        ChainChanged = "chainChanged"
     }
 }
 /// <amd-module name="@ijstech/eth-wallet/utils.ts" />
@@ -1762,7 +1763,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
         sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
         signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        switchNetwork(chainId: number): Promise<boolean>;
         transactionCount(): Promise<number>;
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
@@ -1777,7 +1778,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         init(): Promise<void>;
         instanceId: string;
         isConnected: boolean;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        switchNetwork(chainId: number): Promise<boolean>;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
         unregisterAllWalletEvents(): void;
         unregisterWalletEvent(registry: IEventBusRegistry): void;
@@ -1965,7 +1966,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         disconnect(): Promise<void>;
         isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+        switchNetwork(chainId: number): Promise<boolean>;
     }
     export class MetaMaskProvider extends EthereumProvider {
         get displayName(): string;
@@ -2017,7 +2018,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         static initWeb3(): Promise<void>;
         init(): Promise<void>;
         get isConnected(): boolean;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        switchNetwork(chainId: number): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
         unregisterWalletEvent(registry: IEventBusRegistry): void;
@@ -2133,7 +2134,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         set address(value: string);
         setProvider(provider: any): void;
         get isConnected(): boolean;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+        switchNetwork(chainId: number): Promise<any>;
         initWalletEvents(): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     }

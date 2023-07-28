@@ -43,5 +43,6 @@ export declare enum ClientWalletEvent {
 }
 export declare enum RpcWalletEvent {
     Connected = "connected",
-    Disconnected = "disconnected"
+    Disconnected = "disconnected",
+    ChainChanged = "chainChanged"
 }
