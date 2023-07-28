@@ -246,7 +246,7 @@ function initWeb3ModalLib(callback: () => void){
 		sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
 		sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
 		signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
-        switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;        
+        switchNetwork(chainId: number): Promise<boolean>;        
         transactionCount(): Promise<number>;   
 		getNetworkInfo(chainId: number): INetwork;
 		setNetworkInfo(network: INetwork): void;
@@ -262,7 +262,7 @@ function initWeb3ModalLib(callback: () => void){
 		init(): Promise<void>;
 		instanceId: string;  
 		isConnected: boolean;
-		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;  
+		switchNetwork(chainId: number): Promise<boolean>;  
 		registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
 		unregisterAllWalletEvents(): void;
 		unregisterWalletEvent(registry: IEventBusRegistry): void;
@@ -648,11 +648,8 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			})
 		}
-		switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean> {
+		switchNetwork(chainId: number): Promise<boolean> {
 			let self = this;
-			if (onChainChanged) {
-				this.onChainChanged = onChainChanged;
-			}
 			return new Promise(async function (resolve, reject) {
 				try {
 					let chainIdHex = '0x' + chainId.toString(16);
@@ -889,15 +886,14 @@ function initWeb3ModalLib(callback: () => void){
 		get isConnected() {
 			return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
 		}
-		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
+		async switchNetwork(chainId: number) {
 			let result;
 			if (this.clientSideProvider) {
-				result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
+				result = await this.clientSideProvider.switchNetwork(chainId);
 			}
 			else {
 				this.chainId = chainId;
 				this.setDefaultProvider();
-				if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
 			}
 			return result;
 		}
@@ -2258,12 +2254,13 @@ function initWeb3ModalLib(callback: () => void){
 			const clientWallet = Wallet.getClientInstance();
 			return clientWallet.isConnected && this.chainId === clientWallet.chainId;
 		};
-		async switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void) {
+		async switchNetwork(chainId: number) {
 			await this.init();
 			this.chainId = chainId;
 			const rpc = this.networksMap[chainId].rpcUrls[0];
 			this._web3.setProvider(rpc);
-			if (onChainChanged) onChainChanged('0x' + chainId.toString(16));
+			const eventId = `${this.instanceId}:${RpcWalletEvent.ChainChanged}`;
+			EventBus.getInstance().dispatch(eventId, chainId);
 			return null;
 		}
 		initWalletEvents() {

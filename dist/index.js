@@ -3817,6 +3817,7 @@ var require_lib = __commonJS({
             }
           }
         }
+        params = params || [];
         params.unshift(bytecode);
         let receipt = await this._send("", params, options);
         this.address = receipt.contractAddress;
@@ -4674,6 +4675,7 @@ var RpcWalletEvent;
 (function(RpcWalletEvent2) {
   RpcWalletEvent2["Connected"] = "connected";
   RpcWalletEvent2["Disconnected"] = "disconnected";
+  RpcWalletEvent2["ChainChanged"] = "chainChanged";
 })(RpcWalletEvent || (RpcWalletEvent = {}));
 
 // src/utils.ts
@@ -5208,11 +5210,8 @@ var EthereumProvider = class {
       }
     });
   }
-  switchNetwork(chainId, onChainChanged) {
+  switchNetwork(chainId) {
     let self = this;
-    if (onChainChanged) {
-      this.onChainChanged = onChainChanged;
-    }
     return new Promise(async function(resolve, reject) {
       try {
         let chainIdHex = "0x" + chainId.toString(16);
@@ -5435,15 +5434,13 @@ var _Wallet = class {
   get isConnected() {
     return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
   }
-  async switchNetwork(chainId, onChainChanged) {
+  async switchNetwork(chainId) {
     let result;
     if (this.clientSideProvider) {
-      result = await this.clientSideProvider.switchNetwork(chainId, onChainChanged);
+      result = await this.clientSideProvider.switchNetwork(chainId);
     } else {
       this.chainId = chainId;
       this.setDefaultProvider();
-      if (onChainChanged)
-        onChainChanged("0x" + chainId.toString(16));
     }
     return result;
   }
@@ -6710,13 +6707,13 @@ var RpcWallet = class extends Wallet {
     const clientWallet = Wallet.getClientInstance();
     return clientWallet.isConnected && this.chainId === clientWallet.chainId;
   }
-  async switchNetwork(chainId, onChainChanged) {
+  async switchNetwork(chainId) {
     await this.init();
     this.chainId = chainId;
     const rpc = this.networksMap[chainId].rpcUrls[0];
     this._web3.setProvider(rpc);
-    if (onChainChanged)
-      onChainChanged("0x" + chainId.toString(16));
+    const eventId = `${this.instanceId}:${RpcWalletEvent.ChainChanged}`;
+    EventBus.getInstance().dispatch(eventId, chainId);
     return null;
   }
   initWalletEvents() {

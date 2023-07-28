@@ -161,7 +161,7 @@ export interface IClientWallet extends IWallet {
     sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
     sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
     signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    switchNetwork(chainId: number): Promise<boolean>;
     transactionCount(): Promise<number>;
     getNetworkInfo(chainId: number): INetwork;
     setNetworkInfo(network: INetwork): void;
@@ -176,7 +176,7 @@ export interface IRpcWallet extends IWallet {
     init(): Promise<void>;
     instanceId: string;
     isConnected: boolean;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    switchNetwork(chainId: number): Promise<boolean>;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     unregisterAllWalletEvents(): void;
     unregisterWalletEvent(registry: IEventBusRegistry): void;
@@ -364,7 +364,7 @@ export declare class EthereumProvider implements IClientSideProvider {
     disconnect(): Promise<void>;
     isConnected(): boolean;
     addToken(option: ITokenOption, type?: string): Promise<boolean>;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<boolean>;
+    switchNetwork(chainId: number): Promise<boolean>;
 }
 export declare class MetaMaskProvider extends EthereumProvider {
     get displayName(): string;
@@ -416,7 +416,7 @@ export declare class Wallet implements IClientWallet {
     static initWeb3(): Promise<void>;
     init(): Promise<void>;
     get isConnected(): boolean;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+    switchNetwork(chainId: number): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     unregisterWalletEvent(registry: IEventBusRegistry): void;
@@ -532,7 +532,7 @@ export declare class RpcWallet extends Wallet implements IRpcWallet {
     set address(value: string);
     setProvider(provider: any): void;
     get isConnected(): boolean;
-    switchNetwork(chainId: number, onChainChanged?: (chainId: string) => void): Promise<any>;
+    switchNetwork(chainId: number): Promise<any>;
     initWalletEvents(): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
 }
