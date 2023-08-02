@@ -11,3 +11,5 @@ sed -i '1d' src/types.ts
 sed -i '1d' src/utils.ts
 sed -i '1d' src/wallet.ts
 sed -i '1d' src/web3.ts
+sed -i '1d' src/approvalModel/ERC20ApprovalModel.ts
+sed -i '1d' src/approvalModel/index.ts
