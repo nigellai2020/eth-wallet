@@ -3817,6 +3817,7 @@ var require_lib = __commonJS({
             }
           }
         }
+        params = params || [];
         params.unshift(bytecode);
         let receipt = await this._send("", params, options);
         this.address = receipt.contractAddress;
@@ -4009,17 +4010,19 @@ var require_erc20 = __commonJS({
 
 // src/plugin.ts
 __export(exports, {
-  BigNumber: () => import_bignumber4.BigNumber,
+  BigNumber: () => import_bignumber5.BigNumber,
   Constants: () => constants_exports,
   Contract: () => import_contract2.Contract,
   Contracts: () => contracts_exports,
+  ERC20ApprovalModel: () => ERC20ApprovalModel,
   Erc20: () => Erc20,
   EthereumProvider: () => EthereumProvider,
   MetaMaskProvider: () => MetaMaskProvider,
   Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => Wallet,
-  Web3ModalProvider: () => Web3ModalProvider
+  Web3ModalProvider: () => Web3ModalProvider,
+  getERC20Allowance: () => getERC20Allowance
 });
 
 // src/wallet.ts
@@ -4617,6 +4620,7 @@ __export(utils_exports, {
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
   padRight: () => padRight,
+  registerSendTxEvents: () => registerSendTxEvents,
   sleep: () => sleep,
   stringToBytes: () => stringToBytes,
   stringToBytes32: () => stringToBytes32,
@@ -4819,6 +4823,21 @@ function constructTypedMessageData(domain, customTypes, primaryType, message) {
     message
   };
   return data;
+}
+function registerSendTxEvents(sendTxEventHandlers) {
+  const wallet = Wallet.getClientInstance();
+  wallet.registerSendTxEvents({
+    transactionHash: (error, receipt) => {
+      if (sendTxEventHandlers.transactionHash) {
+        sendTxEventHandlers.transactionHash(error, receipt);
+      }
+    },
+    confirmation: (receipt) => {
+      if (sendTxEventHandlers.confirmation) {
+        sendTxEventHandlers.confirmation(receipt);
+      }
+    }
+  });
 }
 
 // src/contracts/erc20.ts
@@ -6739,7 +6758,7 @@ var RpcWallet = class extends Wallet {
 
 // src/plugin.ts
 var import_contract2 = __toModule(require_contract());
-var import_bignumber4 = __toModule(require("bignumber.js"));
+var import_bignumber5 = __toModule(require("bignumber.js"));
 
 // src/types.ts
 var types_exports = {};
@@ -6752,6 +6771,112 @@ var SignTypedDataVersion;
   SignTypedDataVersion2["V3"] = "V3";
   SignTypedDataVersion2["V4"] = "V4";
 })(SignTypedDataVersion || (SignTypedDataVersion = {}));
+
+// src/approvalModel/ERC20ApprovalModel.ts
+var import_bignumber4 = __toModule(require("bignumber.js"));
+var approveERC20Max = async (token, spenderAddress, callback, confirmationCallback) => {
+  let wallet = Wallet.getInstance();
+  let amount = new import_bignumber4.BigNumber(2).pow(256).minus(1);
+  let erc20 = new ERC20(wallet, token.address);
+  registerSendTxEvents({
+    transactionHash: callback,
+    confirmation: confirmationCallback
+  });
+  let receipt = await erc20.approve({
+    spender: spenderAddress,
+    amount
+  });
+  return receipt;
+};
+var getERC20Allowance = async (wallet, token, spenderAddress) => {
+  if (!(token == null ? void 0 : token.address))
+    return null;
+  let erc20 = new ERC20(wallet, token.address);
+  let allowance = await erc20.allowance({
+    owner: wallet.account.address,
+    spender: spenderAddress
+  });
+  return fromDecimals(allowance, token.decimals || 18);
+};
+var ERC20ApprovalModel = class {
+  constructor(wallet, options) {
+    this.options = {
+      sender: null,
+      spenderAddress: "",
+      payAction: async () => {
+      },
+      onToBeApproved: async (token, data) => {
+      },
+      onToBePaid: async (token, data) => {
+      },
+      onApproving: async (token, receipt, data) => {
+      },
+      onApproved: async (token, data) => {
+      },
+      onPaying: async (receipt, data) => {
+      },
+      onPaid: async (data) => {
+      },
+      onApprovingError: async (token, err) => {
+      },
+      onPayingError: async (err) => {
+      }
+    };
+    this.checkAllowance = async (token, inputAmount, data) => {
+      let allowance = await getERC20Allowance(this.wallet, token, this.options.spenderAddress);
+      if (!allowance) {
+        await this.options.onToBePaid.bind(this.options.sender)(token, data);
+      } else if (new import_bignumber4.BigNumber(inputAmount).gt(allowance)) {
+        await this.options.onToBeApproved.bind(this.options.sender)(token, data);
+      } else {
+        await this.options.onToBePaid.bind(this.options.sender)(token, data);
+      }
+    };
+    this.doApproveAction = async (token, inputAmount, data) => {
+      const txHashCallback = async (err, receipt) => {
+        if (err) {
+          await this.options.onApprovingError.bind(this.options.sender)(token, err);
+        } else {
+          await this.options.onApproving.bind(this.options.sender)(token, receipt, data);
+        }
+      };
+      const confirmationCallback = async (receipt) => {
+        await this.options.onApproved.bind(this.options.sender)(token, data);
+        await this.checkAllowance(token, inputAmount, data);
+      };
+      approveERC20Max(token, this.options.spenderAddress, txHashCallback, confirmationCallback);
+    };
+    this.doPayAction = async (data) => {
+      const txHashCallback = async (err, receipt) => {
+        if (err) {
+          await this.options.onPayingError.bind(this.options.sender)(err);
+        } else {
+          await this.options.onPaying.bind(this.options.sender)(receipt, data);
+        }
+      };
+      const confirmationCallback = async (receipt) => {
+        await this.options.onPaid.bind(this.options.sender)(data);
+      };
+      registerSendTxEvents({
+        transactionHash: txHashCallback,
+        confirmation: confirmationCallback
+      });
+      await this.options.payAction.bind(this.options.sender)();
+    };
+    this.getAction = () => {
+      return {
+        doApproveAction: this.doApproveAction,
+        doPayAction: this.doPayAction,
+        checkAllowance: this.checkAllowance
+      };
+    };
+    this.wallet = wallet;
+    this.options = options;
+  }
+  set spenderAddress(value) {
+    this.options.spenderAddress = value;
+  }
+};
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
 * Released under dual AGPLv3/commercial license

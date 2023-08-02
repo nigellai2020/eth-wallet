@@ -7,6 +7,7 @@
 import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
+import { ISendTxEventsOptions, Wallet } from "./wallet";
 let Web3 = initWeb3Lib(); // tslint:disable-line
 
 export function initWeb3Lib() {
@@ -163,4 +164,20 @@ export function constructTypedMessageData(
         message: message
     };
     return data;
+}
+
+export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions) {
+    const wallet = Wallet.getClientInstance();
+    wallet.registerSendTxEvents({
+        transactionHash: (error: Error, receipt?: string) => {
+            if (sendTxEventHandlers.transactionHash) {
+                sendTxEventHandlers.transactionHash(error, receipt);
+            }
+        },
+        confirmation: (receipt: any) => {
+            if (sendTxEventHandlers.confirmation) {
+                sendTxEventHandlers.confirmation(receipt);
+            }
+        },
+    })
 }

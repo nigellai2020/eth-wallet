@@ -40,3 +40,9 @@ export interface TypedMessage<T extends MessageTypes> {
 export interface IAbiDefinition {
     _abi: any;
 }
+export interface ITokenObject {
+    address?: string;
+    name: string;
+    decimals: number;
+    symbol: string;
+}
