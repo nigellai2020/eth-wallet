@@ -1,3 +1,4 @@
+/// <amd-module name="@ijstech/eth-wallet/approvalModel/index.ts" />
 export {
     getERC20Allowance,
     IERC20ApprovalEventOptions,

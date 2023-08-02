@@ -2147,7 +2147,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     }
 }
-declare module "approvalModel/ERC20ApprovalModel" {
+/// <amd-module name="@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" />
+declare module "@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" {
     import { BigNumber } from 'bignumber.js';
     import { IRpcWallet } from "@ijstech/eth-wallet/wallet.ts";
     import { ITokenObject } from "@ijstech/eth-wallet/types.ts";
@@ -2183,8 +2184,9 @@ declare module "approvalModel/ERC20ApprovalModel" {
         getAction: () => IERC20ApprovalAction;
     }
 }
-declare module "approvalModel/index" {
-    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "approvalModel/ERC20ApprovalModel";
+/// <amd-module name="@ijstech/eth-wallet/approvalModel/index.ts" />
+declare module "@ijstech/eth-wallet/approvalModel/index.ts" {
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts";
 }
 /// <amd-module name="@ijstech/eth-wallet" />
 declare module "@ijstech/eth-wallet" {
@@ -2202,5 +2204,5 @@ declare module "@ijstech/eth-wallet" {
     export * as Types from "@ijstech/eth-wallet/types.ts";
     export * as Constants from "@ijstech/eth-wallet/constants.ts";
     export { IEventBusRegistry } from "@ijstech/eth-wallet/eventBus.ts";
-    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "approvalModel/index";
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "@ijstech/eth-wallet/approvalModel/index.ts";
 }

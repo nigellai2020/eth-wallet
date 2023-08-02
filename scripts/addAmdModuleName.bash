@@ -10,3 +10,5 @@ sed -i '1i /// <amd-module name="@ijstech/eth-wallet/types.ts" />' src/types.ts
 sed -i '1i /// <amd-module name="@ijstech/eth-wallet/utils.ts" />' src/utils.ts
 sed -i '1i /// <amd-module name="@ijstech/eth-wallet/wallet.ts" />' src/wallet.ts
 sed -i '1i /// <amd-module name="@ijstech/eth-wallet/web3.ts" />' src/web3.ts
+sed -i '1i /// <amd-module name="@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" />' src/approvalModel/ERC20ApprovalModel.ts
+sed -i '1i /// <amd-module name="@ijstech/eth-wallet/approvalModel/index.ts" />' src/approvalModel/index.ts
