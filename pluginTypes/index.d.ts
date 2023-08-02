@@ -1408,6 +1408,12 @@ declare module "@ijstech/eth-wallet/types.ts" {
     export interface IAbiDefinition {
         _abi: any;
     }
+    export interface ITokenObject {
+        address?: string;
+        name: string;
+        decimals: number;
+        symbol: string;
+    }
 }
 /// <amd-module name="@ijstech/eth-wallet/constants.ts" />
 declare module "@ijstech/eth-wallet/constants.ts" {
@@ -1469,6 +1475,7 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     *-----------------------------------------------------------*/
     import { BigNumber } from "bignumber.js";
     import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "@ijstech/eth-wallet/types.ts";
+    import { ISendTxEventsOptions } from "@ijstech/eth-wallet/wallet.ts";
     export function initWeb3Lib(): any;
     export function sleep(millisecond: number): Promise<unknown>;
     export function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
@@ -1489,6 +1496,7 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     export function toString(value: any): any;
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
+    export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
 }
 /// <amd-module name="@ijstech/eth-wallet/contracts/erc20.ts" />
 declare module "@ijstech/eth-wallet/contracts/erc20.ts" {
@@ -2139,6 +2147,45 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
     }
 }
+declare module "approvalModel/ERC20ApprovalModel" {
+    import { BigNumber } from 'bignumber.js';
+    import { IRpcWallet } from "@ijstech/eth-wallet/wallet.ts";
+    import { ITokenObject } from "@ijstech/eth-wallet/types.ts";
+    export const getERC20Allowance: (wallet: IRpcWallet, token: ITokenObject, spenderAddress: string) => Promise<BigNumber>;
+    export interface IERC20ApprovalEventOptions {
+        sender: any;
+        payAction: () => Promise<void>;
+        onToBeApproved: (token: ITokenObject) => Promise<void>;
+        onToBePaid: (token: ITokenObject) => Promise<void>;
+        onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
+        onApproved: (token: ITokenObject, data?: any) => Promise<void>;
+        onPaying: (receipt?: string, data?: any) => Promise<void>;
+        onPaid: (data?: any) => Promise<void>;
+        onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
+        onPayingError: (err: Error) => Promise<void>;
+    }
+    export interface IERC20ApprovalOptions extends IERC20ApprovalEventOptions {
+        spenderAddress: string;
+    }
+    export interface IERC20ApprovalAction {
+        doApproveAction: (token: ITokenObject, inputAmount: string, data?: any) => Promise<void>;
+        doPayAction: (data?: any) => Promise<void>;
+        checkAllowance: (token: ITokenObject, inputAmount: string, data?: any) => Promise<void>;
+    }
+    export class ERC20ApprovalModel {
+        private wallet;
+        private options;
+        constructor(wallet: IRpcWallet, options: IERC20ApprovalOptions);
+        set spenderAddress(value: string);
+        private checkAllowance;
+        private doApproveAction;
+        private doPayAction;
+        getAction: () => IERC20ApprovalAction;
+    }
+}
+declare module "approvalModel/index" {
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "approvalModel/ERC20ApprovalModel";
+}
 /// <amd-module name="@ijstech/eth-wallet" />
 declare module "@ijstech/eth-wallet" {
     /*!-----------------------------------------------------------
@@ -2155,4 +2202,5 @@ declare module "@ijstech/eth-wallet" {
     export * as Types from "@ijstech/eth-wallet/types.ts";
     export * as Constants from "@ijstech/eth-wallet/constants.ts";
     export { IEventBusRegistry } from "@ijstech/eth-wallet/eventBus.ts";
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "approvalModel/index";
 }

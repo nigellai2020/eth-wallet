@@ -5,6 +5,7 @@
 *-----------------------------------------------------------*/
 import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
+import { ISendTxEventsOptions } from "./wallet";
 export declare function initWeb3Lib(): any;
 export declare function sleep(millisecond: number): Promise<unknown>;
 export declare function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
@@ -25,4 +26,5 @@ export declare function fromDecimals(value: BigNumber | number | string, decimal
 export declare function toString(value: any): any;
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
 export declare function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
+export declare function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
 export {};

@@ -42,3 +42,10 @@ export * as Contracts from './contracts';
 export * as Types from './nodeTypes';
 export * as Constants from './constants';
 export {IEventBusRegistry} from './eventBus';
+export {
+    getERC20Allowance,
+    IERC20ApprovalEventOptions,
+    IERC20ApprovalOptions,
+    IERC20ApprovalAction,
+    ERC20ApprovalModel
+} from './approvalModel';
