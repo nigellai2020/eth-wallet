@@ -1,4 +1,3 @@
-/// <amd-module name="@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" />
 import { BigNumber } from 'bignumber.js';
 import { IRpcWallet } from "../wallet";
 import { ITokenObject } from '../types';
