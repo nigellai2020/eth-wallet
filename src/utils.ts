@@ -115,13 +115,16 @@ export function addressToBytes32Right(value: string, prefix?: boolean): string {
         v = '0x' + v;
     return v;
 }
-export function toNumber(value: string | number | BigNumber): number {
-    if (typeof (value) == 'number')
-        return value
-    else if (typeof (value) == 'string')
-        return new BigNumber(value).toNumber()
-    else
-        return value.toNumber()
+export function toNumber(value: string | number | BigNumber | BigInt): number {
+    if (typeof value === 'number') {
+        return value;
+    } else if (typeof value === 'string') {
+        return new BigNumber(value).toNumber();
+    } else if (typeof value === "bigint") {
+        return Number(value); 
+    } else {
+        return (value as BigNumber).toNumber();
+    }
 }
 export function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber {
     decimals = decimals || 18;

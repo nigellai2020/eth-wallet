@@ -30,21 +30,21 @@ export interface IWalletUtils {
 }
 export interface IWalletTransaction {
     hash: string;
-    nonce: number;
+    nonce: BigInt;
     blockHash: string | null;
-    blockNumber: number | null;
-    transactionIndex: number | null;
+    blockNumber: BigInt | null;
+    transactionIndex: BigInt | null;
     from: string;
     to: string | null;
-    value: string;
-    gasPrice: string;
-    maxPriorityFeePerGas?: number | string | BigNumber;
-    maxFeePerGas?: number | string | BigNumber;
-    gas: number;
+    value: BigNumber;
+    gasPrice: BigNumber;
+    maxPriorityFeePerGas?: BigInt | string | BigNumber;
+    maxFeePerGas?: BigInt | string | BigNumber;
+    gas: BigInt;
     input: string;
 }
 export interface IWalletBlockTransactionObject {
-    number: number;
+    number: BigInt;
     hash: string;
     parentHash: string;
     nonce: string;
@@ -55,13 +55,13 @@ export interface IWalletBlockTransactionObject {
     receiptsRoot: string;
     miner: string;
     extraData: string;
-    gasLimit: number;
-    gasUsed: number;
-    timestamp: number | string;
-    baseFeePerGas?: number;
-    size: number;
-    difficulty: number;
-    totalDifficulty: number;
+    gasLimit: BigInt;
+    gasUsed: BigInt;
+    timestamp: BigInt | string;
+    baseFeePerGas?: BigInt;
+    size: BigInt;
+    difficulty: BigInt;
+    totalDifficulty: BigInt;
     uncles: string[];
     transactions: IWalletTransaction[];
 }
@@ -239,9 +239,10 @@ export interface Transaction {
     to?: string;
     nonce?: number;
     gas?: number;
-    gasPrice?: BigNumber;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
     data?: string;
-    value?: BigNumber;
+    value?: BigNumber | number;
 }
 export interface TransactionOptions {
     from?: string;
