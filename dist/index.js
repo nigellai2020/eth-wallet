@@ -4783,12 +4783,15 @@ function addressToBytes32Right(value, prefix) {
   return v;
 }
 function toNumber(value) {
-  if (typeof value == "number")
+  if (typeof value === "number") {
     return value;
-  else if (typeof value == "string")
+  } else if (typeof value === "string") {
     return new import_bignumber.BigNumber(value).toNumber();
-  else
+  } else if (typeof value === "bigint") {
+    return Number(value);
+  } else {
     return value.toNumber();
+  }
 }
 function toDecimals(value, decimals) {
   decimals = decimals || 18;

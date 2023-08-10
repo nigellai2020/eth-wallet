@@ -1490,7 +1490,7 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     export function bytes32ToAddress(value: string): string;
     export function bytes32ToString(value: string): string;
     export function addressToBytes32Right(value: string, prefix?: boolean): string;
-    export function toNumber(value: string | number | BigNumber): number;
+    export function toNumber(value: string | number | BigNumber | BigInt): number;
     export function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     export function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     export function toString(value: any): any;
@@ -1640,21 +1640,21 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export interface IWalletTransaction {
         hash: string;
-        nonce: number;
+        nonce: BigInt;
         blockHash: string | null;
-        blockNumber: number | null;
-        transactionIndex: number | null;
+        blockNumber: BigInt | null;
+        transactionIndex: BigInt | null;
         from: string;
         to: string | null;
-        value: string;
-        gasPrice: string;
-        maxPriorityFeePerGas?: number | string | BigNumber;
-        maxFeePerGas?: number | string | BigNumber;
-        gas: number;
+        value: BigNumber;
+        gasPrice: BigNumber;
+        maxPriorityFeePerGas?: BigInt | string | BigNumber;
+        maxFeePerGas?: BigInt | string | BigNumber;
+        gas: BigInt;
         input: string;
     }
     export interface IWalletBlockTransactionObject {
-        number: number;
+        number: BigInt;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -1665,13 +1665,13 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: number;
-        gasUsed: number;
-        timestamp: number | string;
-        baseFeePerGas?: number;
-        size: number;
-        difficulty: number;
-        totalDifficulty: number;
+        gasLimit: BigInt;
+        gasUsed: BigInt;
+        timestamp: BigInt | string;
+        baseFeePerGas?: BigInt;
+        size: BigInt;
+        difficulty: BigInt;
+        totalDifficulty: BigInt;
         uncles: string[];
         transactions: IWalletTransaction[];
     }
@@ -1849,9 +1849,10 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         to?: string;
         nonce?: number;
         gas?: number;
-        gasPrice?: BigNumber;
+        gasLimit?: number;
+        gasPrice?: BigNumber | number;
         data?: string;
-        value?: BigNumber;
+        value?: BigNumber | number;
     }
     export interface TransactionOptions {
         from?: string;
