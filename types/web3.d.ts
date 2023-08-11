@@ -332,7 +332,7 @@ export interface Accounts {
     decrypt(keystoreJsonV3: EncryptedKeystoreV3Json, password: string): Account;
     wallet: WalletBase;
 }
-export type BlockNumber = BigInt | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+export type BlockNumber = bigint | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
 export interface Options extends ContractOptions {
     address: string;
     jsonInterface: AbiItem[];
@@ -352,11 +352,11 @@ export interface EventLog {
     event: string;
     address: string;
     returnValues: any;
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     raw?: {
         data: string;
         topics: any[];
@@ -366,25 +366,25 @@ export interface Log {
     address: string;
     data: string;
     topics: string[];
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     removed: boolean;
 }
 export interface TransactionReceipt {
-    status: BigInt;
+    status: bigint;
     transactionHash: string;
-    transactionIndex: BigInt;
+    transactionIndex: bigint;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     from: string;
     to: string;
     contractAddress?: string;
-    cumulativeGasUsed: BigInt;
-    gasUsed: BigInt;
-    effectiveGasPrice: BigInt;
+    cumulativeGasUsed: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: bigint;
     logs: Log[];
     logsBloom: string;
     events?: {
@@ -392,7 +392,7 @@ export interface TransactionReceipt {
     };
 }
 export interface ConfirmationObject {
-    confirmationNumber: BigInt;
+    confirmationNumber: bigint;
     receipt: TransactionReceipt;
     latestBlockHash: string;
 }
@@ -415,21 +415,21 @@ export interface PromiEvent<T> extends Promise<T> {
 export interface CallOptions {
     from?: string;
     gasPrice?: string;
-    gas?: BigInt;
+    gas?: bigint;
 }
 export interface EstimateGasOptions {
     from?: string;
-    gas?: BigInt;
+    gas?: bigint;
     value?: number | string | BigNumber;
 }
 export interface ContractSendMethod {
     send(options: SendOptions): PromiEvent<Contract>;
     call(options?: CallOptions): Promise<any>;
-    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-    estimateGas(): Promise<BigInt>;
-    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-    estimateGas(): Promise<BigInt>;
+    estimateGas(options: EstimateGasOptions): Promise<bigint>;
+    estimateGas(): Promise<bigint>;
+    estimateGas(options: EstimateGasOptions): Promise<bigint>;
+    estimateGas(options: EstimateGasOptions): Promise<bigint>;
+    estimateGas(): Promise<bigint>;
     encodeABI(): string;
 }
 export interface EventData {
@@ -442,11 +442,11 @@ export interface EventData {
     };
     event: string;
     signature: string;
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     address: string;
 }
 export interface Filter {
@@ -625,7 +625,7 @@ export interface Syncing {
     PulledStates: number;
 }
 export interface BlockHeader {
-    number: BigInt;
+    number: bigint;
     hash: string;
     parentHash: string;
     nonce: string;
@@ -636,21 +636,21 @@ export interface BlockHeader {
     receiptsRoot: string;
     miner: string;
     extraData: string;
-    gasLimit: BigInt;
-    gasUsed: BigInt;
-    timestamp: BigInt;
-    baseFeePerGas?: BigInt;
+    gasLimit: bigint;
+    gasUsed: bigint;
+    timestamp: bigint;
+    baseFeePerGas?: bigint;
 }
 export interface FeeHistoryResult {
     baseFeePerGas: string[];
     gasUsedRatio: number[];
-    oldestBlock: BigInt;
+    oldestBlock: bigint;
     reward: string[][];
 }
 export interface BlockTransactionBase extends BlockHeader {
-    size: BigInt;
-    difficulty: BigInt;
-    totalDifficulty: BigInt;
+    size: bigint;
+    difficulty: bigint;
+    totalDifficulty: bigint;
     uncles: string[];
 }
 export interface BlockTransactionString extends BlockTransactionBase {
@@ -663,17 +663,17 @@ export interface AccessTuple {
 export type AccessList = AccessTuple[];
 export interface Transaction {
     hash: string;
-    nonce: BigInt;
+    nonce: bigint;
     blockHash: string | null;
-    blockNumber: BigInt | null;
-    transactionIndex: BigInt | null;
+    blockNumber: bigint | null;
+    transactionIndex: bigint | null;
     from: string;
     to: string | null;
     value: string;
     gasPrice: string;
-    maxPriorityFeePerGas?: BigInt | string | BigNumber;
-    maxFeePerGas?: BigInt | string | BigNumber;
-    gas: BigInt;
+    maxPriorityFeePerGas?: bigint | string | BigNumber;
+    maxFeePerGas?: bigint | string | BigNumber;
+    gas: bigint;
     input: string;
     chainId?: string;
     accessList?: AccessList;
@@ -724,15 +724,15 @@ export interface Eth {
     isMining(): Promise<boolean>;
     getHashRate(): Promise<number>;
     getNodeInfo(): Promise<string>;
-    getChainId(): Promise<BigInt>;
-    getGasPrice(): Promise<BigInt>;
+    getChainId(): Promise<bigint>;
+    getGasPrice(): Promise<bigint>;
     getFeeHistory(blockCount: number | BigNumber | BigNumber | string, lastBlock: number | BigNumber | BigNumber | string, rewardPercentiles: number[]): Promise<FeeHistoryResult>;
     getAccounts(): Promise<string[]>;
-    getBlockNumber(): Promise<BigInt>;
-    getBalance(address: string): Promise<BigInt>;
-    getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
-    getBalance(address: string): Promise<BigInt>;
-    getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+    getBlockNumber(): Promise<bigint>;
+    getBalance(address: string): Promise<bigint>;
+    getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+    getBalance(address: string): Promise<bigint>;
+    getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
     getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
     getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
     getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
@@ -747,8 +747,8 @@ export interface Eth {
     getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
     getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
     getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
-    getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
-    getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
+    getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
+    getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
     getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
     getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
     getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
@@ -757,10 +757,10 @@ export interface Eth {
     getPendingTransactions(): Promise<Transaction[]>;
     getTransactionFromBlock(blockHashOrBlockNumber: BlockNumber | string, indexNumber: number | string | BigNumber): Promise<Transaction>;
     getTransactionReceipt(hash: string): Promise<TransactionReceipt>;
-    getTransactionCount(address: string): Promise<BigInt>;
-    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
-    getTransactionCount(address: string): Promise<BigInt>;
-    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+    getTransactionCount(address: string): Promise<bigint>;
+    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+    getTransactionCount(address: string): Promise<bigint>;
+    getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
     sendTransaction(transactionConfig: TransactionConfig): PromiEvent<TransactionReceipt>;
     sendSignedTransaction(signedTransactionData: string): PromiEvent<TransactionReceipt>;
     sign(dataToSign: string, address: string | number): Promise<string>;
@@ -771,7 +771,7 @@ export interface Eth {
     call(transactionConfig: TransactionConfig, defaultBlock?: BlockNumber): Promise<string>;
     call(transactionConfig: TransactionConfig): Promise<string>;
     call(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<string>;
-    estimateGas(transactionConfig: TransactionConfig): Promise<BigInt>;
+    estimateGas(transactionConfig: TransactionConfig): Promise<bigint>;
     createAccessList(transactionConfig: TransactionConfig): Promise<CreateAccessList>;
     createAccessList(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<CreateAccessList>;
     getPastLogs(options: PastLogsOptions): Promise<Log[]>;

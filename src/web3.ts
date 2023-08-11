@@ -452,7 +452,7 @@ export interface Accounts {
 
     wallet: WalletBase;
 };
-export type BlockNumber = BigInt | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+export type BlockNumber = bigint | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
 export interface Options extends ContractOptions {
     address: string;
     jsonInterface: AbiItem[];
@@ -472,36 +472,36 @@ export interface EventLog {
     event: string;
     address: string;
     returnValues: any;
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     raw?: {data: string; topics: any[]};
 };
 export interface Log {
     address: string;
     data: string;
     topics: string[];
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     removed: boolean;
 };
 export interface TransactionReceipt {
-    status: BigInt;
+    status: bigint;
     transactionHash: string;
-    transactionIndex: BigInt;
+    transactionIndex: bigint;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     from: string;
     to: string;
     contractAddress?: string;
-    cumulativeGasUsed: BigInt;
-    gasUsed: BigInt;
-    effectiveGasPrice: BigInt;
+    cumulativeGasUsed: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: bigint;
     logs: Log[];
     logsBloom: string;
     events?: {
@@ -509,7 +509,7 @@ export interface TransactionReceipt {
     };
 };
 export interface ConfirmationObject {
-    confirmationNumber: BigInt;
+    confirmationNumber: bigint;
     receipt: TransactionReceipt;
     latestBlockHash: string;
 }
@@ -581,11 +581,11 @@ export interface PromiEvent<T> extends Promise<T> {
 export interface CallOptions {
     from?: string;
     gasPrice?: string;
-    gas?: BigInt;
+    gas?: bigint;
 };
 export interface EstimateGasOptions {
     from?: string;
-    gas?: BigInt;
+    gas?: bigint;
     value?: number | string | BigNumber;
 };
 export interface ContractSendMethod {
@@ -602,18 +602,18 @@ export interface ContractSendMethod {
     estimateGas(
         options: EstimateGasOptions,
         // callback?: (err: Error, gas: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
-    estimateGas(/*callback: (err: Error, gas: number) => void*/): Promise<BigInt>;
+    estimateGas(/*callback: (err: Error, gas: number) => void*/): Promise<bigint>;
 
     estimateGas(
         options: EstimateGasOptions,
         // callback: (err: Error, gas: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
-    estimateGas(options: EstimateGasOptions): Promise<BigInt>;
+    estimateGas(options: EstimateGasOptions): Promise<bigint>;
 
-    estimateGas(): Promise<BigInt>;
+    estimateGas(): Promise<bigint>;
 
     encodeABI(): string;
 };
@@ -627,11 +627,11 @@ export interface EventData {
     };
     event: string;
     signature: string;
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     address: string;
 };
 export interface Filter {
@@ -916,7 +916,7 @@ export interface Syncing {
     PulledStates: number;
 };
 export interface BlockHeader {
-    number: BigInt;
+    number: bigint;
     hash: string;
     parentHash: string;
     nonce: string;
@@ -927,21 +927,21 @@ export interface BlockHeader {
     receiptsRoot: string;
     miner: string;
     extraData: string;
-    gasLimit: BigInt;
-    gasUsed: BigInt;
-    timestamp: BigInt;
-    baseFeePerGas?: BigInt;
+    gasLimit: bigint;
+    gasUsed: bigint;
+    timestamp: bigint;
+    baseFeePerGas?: bigint;
 };
 export interface FeeHistoryResult {
     baseFeePerGas: string[];
     gasUsedRatio: number[];
-    oldestBlock: BigInt;
+    oldestBlock: bigint;
     reward: string[][];
 };
 export interface BlockTransactionBase extends BlockHeader {
-    size: BigInt;
-    difficulty: BigInt;
-    totalDifficulty: BigInt;
+    size: bigint;
+    difficulty: bigint;
+    totalDifficulty: bigint;
     uncles: string[];
 };
 export interface BlockTransactionString extends BlockTransactionBase {
@@ -954,17 +954,17 @@ export interface AccessTuple {
 export type AccessList = AccessTuple[];
 export interface Transaction {
     hash: string;
-    nonce: BigInt;
+    nonce: bigint;
     blockHash: string | null;
-    blockNumber: BigInt | null;
-    transactionIndex: BigInt | null;
+    blockNumber: bigint | null;
+    transactionIndex: bigint | null;
     from: string;
     to: string | null;
     value: string;
     gasPrice: string;
-    maxPriorityFeePerGas?: BigInt | string | BigNumber;
-    maxFeePerGas?: BigInt | string | BigNumber;
-    gas: BigInt;
+    maxPriorityFeePerGas?: bigint | string | BigNumber;
+    maxFeePerGas?: bigint | string | BigNumber;
+    gas: bigint;
     input: string;
     chainId?: string;
     accessList?: AccessList;
@@ -1059,11 +1059,11 @@ export interface Eth {
 
     getChainId(
         // callback?: (error: Error, version: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getGasPrice(
         // callback?: (error: Error, gasPrice: string) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getFeeHistory(
         blockCount: number | BigNumber | BigNumber | string,
@@ -1078,23 +1078,23 @@ export interface Eth {
 
     getBlockNumber(
         // callback?: (error: Error, blockNumber: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getBalance(
         address: string
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
     getBalance(
         address: string,
-        defaultBlock: BlockNumber): Promise<BigInt>;
+        defaultBlock: BlockNumber): Promise<bigint>;
     getBalance(
         address: string,
         // callback?: (error: Error, balance: string) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
     getBalance(
         address: string,
         defaultBlock: BlockNumber,
         // callback?: (error: Error, balance: string) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
     getStorageAt(
@@ -1158,12 +1158,12 @@ export interface Eth {
     getBlockTransactionCount(
         blockHashOrBlockNumber: BlockNumber | string,
         // callback?: (error: Error, numberOfTransactions: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getBlockUncleCount(
         blockHashOrBlockNumber: BlockNumber | string,
         // callback?: (error: Error, numberOfTransactions: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     getUncle(
         blockHashOrBlockNumber: BlockNumber | string,
@@ -1209,20 +1209,20 @@ export interface Eth {
         // ) => void
     ): Promise<TransactionReceipt>;
 
-    getTransactionCount(address: string): Promise<BigInt>;
+    getTransactionCount(address: string): Promise<bigint>;
     getTransactionCount(
         address: string,
         defaultBlock: BlockNumber
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
     getTransactionCount(
         address: string,
         // callback?: (error: Error, count: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
     getTransactionCount(
         address: string,
         defaultBlock: BlockNumber,
         // callback?: (error: Error, count: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     sendTransaction(
         transactionConfig: TransactionConfig,
@@ -1278,7 +1278,7 @@ export interface Eth {
     estimateGas(
         transactionConfig: TransactionConfig,
         // callback?: (error: Error, gas: number) => void
-    ): Promise<BigInt>;
+    ): Promise<bigint>;
 
     createAccessList(
         transactionConfig: TransactionConfig,

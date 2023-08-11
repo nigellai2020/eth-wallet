@@ -115,7 +115,7 @@ export function addressToBytes32Right(value: string, prefix?: boolean): string {
         v = '0x' + v;
     return v;
 }
-export function toNumber(value: string | number | BigNumber | BigInt): number {
+export function toNumber(value: string | number | BigNumber | bigint): number {
     if (typeof value === 'number') {
         return value;
     } else if (typeof value === 'string') {
