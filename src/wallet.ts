@@ -125,21 +125,21 @@ function initWeb3ModalLib(callback: () => void){
 	};
 	export interface IWalletTransaction {
 		hash: string;
-		nonce: BigInt;
+		nonce: bigint;
 		blockHash: string | null;
-		blockNumber: BigInt | null;
-		transactionIndex: BigInt | null;
+		blockNumber: bigint | null;
+		transactionIndex: bigint | null;
 		from: string;
 		to: string | null;
 		value: BigNumber;
 		gasPrice: BigNumber;
-		maxPriorityFeePerGas?: BigInt | string | BigNumber;
-		maxFeePerGas?: BigInt | string | BigNumber;
-		gas: BigInt;
+		maxPriorityFeePerGas?: bigint | string | BigNumber;
+		maxFeePerGas?: bigint | string | BigNumber;
+		gas: bigint;
 		input: string;
 	}
 	export interface IWalletBlockTransactionObject {
-		number: BigInt;
+		number: bigint;
 		hash: string;
 		parentHash: string;
 		nonce: string;
@@ -150,13 +150,13 @@ function initWeb3ModalLib(callback: () => void){
 		receiptsRoot: string;
 		miner: string;
 		extraData: string;
-		gasLimit: BigInt;
-		gasUsed: BigInt;
-		timestamp: BigInt | string;
-		baseFeePerGas?: BigInt;
-		size: BigInt;
-		difficulty: BigInt;
-		totalDifficulty: BigInt;
+		gasLimit: bigint;
+		gasUsed: bigint;
+		timestamp: bigint | string;
+		baseFeePerGas?: bigint;
+		size: bigint;
+		difficulty: bigint;
+		totalDifficulty: bigint;
 		uncles: string[];
 		transactions: IWalletTransaction[];
 	}
@@ -269,7 +269,7 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export interface IContractMethod {
 		call: any;
-		estimateGas(...params:any[]): Promise<BigInt>;
+		estimateGas(...params:any[]): Promise<bigint>;
 		encodeABI(): string;
 	}
 	export interface IContract {
@@ -280,11 +280,11 @@ function initWeb3ModalLib(callback: () => void){
     export interface Event{
 		name: string;
         address: string;
-        blockNumber: BigInt;
-		logIndex: BigInt;
+        blockNumber: bigint;
+		logIndex: bigint;
 		topics: string[];
         transactionHash: string;
-        transactionIndex: BigInt;        
+        transactionIndex: bigint;        
         data: any;
 		rawData: any;
 	}
@@ -292,22 +292,22 @@ function initWeb3ModalLib(callback: () => void){
 	    address: string;
 	    data: string;
 	    topics: Array <string>;
-        logIndex: BigInt;
+        logIndex: bigint;
 	    transactionHash?: string;
-	    transactionIndex: BigInt;
+	    transactionIndex: bigint;
 	    blockHash?: string;
 	    type?: string;
-	    blockNumber: BigInt;
+	    blockNumber: bigint;
 	}
 	export interface EventLog {
 	    event: string
 	    address: string
 	    returnValues: any
-	    logIndex: BigInt
-	    transactionIndex: BigInt
+	    logIndex: bigint
+	    transactionIndex: bigint
 	    transactionHash: string
 	    blockHash: string
-	    blockNumber: BigInt
+	    blockNumber: bigint
 	    raw ? : {
 	        data: string,
 	        topics: string[]

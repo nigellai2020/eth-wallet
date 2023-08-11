@@ -20,7 +20,7 @@ export declare function addressToBytes32(value: string, prefix?: boolean): strin
 export declare function bytes32ToAddress(value: string): string;
 export declare function bytes32ToString(value: string): string;
 export declare function addressToBytes32Right(value: string, prefix?: boolean): string;
-export declare function toNumber(value: string | number | BigNumber | BigInt): number;
+export declare function toNumber(value: string | number | BigNumber | bigint): number;
 export declare function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
 export declare function toString(value: any): any;

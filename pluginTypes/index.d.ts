@@ -334,7 +334,7 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         decrypt(keystoreJsonV3: EncryptedKeystoreV3Json, password: string): Account;
         wallet: WalletBase;
     }
-    export type BlockNumber = BigInt | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+    export type BlockNumber = bigint | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
     export interface Options extends ContractOptions {
         address: string;
         jsonInterface: AbiItem[];
@@ -354,11 +354,11 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         event: string;
         address: string;
         returnValues: any;
-        logIndex: BigInt;
-        transactionIndex: BigInt;
+        logIndex: bigint;
+        transactionIndex: bigint;
         transactionHash: string;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         raw?: {
             data: string;
             topics: any[];
@@ -368,25 +368,25 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         address: string;
         data: string;
         topics: string[];
-        logIndex: BigInt;
-        transactionIndex: BigInt;
+        logIndex: bigint;
+        transactionIndex: bigint;
         transactionHash: string;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         removed: boolean;
     }
     export interface TransactionReceipt {
-        status: BigInt;
+        status: bigint;
         transactionHash: string;
-        transactionIndex: BigInt;
+        transactionIndex: bigint;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         from: string;
         to: string;
         contractAddress?: string;
-        cumulativeGasUsed: BigInt;
-        gasUsed: BigInt;
-        effectiveGasPrice: BigInt;
+        cumulativeGasUsed: bigint;
+        gasUsed: bigint;
+        effectiveGasPrice: bigint;
         logs: Log[];
         logsBloom: string;
         events?: {
@@ -394,7 +394,7 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         };
     }
     export interface ConfirmationObject {
-        confirmationNumber: BigInt;
+        confirmationNumber: bigint;
         receipt: TransactionReceipt;
         latestBlockHash: string;
     }
@@ -417,21 +417,21 @@ declare module "@ijstech/eth-wallet/web3.ts" {
     export interface CallOptions {
         from?: string;
         gasPrice?: string;
-        gas?: BigInt;
+        gas?: bigint;
     }
     export interface EstimateGasOptions {
         from?: string;
-        gas?: BigInt;
+        gas?: bigint;
         value?: number | string | BigNumber;
     }
     export interface ContractSendMethod {
         send(options: SendOptions): PromiEvent<Contract>;
         call(options?: CallOptions): Promise<any>;
-        estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-        estimateGas(): Promise<BigInt>;
-        estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-        estimateGas(options: EstimateGasOptions): Promise<BigInt>;
-        estimateGas(): Promise<BigInt>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(): Promise<bigint>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(): Promise<bigint>;
         encodeABI(): string;
     }
     export interface EventData {
@@ -444,11 +444,11 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         };
         event: string;
         signature: string;
-        logIndex: BigInt;
-        transactionIndex: BigInt;
+        logIndex: bigint;
+        transactionIndex: bigint;
         transactionHash: string;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         address: string;
     }
     export interface Filter {
@@ -627,7 +627,7 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         PulledStates: number;
     }
     export interface BlockHeader {
-        number: BigInt;
+        number: bigint;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -638,21 +638,21 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: BigInt;
-        gasUsed: BigInt;
-        timestamp: BigInt;
-        baseFeePerGas?: BigInt;
+        gasLimit: bigint;
+        gasUsed: bigint;
+        timestamp: bigint;
+        baseFeePerGas?: bigint;
     }
     export interface FeeHistoryResult {
         baseFeePerGas: string[];
         gasUsedRatio: number[];
-        oldestBlock: BigInt;
+        oldestBlock: bigint;
         reward: string[][];
     }
     export interface BlockTransactionBase extends BlockHeader {
-        size: BigInt;
-        difficulty: BigInt;
-        totalDifficulty: BigInt;
+        size: bigint;
+        difficulty: bigint;
+        totalDifficulty: bigint;
         uncles: string[];
     }
     export interface BlockTransactionString extends BlockTransactionBase {
@@ -665,17 +665,17 @@ declare module "@ijstech/eth-wallet/web3.ts" {
     export type AccessList = AccessTuple[];
     export interface Transaction {
         hash: string;
-        nonce: BigInt;
+        nonce: bigint;
         blockHash: string | null;
-        blockNumber: BigInt | null;
-        transactionIndex: BigInt | null;
+        blockNumber: bigint | null;
+        transactionIndex: bigint | null;
         from: string;
         to: string | null;
         value: string;
         gasPrice: string;
-        maxPriorityFeePerGas?: BigInt | string | BigNumber;
-        maxFeePerGas?: BigInt | string | BigNumber;
-        gas: BigInt;
+        maxPriorityFeePerGas?: bigint | string | BigNumber;
+        maxFeePerGas?: bigint | string | BigNumber;
+        gas: bigint;
         input: string;
         chainId?: string;
         accessList?: AccessList;
@@ -726,15 +726,15 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         isMining(): Promise<boolean>;
         getHashRate(): Promise<number>;
         getNodeInfo(): Promise<string>;
-        getChainId(): Promise<BigInt>;
-        getGasPrice(): Promise<BigInt>;
+        getChainId(): Promise<bigint>;
+        getGasPrice(): Promise<bigint>;
         getFeeHistory(blockCount: number | BigNumber | BigNumber | string, lastBlock: number | BigNumber | BigNumber | string, rewardPercentiles: number[]): Promise<FeeHistoryResult>;
         getAccounts(): Promise<string[]>;
-        getBlockNumber(): Promise<BigInt>;
-        getBalance(address: string): Promise<BigInt>;
-        getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
-        getBalance(address: string): Promise<BigInt>;
-        getBalance(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+        getBlockNumber(): Promise<bigint>;
+        getBalance(address: string): Promise<bigint>;
+        getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        getBalance(address: string): Promise<bigint>;
+        getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
         getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
         getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
         getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
@@ -749,8 +749,8 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
         getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
         getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
-        getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
-        getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<BigInt>;
+        getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
+        getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
         getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
         getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
         getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
@@ -759,10 +759,10 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         getPendingTransactions(): Promise<Transaction[]>;
         getTransactionFromBlock(blockHashOrBlockNumber: BlockNumber | string, indexNumber: number | string | BigNumber): Promise<Transaction>;
         getTransactionReceipt(hash: string): Promise<TransactionReceipt>;
-        getTransactionCount(address: string): Promise<BigInt>;
-        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
-        getTransactionCount(address: string): Promise<BigInt>;
-        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<BigInt>;
+        getTransactionCount(address: string): Promise<bigint>;
+        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        getTransactionCount(address: string): Promise<bigint>;
+        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
         sendTransaction(transactionConfig: TransactionConfig): PromiEvent<TransactionReceipt>;
         sendSignedTransaction(signedTransactionData: string): PromiEvent<TransactionReceipt>;
         sign(dataToSign: string, address: string | number): Promise<string>;
@@ -773,7 +773,7 @@ declare module "@ijstech/eth-wallet/web3.ts" {
         call(transactionConfig: TransactionConfig, defaultBlock?: BlockNumber): Promise<string>;
         call(transactionConfig: TransactionConfig): Promise<string>;
         call(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<string>;
-        estimateGas(transactionConfig: TransactionConfig): Promise<BigInt>;
+        estimateGas(transactionConfig: TransactionConfig): Promise<bigint>;
         createAccessList(transactionConfig: TransactionConfig): Promise<CreateAccessList>;
         createAccessList(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<CreateAccessList>;
         getPastLogs(options: PastLogsOptions): Promise<Log[]>;
@@ -1490,7 +1490,7 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     export function bytes32ToAddress(value: string): string;
     export function bytes32ToString(value: string): string;
     export function addressToBytes32Right(value: string, prefix?: boolean): string;
-    export function toNumber(value: string | number | BigNumber | BigInt): number;
+    export function toNumber(value: string | number | BigNumber | bigint): number;
     export function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     export function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     export function toString(value: any): any;
@@ -1642,21 +1642,21 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export interface IWalletTransaction {
         hash: string;
-        nonce: BigInt;
+        nonce: bigint;
         blockHash: string | null;
-        blockNumber: BigInt | null;
-        transactionIndex: BigInt | null;
+        blockNumber: bigint | null;
+        transactionIndex: bigint | null;
         from: string;
         to: string | null;
         value: BigNumber;
         gasPrice: BigNumber;
-        maxPriorityFeePerGas?: BigInt | string | BigNumber;
-        maxFeePerGas?: BigInt | string | BigNumber;
-        gas: BigInt;
+        maxPriorityFeePerGas?: bigint | string | BigNumber;
+        maxFeePerGas?: bigint | string | BigNumber;
+        gas: bigint;
         input: string;
     }
     export interface IWalletBlockTransactionObject {
-        number: BigInt;
+        number: bigint;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -1667,13 +1667,13 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: BigInt;
-        gasUsed: BigInt;
-        timestamp: BigInt | string;
-        baseFeePerGas?: BigInt;
-        size: BigInt;
-        difficulty: BigInt;
-        totalDifficulty: BigInt;
+        gasLimit: bigint;
+        gasUsed: bigint;
+        timestamp: bigint | string;
+        baseFeePerGas?: bigint;
+        size: bigint;
+        difficulty: bigint;
+        totalDifficulty: bigint;
         uncles: string[];
         transactions: IWalletTransaction[];
     }
@@ -1795,7 +1795,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export interface IContractMethod {
         call: any;
-        estimateGas(...params: any[]): Promise<BigInt>;
+        estimateGas(...params: any[]): Promise<bigint>;
         encodeABI(): string;
     }
     export interface IContract {
@@ -1813,11 +1813,11 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     export interface Event {
         name: string;
         address: string;
-        blockNumber: BigInt;
-        logIndex: BigInt;
+        blockNumber: bigint;
+        logIndex: bigint;
         topics: string[];
         transactionHash: string;
-        transactionIndex: BigInt;
+        transactionIndex: bigint;
         data: any;
         rawData: any;
     }
@@ -1825,22 +1825,22 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         address: string;
         data: string;
         topics: Array<string>;
-        logIndex: BigInt;
+        logIndex: bigint;
         transactionHash?: string;
-        transactionIndex: BigInt;
+        transactionIndex: bigint;
         blockHash?: string;
         type?: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
     }
     export interface EventLog {
         event: string;
         address: string;
         returnValues: any;
-        logIndex: BigInt;
-        transactionIndex: BigInt;
+        logIndex: bigint;
+        transactionIndex: bigint;
         transactionHash: string;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         raw?: {
             data: string;
             topics: string[];
