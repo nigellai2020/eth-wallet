@@ -170,6 +170,13 @@ export function constructTypedMessageData(
     return data;
 }
 
+export function soliditySha3(...val: any[]) {
+    return Web3.utils.soliditySha3(...val);
+}
+export function toChecksumAddress(address: string) {
+    return Web3.utils.toChecksumAddress(address);
+}
+
 export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]) {
     return (leafData: Record<string, any>): string => {
         let encodePackedInput = abi.map((abiItem) => {

@@ -4622,8 +4622,10 @@ __export(utils_exports, {
   padRight: () => padRight,
   registerSendTxEvents: () => registerSendTxEvents,
   sleep: () => sleep,
+  soliditySha3: () => soliditySha3,
   stringToBytes: () => stringToBytes,
   stringToBytes32: () => stringToBytes32,
+  toChecksumAddress: () => toChecksumAddress,
   toDecimals: () => toDecimals,
   toNumber: () => toNumber,
   toString: () => toString
@@ -4826,6 +4828,12 @@ function constructTypedMessageData(domain, customTypes, primaryType, message) {
     message
   };
   return data;
+}
+function soliditySha3(...val) {
+  return Web32.utils.soliditySha3(...val);
+}
+function toChecksumAddress(address) {
+  return Web32.utils.toChecksumAddress(address);
 }
 function registerSendTxEvents(sendTxEventHandlers) {
   const wallet = Wallet.getClientInstance();

@@ -1496,6 +1496,8 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     export function toString(value: any): any;
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
+    export function soliditySha3(...val: any[]): any;
+    export function toChecksumAddress(address: string): any;
     export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
 }
 /// <amd-module name="@ijstech/eth-wallet/contracts/erc20.ts" />

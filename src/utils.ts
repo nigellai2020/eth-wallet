@@ -169,6 +169,13 @@ export function constructTypedMessageData(
     return data;
 }
 
+export function soliditySha3(...val: any[]) {
+    return Web3.utils.soliditySha3(...val);
+}
+export function toChecksumAddress(address: string) {
+    return Web3.utils.toChecksumAddress(address);
+}
+
 export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions) {
     const wallet = Wallet.getClientInstance();
     wallet.registerSendTxEvents({
