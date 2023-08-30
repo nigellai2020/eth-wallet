@@ -24,7 +24,8 @@ export {
     IClientWallet,
     IMulticallInfo,
     IRpcWalletConfig,
-    IRpcWallet
+    IRpcWallet,
+    IConnectWalletEventPayload
 } from './wallet';
 export {NodeWallet as Wallet} from './nodeWallet';
 export {Contract} from './contract';

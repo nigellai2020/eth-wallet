@@ -25,7 +25,8 @@ export {
     IClientWallet,
     IMulticallInfo,
     IRpcWalletConfig,
-    IRpcWallet
+    IRpcWallet,
+    IConnectWalletEventPayload
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";

@@ -1692,6 +1692,10 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         promises: Promise<IBatchRequestResult>[];
         execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
     }
+    export interface IConnectWalletEventPayload {
+        userTriggeredConnect?: boolean;
+        [key: string]: any;
+    }
     export interface IWallet {
         account: IAccount;
         accounts: Promise<string[]>;
@@ -1972,8 +1976,9 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         get selectedAddress(): string;
         protected toChecksumAddress(address: string): string;
         protected removeListeners(): void;
+        private _handleAccountsChanged;
         protected initEvents(): void;
-        connect(eventPayload?: Record<string, any>): Promise<any>;
+        connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
         disconnect(): Promise<void>;
         isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -1996,7 +2001,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         installed(): boolean;
         get options(): IClientProviderOptions;
         private initializeWeb3Modal;
-        connect(eventPayload?: Record<string, any>): Promise<any>;
+        connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
         disconnect(): Promise<void>;
     }
     export interface ISendTxEventsOptions {
@@ -2038,7 +2043,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         private generateUUID;
         initRpcWallet(config: IRpcWalletConfig): string;
         setDefaultProvider(): void;
-        connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<void>;
+        connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload): Promise<void>;
         disconnect(): Promise<void>;
         get accounts(): Promise<string[]>;
         get address(): string;
@@ -2198,7 +2203,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, IRpcWalletConfig, IRpcWallet } from "@ijstech/eth-wallet/wallet.ts";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload } from "@ijstech/eth-wallet/wallet.ts";
     export { Contract } from "@ijstech/eth-wallet/contract.ts";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";
