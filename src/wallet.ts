@@ -599,7 +599,7 @@ function initWeb3ModalLib(callback: () => void){
 			let self = this;
 			try {
 				if (this.installed()) {
-					if (eventPayload.userTriggeredConnect) {
+					if (eventPayload?.userTriggeredConnect) {
 						await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
 							self._handleAccountsChanged(accounts, eventPayload);
 						});

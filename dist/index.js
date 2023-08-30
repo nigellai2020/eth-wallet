@@ -5187,7 +5187,7 @@ var EthereumProvider = class {
     let self = this;
     try {
       if (this.installed()) {
-        if (eventPayload.userTriggeredConnect) {
+        if (eventPayload == null ? void 0 : eventPayload.userTriggeredConnect) {
           await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
             self._handleAccountsChanged(accounts, eventPayload);
           });
