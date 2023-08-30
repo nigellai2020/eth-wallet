@@ -80,6 +80,10 @@ export interface IBatchRequestObj {
     promises: Promise<IBatchRequestResult>[];
     execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
 }
+export interface IConnectWalletEventPayload {
+    userTriggeredConnect?: boolean;
+    [key: string]: any;
+}
 export interface IWallet {
     account: IAccount;
     accounts: Promise<string[]>;
@@ -360,8 +364,9 @@ export declare class EthereumProvider implements IClientSideProvider {
     get selectedAddress(): string;
     protected toChecksumAddress(address: string): string;
     protected removeListeners(): void;
+    private _handleAccountsChanged;
     protected initEvents(): void;
-    connect(eventPayload?: Record<string, any>): Promise<any>;
+    connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
     disconnect(): Promise<void>;
     isConnected(): boolean;
     addToken(option: ITokenOption, type?: string): Promise<boolean>;
@@ -384,7 +389,7 @@ export declare class Web3ModalProvider extends EthereumProvider {
     installed(): boolean;
     get options(): IClientProviderOptions;
     private initializeWeb3Modal;
-    connect(eventPayload?: Record<string, any>): Promise<any>;
+    connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
     disconnect(): Promise<void>;
 }
 export interface ISendTxEventsOptions {
@@ -426,7 +431,7 @@ export declare class Wallet implements IClientWallet {
     private generateUUID;
     initRpcWallet(config: IRpcWalletConfig): string;
     setDefaultProvider(): void;
-    connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<void>;
+    connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload): Promise<void>;
     disconnect(): Promise<void>;
     get accounts(): Promise<string[]>;
     get address(): string;

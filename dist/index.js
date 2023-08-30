@@ -5119,29 +5119,32 @@ var EthereumProvider = class {
       this.provider.removeListener("disconnect", this.handleDisconnect);
     }
   }
+  _handleAccountsChanged(accounts, eventPayload) {
+    let accountAddress;
+    let hasAccounts = accounts && accounts.length > 0;
+    if (hasAccounts) {
+      this._selectedAddress = this.toChecksumAddress(accounts[0]);
+      accountAddress = this._selectedAddress;
+      if (this.wallet.web3) {
+        this.wallet.web3.selectedAddress = this._selectedAddress;
+      }
+      this.wallet.account = {
+        address: accountAddress
+      };
+    }
+    this._isConnected = hasAccounts;
+    EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
+      account: accountAddress
+    }));
+    if (this.onAccountChanged)
+      this.onAccountChanged(accountAddress);
+  }
   initEvents() {
     let self = this;
     if (this.installed()) {
       this.removeListeners();
       this.handleAccountsChanged = (accounts) => {
-        let accountAddress;
-        let hasAccounts = accounts && accounts.length > 0;
-        if (hasAccounts) {
-          this._selectedAddress = self.toChecksumAddress(accounts[0]);
-          accountAddress = this._selectedAddress;
-          if (self.wallet.web3) {
-            self.wallet.web3.selectedAddress = this._selectedAddress;
-          }
-          self.wallet.account = {
-            address: accountAddress
-          };
-        }
-        this._isConnected = hasAccounts;
-        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
-          account: accountAddress
-        });
-        if (self.onAccountChanged)
-          self.onAccountChanged(accountAddress);
+        self._handleAccountsChanged(accounts);
       };
       this.handleChainChanged = (chainId) => {
         self.wallet.chainId = parseInt(chainId);
@@ -5184,26 +5187,15 @@ var EthereumProvider = class {
     let self = this;
     try {
       if (this.installed()) {
-        await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
-          let accountAddress;
-          let hasAccounts = accounts && accounts.length > 0;
-          if (hasAccounts) {
-            this._selectedAddress = self.toChecksumAddress(accounts[0]);
-            accountAddress = this._selectedAddress;
-            if (self.wallet.web3) {
-              self.wallet.web3.selectedAddress = this._selectedAddress;
-            }
-            self.wallet.account = {
-              address: accountAddress
-            };
+        if (eventPayload == null ? void 0 : eventPayload.userTriggeredConnect) {
+          await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
+            self._handleAccountsChanged(accounts, eventPayload);
+          });
+        } else {
+          if (this.provider.selectedAddress) {
+            self._handleAccountsChanged([this.provider.selectedAddress], eventPayload);
           }
-          this._isConnected = hasAccounts;
-          EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
-            account: accountAddress
-          }));
-          if (self.onAccountChanged)
-            self.onAccountChanged(accountAddress);
-        });
+        }
       }
     } catch (error) {
       console.error(error);

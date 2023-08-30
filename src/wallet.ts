@@ -175,6 +175,10 @@ function initWeb3ModalLib(callback: () => void){
 		promises: Promise<IBatchRequestResult>[];
 		execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
 	}
+	export interface IConnectWalletEventPayload {
+		userTriggeredConnect?: boolean;
+		[key: string]: any;	
+	}
 	export interface IWallet {		
 		account: IAccount;
 		accounts: Promise<string[]>;
@@ -527,30 +531,34 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider.removeListener('disconnect', this.handleDisconnect);
 			}
 		}
+		private _handleAccountsChanged(accounts: string[], eventPayload?: Record<string, any>) {
+			let accountAddress;
+			let hasAccounts = accounts && accounts.length > 0;
+			if (hasAccounts) {
+				this._selectedAddress = this.toChecksumAddress(accounts[0]);
+				accountAddress = this._selectedAddress;
+				if (this.wallet.web3) {
+					(<any>this.wallet.web3).selectedAddress = this._selectedAddress;
+				}
+				this.wallet.account = {
+					address: accountAddress
+				};
+			}
+			this._isConnected = hasAccounts;
+			EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
+				...eventPayload,
+				account: accountAddress
+			});
+			//TODO: check if this is needed
+			if (this.onAccountChanged)
+				this.onAccountChanged(accountAddress);
+		}
 		protected initEvents() {
 			let self = this;
 			if (this.installed()) {
 				this.removeListeners();
 				this.handleAccountsChanged = (accounts) => {
-					let accountAddress;
-					let hasAccounts = accounts && accounts.length > 0;
-					if (hasAccounts) {
-						this._selectedAddress = self.toChecksumAddress(accounts[0]);
-						accountAddress = this._selectedAddress;
-						if (self.wallet.web3) {
-							(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
-						}
-						self.wallet.account = {
-							address: accountAddress
-						};
-					}
-					this._isConnected = hasAccounts;
-					EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
-						account: accountAddress
-					});
-					//TODO: Check if this is needed
-					if (self.onAccountChanged)
-						self.onAccountChanged(accountAddress);
+					self._handleAccountsChanged(accounts);
 				};
 				this.handleChainChanged = (chainId) => {
 					self.wallet.chainId = parseInt(chainId);
@@ -578,7 +586,7 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider.on('disconnect', this.handleDisconnect);
 			};
 		}
-		async connect(eventPayload?: Record<string, any>) {
+		async connect(eventPayload?: IConnectWalletEventPayload) {
 			this.wallet.chainId = parseInt(this.provider.chainId, 16);
 			this.wallet.provider = this.provider;
 			if (this._events) {
@@ -591,28 +599,16 @@ function initWeb3ModalLib(callback: () => void){
 			let self = this;
 			try {
 				if (this.installed()) {
-					await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
-						let accountAddress;
-						let hasAccounts = accounts && accounts.length > 0;
-						if (hasAccounts) {
-							this._selectedAddress = self.toChecksumAddress(accounts[0]);
-							accountAddress = this._selectedAddress;
-							if (self.wallet.web3) {
-								(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
-							}
-							self.wallet.account = {
-								address: accountAddress
-							};
-						}
-						this._isConnected = hasAccounts;
-						EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
-							...eventPayload,
-							account: accountAddress
+					if (eventPayload?.userTriggeredConnect) {
+						await this.provider.request({ method: 'eth_requestAccounts' }).then((accounts) => {
+							self._handleAccountsChanged(accounts, eventPayload);
 						});
-						//TODO: check if this is needed
-						if (self.onAccountChanged)
-							self.onAccountChanged(accountAddress);
-					});
+					}
+					else {
+						if (this.provider.selectedAddress) {
+							self._handleAccountsChanged([this.provider.selectedAddress], eventPayload);
+						}
+					}
 				}
 			} catch (error) {
 				console.error(error);
@@ -747,7 +743,7 @@ function initWeb3ModalLib(callback: () => void){
 			}
 			initWeb3ModalLib(func);
 		}
-		async connect(eventPayload?: Record<string, any>) {
+		async connect(eventPayload?: IConnectWalletEventPayload) {
 			if (!this._provider) {
 				this.initializeWeb3Modal(this._options);
 			}			
@@ -970,7 +966,7 @@ function initWeb3ModalLib(callback: () => void){
 				this.provider = rpc;
 			}
 		}
-		async connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>) {
+		async connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload) {
 			this.clientSideProvider = clientSideProvider;
 			await this.clientSideProvider.connect(eventPayload);
 			
@@ -2231,7 +2227,7 @@ function initWeb3ModalLib(callback: () => void){
 				const abi = contract._abi.find(v => v.name == methodName);
 				return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
 			}
-		}
+		}		
 		public get web3(): typeof Web3{
 			return this._web3;
 		}
