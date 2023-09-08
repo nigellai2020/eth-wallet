@@ -4995,9 +4995,12 @@ var _EventBus = class {
   }
   unregister(id) {
     const event = this.idEventMap[id];
-    delete this.subscribers[event][id];
-    if (Object.keys(this.subscribers[event]).length === 0)
-      delete this.subscribers[event];
+    if (this.subscribers[event]) {
+      delete this.subscribers[event][id];
+      if (Object.keys(this.subscribers[event]).length === 0) {
+        delete this.subscribers[event];
+      }
+    }
     delete this.idEventMap[id];
   }
   getNextId() {
@@ -6702,6 +6705,13 @@ var _Wallet = class {
     if (this._web3) {
       const abi = contract._abi.find((v) => v.name == methodName);
       return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+    }
+  }
+  decodeAbiEncodedParameters(contract, methodName, hexString) {
+    if (this._web3) {
+      const abi = contract._abi.find((v) => v.name == methodName);
+      const outputs = (abi == null ? void 0 : abi.outputs) || [];
+      return abi ? this._web3.eth.abi.decodeParameters(outputs, hexString) : {};
     }
   }
   get web3() {

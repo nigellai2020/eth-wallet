@@ -144,6 +144,9 @@ export interface IWallet {
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
 }
 export interface IClientWallet extends IWallet {
     init(): Promise<void>;
@@ -529,6 +532,11 @@ export declare class Wallet implements IClientWallet {
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, hexString: string): {
+        [key: string]: any;
+    };
     get web3(): typeof Web3;
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {
