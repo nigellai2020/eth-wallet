@@ -61,9 +61,12 @@ export class EventBus implements IEventBus {
 
     public unregister(id: number) {
         const event = this.idEventMap[id];
-        delete this.subscribers[event][id];
-        if (Object.keys(this.subscribers[event]).length === 0)
-            delete this.subscribers[event];
+        if (this.subscribers[event]) {
+            delete this.subscribers[event][id];
+            if (Object.keys(this.subscribers[event]).length === 0) {
+                delete this.subscribers[event];
+            }
+        }
         delete this.idEventMap[id];
     }
 
