@@ -4018,6 +4018,7 @@ __export(exports, {
   Erc20: () => Erc20,
   EthereumProvider: () => EthereumProvider,
   MetaMaskProvider: () => MetaMaskProvider,
+  RpcWallet: () => RpcWallet,
   Types: () => types_exports,
   Utils: () => utils_exports,
   Wallet: () => Wallet,
@@ -6738,6 +6739,29 @@ var RpcWallet = class extends Wallet {
     const clientWallet = Wallet.getClientInstance();
     return clientWallet.isConnected && this.chainId === clientWallet.chainId;
   }
+  static getRpcWallet(chainId) {
+    var _a, _b, _c;
+    if (this.rpcWalletRegistry[chainId]) {
+      return this.rpcWalletRegistry[chainId];
+    }
+    const application = window["application"];
+    if (!application)
+      throw new Error("application is not initialized");
+    const clientWallet = Wallet.getClientInstance();
+    const networkList = Object.values(((_a = application.store) == null ? void 0 : _a.networkMap) || []);
+    const instanceId = clientWallet.initRpcWallet({
+      networks: networkList,
+      defaultChainId: chainId,
+      infuraId: (_b = application.store) == null ? void 0 : _b.infuraId,
+      multicalls: (_c = application.store) == null ? void 0 : _c.multicalls
+    });
+    const rpcWallet = Wallet.getRpcWalletInstance(instanceId);
+    this.rpcWalletRegistry[chainId] = rpcWallet;
+    if (clientWallet.address) {
+      rpcWallet.address = clientWallet.address;
+    }
+    return rpcWallet;
+  }
   async switchNetwork(chainId) {
     await this.init();
     this.chainId = chainId;
@@ -6768,6 +6792,7 @@ var RpcWallet = class extends Wallet {
     return registry;
   }
 };
+RpcWallet.rpcWalletRegistry = {};
 
 // src/plugin.ts
 var import_contract2 = __toModule(require_contract());

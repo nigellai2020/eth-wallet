@@ -2249,6 +2249,7 @@ function initWeb3ModalLib(callback: () => void){
 		}
 	}
 	export class RpcWallet extends Wallet implements IRpcWallet{
+		public static rpcWalletRegistry: Record<string, IRpcWallet> = {};
 		public instanceId: string;  
 		private _address: string;
 		get address(): string{
@@ -2267,6 +2268,27 @@ function initWeb3ModalLib(callback: () => void){
 			const clientWallet = Wallet.getClientInstance();
 			return clientWallet.isConnected && this.chainId === clientWallet.chainId;
 		};
+		static getRpcWallet(chainId: number) {
+			if (this.rpcWalletRegistry[chainId]) {	
+				return this.rpcWalletRegistry[chainId];
+			}
+			const application = window["application"];
+			if (!application) throw new Error("application is not initialized");
+			const clientWallet = Wallet.getClientInstance();
+			const networkList: INetwork[] = Object.values(application.store?.networkMap || []);
+			const instanceId = clientWallet.initRpcWallet({
+			  networks: networkList,
+			  defaultChainId: chainId,
+			  infuraId: application.store?.infuraId,
+			  multicalls: application.store?.multicalls
+			});
+			const rpcWallet = Wallet.getRpcWalletInstance(instanceId);
+			this.rpcWalletRegistry[chainId] = rpcWallet;
+			if (clientWallet.address) {
+			  rpcWallet.address = clientWallet.address;
+			}
+			return rpcWallet;
+		}
 		async switchNetwork(chainId: number) {
 			await this.init();
 			this.chainId = chainId;

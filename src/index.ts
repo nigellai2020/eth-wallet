@@ -23,6 +23,7 @@ export {
     IClientWalletConfig,
     IClientWallet,
     IMulticallInfo,
+    RpcWallet,
     IRpcWalletConfig,
     IRpcWallet,
     IConnectWalletEventPayload
