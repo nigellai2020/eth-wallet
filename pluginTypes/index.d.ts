@@ -2152,12 +2152,14 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         get web3(): typeof Web3;
     }
     export class RpcWallet extends Wallet implements IRpcWallet {
+        static rpcWalletRegistry: Record<string, IRpcWallet>;
         instanceId: string;
         private _address;
         get address(): string;
         set address(value: string);
         setProvider(provider: any): void;
         get isConnected(): boolean;
+        static getRpcWallet(chainId: number): IRpcWallet;
         switchNetwork(chainId: number): Promise<any>;
         initWalletEvents(): void;
         registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
@@ -2211,7 +2213,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload } from "@ijstech/eth-wallet/wallet.ts";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, RpcWallet, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload } from "@ijstech/eth-wallet/wallet.ts";
     export { Contract } from "@ijstech/eth-wallet/contract.ts";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";

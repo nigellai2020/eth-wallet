@@ -540,12 +540,14 @@ export declare class Wallet implements IClientWallet {
     get web3(): typeof Web3;
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {
+    static rpcWalletRegistry: Record<string, IRpcWallet>;
     instanceId: string;
     private _address;
     get address(): string;
     set address(value: string);
     setProvider(provider: any): void;
     get isConnected(): boolean;
+    static getRpcWallet(chainId: number): IRpcWallet;
     switchNetwork(chainId: number): Promise<any>;
     initWalletEvents(): void;
     registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
