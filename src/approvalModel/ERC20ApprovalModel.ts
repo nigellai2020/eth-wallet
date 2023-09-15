@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import { IRpcWallet, Wallet } from "../wallet";
+import { IRpcWallet, TransactionReceipt, Wallet } from "../wallet";
 import * as Contracts from "../contracts";
 import * as Utils from "../utils";
 import { registerSendTxEvents } from '../utils';
@@ -33,12 +33,12 @@ export const getERC20Allowance = async (wallet: IRpcWallet, token: ITokenObject,
 export interface IERC20ApprovalEventOptions {
   sender: any;
   payAction: () => Promise<void>;
-  onToBeApproved: (token: ITokenObject) => Promise<void>;
-  onToBePaid: (token: ITokenObject) => Promise<void>;
+  onToBeApproved: (token: ITokenObject, data?: any) => Promise<void>;
+  onToBePaid: (token: ITokenObject, data?: any) => Promise<void>;
   onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
-  onApproved: (token: ITokenObject, data?: any) => Promise<void>;
+  onApproved: (token: ITokenObject, data?: any, receipt?: TransactionReceipt) => Promise<void>;
   onPaying: (receipt?: string, data?: any) => Promise<void>;
-  onPaid: (data?: any) => Promise<void>;
+  onPaid: (data?: any, receipt?: TransactionReceipt) => Promise<void>;
   onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
   onPayingError: (err: Error) => Promise<void>;
 }
@@ -60,9 +60,9 @@ export class ERC20ApprovalModel {
     onToBeApproved: async (token: ITokenObject, data?: any) => {},
     onToBePaid: async (token: ITokenObject, data?: any) => {},
     onApproving: async (token: ITokenObject, receipt?: string, data?: any) => {},
-    onApproved: async (token: ITokenObject, data?: any) => {},
+    onApproved: async (token: ITokenObject, data?: any, receipt?: TransactionReceipt) => {},
     onPaying: async (receipt?: string, data?: any) => {},
-    onPaid: async (data?: any) => {},
+    onPaid: async (data?: any, receipt?: TransactionReceipt) => {},
     onApprovingError: async (token: ITokenObject, err: Error) => {},
     onPayingError: async (err: Error) => {}
   };
@@ -98,8 +98,8 @@ export class ERC20ApprovalModel {
         await this.options.onApproving.bind(this.options.sender)(token, receipt, data);
       }
     }
-    const confirmationCallback = async (receipt: any) => {
-      await this.options.onApproved.bind(this.options.sender)(token, data);
+    const confirmationCallback = async (receipt: TransactionReceipt) => {
+      await this.options.onApproved.bind(this.options.sender)(token, data, receipt);
       await this.checkAllowance(token, inputAmount, data);
     }
     approveERC20Max(token, this.options.spenderAddress, txHashCallback, confirmationCallback)
@@ -114,8 +114,8 @@ export class ERC20ApprovalModel {
         await this.options.onPaying.bind(this.options.sender)(receipt, data);
       }
     }
-    const confirmationCallback = async (receipt: any) => {
-      await this.options.onPaid.bind(this.options.sender)(data);
+    const confirmationCallback = async (receipt: TransactionReceipt) => {
+      await this.options.onPaid.bind(this.options.sender)(data, receipt);
     }
     registerSendTxEvents({
       transactionHash: txHashCallback,

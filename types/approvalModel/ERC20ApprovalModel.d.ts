@@ -1,16 +1,16 @@
 import { BigNumber } from 'bignumber.js';
-import { IRpcWallet } from "../wallet";
+import { IRpcWallet, TransactionReceipt } from "../wallet";
 import { ITokenObject } from '../types';
 export declare const getERC20Allowance: (wallet: IRpcWallet, token: ITokenObject, spenderAddress: string) => Promise<BigNumber>;
 export interface IERC20ApprovalEventOptions {
     sender: any;
     payAction: () => Promise<void>;
-    onToBeApproved: (token: ITokenObject) => Promise<void>;
-    onToBePaid: (token: ITokenObject) => Promise<void>;
+    onToBeApproved: (token: ITokenObject, data?: any) => Promise<void>;
+    onToBePaid: (token: ITokenObject, data?: any) => Promise<void>;
     onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
-    onApproved: (token: ITokenObject, data?: any) => Promise<void>;
+    onApproved: (token: ITokenObject, data?: any, receipt?: TransactionReceipt) => Promise<void>;
     onPaying: (receipt?: string, data?: any) => Promise<void>;
-    onPaid: (data?: any) => Promise<void>;
+    onPaid: (data?: any, receipt?: TransactionReceipt) => Promise<void>;
     onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
     onPayingError: (err: Error) => Promise<void>;
 }

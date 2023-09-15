@@ -2168,18 +2168,18 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
 /// <amd-module name="@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" />
 declare module "@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" {
     import { BigNumber } from 'bignumber.js';
-    import { IRpcWallet } from "@ijstech/eth-wallet/wallet.ts";
+    import { IRpcWallet, TransactionReceipt } from "@ijstech/eth-wallet/wallet.ts";
     import { ITokenObject } from "@ijstech/eth-wallet/types.ts";
     export const getERC20Allowance: (wallet: IRpcWallet, token: ITokenObject, spenderAddress: string) => Promise<BigNumber>;
     export interface IERC20ApprovalEventOptions {
         sender: any;
         payAction: () => Promise<void>;
-        onToBeApproved: (token: ITokenObject) => Promise<void>;
-        onToBePaid: (token: ITokenObject) => Promise<void>;
+        onToBeApproved: (token: ITokenObject, data?: any) => Promise<void>;
+        onToBePaid: (token: ITokenObject, data?: any) => Promise<void>;
         onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
-        onApproved: (token: ITokenObject, data?: any) => Promise<void>;
+        onApproved: (token: ITokenObject, data?: any, receipt?: TransactionReceipt) => Promise<void>;
         onPaying: (receipt?: string, data?: any) => Promise<void>;
-        onPaid: (data?: any) => Promise<void>;
+        onPaid: (data?: any, receipt?: TransactionReceipt) => Promise<void>;
         onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
         onPayingError: (err: Error) => Promise<void>;
     }
