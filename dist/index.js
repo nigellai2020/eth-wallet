@@ -3904,7 +3904,7 @@ var require_contract = __commonJS({
             for (let name in receipt.events) {
               let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
               events.forEach((event) => {
-                if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
+                if (topic0 == event.raw.topics[0] && (this.address && this.address.toLowerCase() == event.address.toLowerCase())) {
                   result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
                 }
               });
@@ -3912,7 +3912,7 @@ var require_contract = __commonJS({
           } else if (receipt.logs) {
             for (let i = 0; i < receipt.logs.length; i++) {
               let log = receipt.logs[i];
-              if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
+              if (topic0 == log.topics[0] && (this.address && this.address.toLowerCase() == log.address.toLowerCase())) {
                 result.push(this.wallet.decode(eventAbis[topic0], log));
               }
             }
@@ -6849,11 +6849,11 @@ var ERC20ApprovalModel = class {
       },
       onApproving: async (token, receipt, data) => {
       },
-      onApproved: async (token, data) => {
+      onApproved: async (token, data, receipt) => {
       },
       onPaying: async (receipt, data) => {
       },
-      onPaid: async (data) => {
+      onPaid: async (data, receipt) => {
       },
       onApprovingError: async (token, err) => {
       },
@@ -6879,7 +6879,7 @@ var ERC20ApprovalModel = class {
         }
       };
       const confirmationCallback = async (receipt) => {
-        await this.options.onApproved.bind(this.options.sender)(token, data);
+        await this.options.onApproved.bind(this.options.sender)(token, data, receipt);
         await this.checkAllowance(token, inputAmount, data);
       };
       approveERC20Max(token, this.options.spenderAddress, txHashCallback, confirmationCallback);
@@ -6893,7 +6893,7 @@ var ERC20ApprovalModel = class {
         }
       };
       const confirmationCallback = async (receipt) => {
-        await this.options.onPaid.bind(this.options.sender)(data);
+        await this.options.onPaid.bind(this.options.sender)(data, receipt);
       };
       registerSendTxEvents({
         transactionHash: txHashCallback,
