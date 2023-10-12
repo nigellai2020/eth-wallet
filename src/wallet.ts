@@ -218,12 +218,17 @@ function initWeb3ModalLib(callback: () => void){
 		signTransaction(tx: any, privateKey?: string): Promise<string>;
 		soliditySha3(...val: any[]): string;
 		toChecksumAddress(address: string): string;
+		isAddress(address: string): boolean;
 		tokenInfo(address: string): Promise<ITokenInfo>;
 		_txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
 		_txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
 		utils: IWalletUtils;
 		verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
 		multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+		doMulticall(
+			contracts: IMulticallContractCall[], 
+			gasBuffer?: string
+		): Promise<any[]>;
 		encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
 			contract: T, 
 			methodName: F, 
@@ -409,6 +414,12 @@ function initWeb3ModalLib(callback: () => void){
 	}
 	export type NetworksMapType = { [chainId: number]: INetwork }
 	export type MulticallInfoMapType = { [chainId: number]: IMulticallInfo }
+	export interface IMulticallContractCall {
+		to: string;
+		contract: IAbiDefinition;
+		methodName: string;
+		params: string[];
+	}
 	export interface IRpcWalletConfig {
 		networks: INetwork[];
 		defaultChainId?: number;
@@ -938,6 +949,7 @@ function initWeb3ModalLib(callback: () => void){
 				return v.toString(16);
 			});
 		}
+		//To be removed
 		initRpcWallet(config: IRpcWalletConfig): string {
 			const wallet = new RpcWallet();
 			const defaultNetwork = config.defaultChainId ? config.networks.find(v => v.chainId === config.defaultChainId) : config.networks[0];
@@ -2212,6 +2224,11 @@ function initWeb3ModalLib(callback: () => void){
 			if (this._web3)
 				return this._web3.utils.toChecksumAddress(address);
 		}
+		isAddress(address: string) {
+			if (this._web3)
+				return this._web3.utils.isAddress(address);
+		}
+		//To be removed
 		async multiCall(calls: {to: string; data: string}[], gasBuffer?: string) {
 			const chainId = await this.getChainId();
 			const multicallInfo = this._multicallInfoMap[chainId];
@@ -2222,6 +2239,74 @@ function initWeb3ModalLib(callback: () => void){
 				gasBuffer: new BigNumber(gasBuffer ?? multicallInfo.gasBuffer)
 			});
 			return result;
+		}
+		async doMulticall(
+			contracts: IMulticallContractCall[], 
+			gasBuffer?: string
+		): Promise<any[]> {
+			if (!this._web3) return null;
+			const chainId = await this.getChainId();
+			const multicallInfo = this._multicallInfoMap[chainId];
+			if (!multicallInfo) return null;
+			const multiCall = new MultiCall(this, multicallInfo.contractAddress);
+			let calls = [];
+			for (let i = 0; i < contracts.length; i++) {
+				const { to, contract, methodName, params } = contracts[i];
+				const abi = contract._abi.find(v => v.name == methodName);
+				const callData = abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : '';
+				calls.push({
+					to,
+					data: callData
+				});
+			}
+			const multicallResult = await multiCall.multicallWithGasLimitation.call({
+				calls,
+				gasBuffer: new BigNumber(gasBuffer ?? multicallInfo.gasBuffer)
+			});
+			const calculateOutputValue = (decodedValue: any, abiOutput: any) => {
+				let outputValue;
+				if (abiOutput.type.startsWith('uint') || abiOutput.type.startsWith('int')) {
+					outputValue = new BigNumber(decodedValue);
+				}
+				else {
+					switch (abiOutput.type) {
+						case 'address':
+						case 'bool':					
+						default:
+							outputValue = decodedValue;
+							break;
+					}
+				}
+				return outputValue;
+			}
+			let outputValues = [];
+			for (let i = 0; i <= multicallResult.lastSuccessIndex.toNumber(); i++) {
+				const callResult = multicallResult.results[i];
+				if (callResult === '0x') {
+					outputValues.push(null);
+					continue;
+				}
+				const abi = contracts[i].contract._abi.find(v => v.name == contracts[i].methodName);
+				const outputs = abi?.outputs || [];
+				const decodedValues = this._web3.eth.abi.decodeParameters(outputs, callResult);
+				if (outputs.length == 0) {
+					outputValues.push(null);
+				}
+				else if (outputs.length == 1) {
+					let outputValue = calculateOutputValue(decodedValues[0], outputs[0]);
+					outputValues.push(outputValue);
+				}
+				else {
+					let outputValue = {};
+					for (let j = 0; j < outputs.length; j++) {
+						const output = outputs[j];
+						const decodedValue = decodedValues[j];
+						outputValue[output.name] = calculateOutputValue(decodedValue, output);
+					}
+					outputValues.push(outputValue);
+				}
+			}
+			return outputValues;
 		}
 		encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
 			contract: T, 

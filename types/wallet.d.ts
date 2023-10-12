@@ -129,6 +129,7 @@ export interface IWallet {
     signTransaction(tx: any, privateKey?: string): Promise<string>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
+    isAddress(address: string): boolean;
     tokenInfo(address: string): Promise<ITokenInfo>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
@@ -141,6 +142,7 @@ export interface IWallet {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
@@ -306,6 +308,12 @@ export type NetworksMapType = {
 export type MulticallInfoMapType = {
     [chainId: number]: IMulticallInfo;
 };
+export interface IMulticallContractCall {
+    to: string;
+    contract: IAbiDefinition;
+    methodName: string;
+    params: string[];
+}
 export interface IRpcWalletConfig {
     networks: INetwork[];
     defaultChainId?: number;
@@ -522,6 +530,7 @@ export declare class Wallet implements IClientWallet {
     newBatchRequest(): Promise<IBatchRequestObj>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
+    isAddress(address: string): boolean;
     multiCall(calls: {
         to: string;
         data: string;
@@ -529,6 +538,7 @@ export declare class Wallet implements IClientWallet {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
