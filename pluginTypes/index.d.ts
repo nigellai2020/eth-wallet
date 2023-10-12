@@ -1741,6 +1741,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;
+        isAddress(address: string): boolean;
         tokenInfo(address: string): Promise<ITokenInfo>;
         _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
         _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
@@ -1753,6 +1754,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
             results: string[];
             lastSuccessIndex: BigNumber;
         }>;
+        doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
@@ -1918,6 +1920,12 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     export type MulticallInfoMapType = {
         [chainId: number]: IMulticallInfo;
     };
+    export interface IMulticallContractCall {
+        to: string;
+        contract: IAbiDefinition;
+        methodName: string;
+        params: string[];
+    }
     export interface IRpcWalletConfig {
         networks: INetwork[];
         defaultChainId?: number;
@@ -2134,6 +2142,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         newBatchRequest(): Promise<IBatchRequestObj>;
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;
+        isAddress(address: string): boolean;
         multiCall(calls: {
             to: string;
             data: string;
@@ -2141,6 +2150,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
             results: string[];
             lastSuccessIndex: BigNumber;
         }>;
+        doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
@@ -2213,7 +2223,7 @@ declare module "@ijstech/eth-wallet" {
     * Released under dual AGPLv3/commercial license
     * https://ijs.network
     *-----------------------------------------------------------*/
-    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, RpcWallet, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload } from "@ijstech/eth-wallet/wallet.ts";
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, RpcWallet, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload, IMulticallContractCall } from "@ijstech/eth-wallet/wallet.ts";
     export { Contract } from "@ijstech/eth-wallet/contract.ts";
     export { BigNumber } from "bignumber.js";
     export { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";

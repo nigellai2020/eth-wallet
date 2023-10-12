@@ -3731,7 +3731,7 @@ var require_lib = __commonJS({
           for (let name in receipt.events) {
             let events = Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]];
             events.forEach((event) => {
-              if (topic0 == event.raw.topics[0] && (this.address && this.address == event.address)) {
+              if (topic0 == event.raw.topics[0] && this.address && event.address && this.address.toLowerCase() == event.address.toLowerCase()) {
                 result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
               }
             });
@@ -3739,7 +3739,7 @@ var require_lib = __commonJS({
         } else if (receipt.logs) {
           for (let i = 0; i < receipt.logs.length; i++) {
             let log = receipt.logs[i];
-            if (topic0 == log.topics[0] && (this.address && this.address == log.address)) {
+            if (topic0 == log.topics[0] && this.address && log.address && this.address.toLowerCase() == log.address.toLowerCase()) {
               result.push(this.wallet.decode(eventAbis[topic0], log));
             }
           }
@@ -6690,6 +6690,10 @@ var _Wallet = class {
     if (this._web3)
       return this._web3.utils.toChecksumAddress(address);
   }
+  isAddress(address) {
+    if (this._web3)
+      return this._web3.utils.isAddress(address);
+  }
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
     const multicallInfo = this._multicallInfoMap[chainId];
@@ -6701,6 +6705,70 @@ var _Wallet = class {
       gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : multicallInfo.gasBuffer)
     });
     return result;
+  }
+  async doMulticall(contracts, gasBuffer) {
+    if (!this._web3)
+      return null;
+    const chainId = await this.getChainId();
+    const multicallInfo = this._multicallInfoMap[chainId];
+    if (!multicallInfo)
+      return null;
+    const multiCall = new MultiCall(this, multicallInfo.contractAddress);
+    let calls = [];
+    for (let i = 0; i < contracts.length; i++) {
+      const { to, contract, methodName, params } = contracts[i];
+      const abi = contract._abi.find((v) => v.name == methodName);
+      const callData = abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+      calls.push({
+        to,
+        data: callData
+      });
+    }
+    const multicallResult = await multiCall.multicallWithGasLimitation.call({
+      calls,
+      gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : multicallInfo.gasBuffer)
+    });
+    const calculateOutputValue = (decodedValue, abiOutput) => {
+      let outputValue;
+      if (abiOutput.type.startsWith("uint") || abiOutput.type.startsWith("int")) {
+        outputValue = new import_bignumber3.BigNumber(decodedValue);
+      } else {
+        switch (abiOutput.type) {
+          case "address":
+          case "bool":
+          default:
+            outputValue = decodedValue;
+            break;
+        }
+      }
+      return outputValue;
+    };
+    let outputValues = [];
+    for (let i = 0; i <= multicallResult.lastSuccessIndex.toNumber(); i++) {
+      const callResult = multicallResult.results[i];
+      if (callResult === "0x") {
+        outputValues.push(null);
+        continue;
+      }
+      const abi = contracts[i].contract._abi.find((v) => v.name == contracts[i].methodName);
+      const outputs = (abi == null ? void 0 : abi.outputs) || [];
+      const decodedValues = this._web3.eth.abi.decodeParameters(outputs, callResult);
+      if (outputs.length == 0) {
+        outputValues.push(null);
+      } else if (outputs.length == 1) {
+        let outputValue = calculateOutputValue(decodedValues[0], outputs[0]);
+        outputValues.push(outputValue);
+      } else {
+        let outputValue = {};
+        for (let j = 0; j < outputs.length; j++) {
+          const output = outputs[j];
+          const decodedValue = decodedValues[j];
+          outputValue[output.name] = calculateOutputValue(decodedValue, output);
+        }
+        outputValues.push(outputValue);
+      }
+    }
+    return outputValues;
   }
   encodeFunctionCall(contract, methodName, params) {
     if (this._web3) {

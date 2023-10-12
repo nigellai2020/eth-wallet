@@ -27,7 +27,8 @@ export {
     RpcWallet,
     IRpcWalletConfig,
     IRpcWallet,
-    IConnectWalletEventPayload
+    IConnectWalletEventPayload,
+    IMulticallContractCall
 } from './wallet';
 export {Contract} from './contract';
 export {BigNumber} from "bignumber.js";
