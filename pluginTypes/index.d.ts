@@ -2231,6 +2231,6 @@ declare module "@ijstech/eth-wallet" {
     export * as Contracts from "@ijstech/eth-wallet/contracts/index.ts";
     export * as Types from "@ijstech/eth-wallet/types.ts";
     export * as Constants from "@ijstech/eth-wallet/constants.ts";
-    export { IEventBusRegistry } from "@ijstech/eth-wallet/eventBus.ts";
+    export { IEventBusRegistry, EventBus } from "@ijstech/eth-wallet/eventBus.ts";
     export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "@ijstech/eth-wallet/approvalModel/index.ts";
 }
