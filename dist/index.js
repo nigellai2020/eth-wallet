@@ -6730,7 +6730,13 @@ var _Wallet = class {
     });
     const calculateOutputValue = (decodedValue, abiOutput) => {
       let outputValue;
-      if (abiOutput.type.startsWith("uint") || abiOutput.type.startsWith("int")) {
+      if (abiOutput.type.endsWith("[]")) {
+        if (abiOutput.type.startsWith("uint") || abiOutput.type.startsWith("int")) {
+          outputValue = decodedValue.map((v) => new import_bignumber3.BigNumber(v));
+        } else {
+          outputValue = decodedValue;
+        }
+      } else if (abiOutput.type.startsWith("uint") || abiOutput.type.startsWith("int")) {
         outputValue = new import_bignumber3.BigNumber(decodedValue);
       } else {
         switch (abiOutput.type) {
@@ -6759,13 +6765,14 @@ var _Wallet = class {
         let outputValue = calculateOutputValue(decodedValues[0], outputs[0]);
         outputValues.push(outputValue);
       } else {
-        let outputValue = {};
+        let outputValueArr = [];
         for (let j = 0; j < outputs.length; j++) {
           const output = outputs[j];
           const decodedValue = decodedValues[j];
-          outputValue[output.name] = calculateOutputValue(decodedValue, output);
+          const outputValue = calculateOutputValue(decodedValue, output);
+          outputValueArr.push(outputValue);
         }
-        outputValues.push(outputValue);
+        outputValues.push(outputValueArr);
       }
     }
     return outputValues;
