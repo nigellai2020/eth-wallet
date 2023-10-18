@@ -4017,6 +4017,7 @@ __export(exports, {
   ERC20ApprovalModel: () => ERC20ApprovalModel,
   Erc20: () => Erc20,
   EthereumProvider: () => EthereumProvider,
+  EventBus: () => EventBus,
   MetaMaskProvider: () => MetaMaskProvider,
   RpcWallet: () => RpcWallet,
   Types: () => types_exports,
