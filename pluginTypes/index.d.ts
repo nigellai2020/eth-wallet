@@ -2133,6 +2133,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         blockGasLimit(): Promise<number>;
         getGasPrice(): Promise<BigNumber>;
         transactionCount(): Promise<number>;
+        private monitorTransactionEvents;
         sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
         getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
