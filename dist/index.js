@@ -6075,20 +6075,7 @@ var _Wallet = class {
           data: method.encodeABI()
         };
         let promiEvent = _web3.eth.sendTransaction(tx);
-        promiEvent.on("error", (error) => {
-          if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-            return;
-          }
-          if (this._sendTxEventHandler.transactionHash)
-            this._sendTxEventHandler.transactionHash(error);
-        });
-        promiEvent.on("transactionHash", (receipt) => {
-          if (this._sendTxEventHandler.transactionHash)
-            this._sendTxEventHandler.transactionHash(null, receipt);
-        });
-        promiEvent.once("confirmation", (confirmationObj) => {
-          this._sendTxEventHandler.confirmation(confirmationObj.receipt);
-        });
+        this.monitorTransactionEvents(promiEvent);
         result = await promiEvent;
         if (methodName == "deploy")
           return result.contractAddress;
@@ -6596,6 +6583,22 @@ var _Wallet = class {
       }
     });
   }
+  monitorTransactionEvents(promiEvent) {
+    promiEvent.on("error", (error) => {
+      if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+        return;
+      }
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(error);
+    });
+    promiEvent.on("transactionHash", (receipt) => {
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(null, receipt);
+    });
+    promiEvent.once("confirmation", (confirmationObj) => {
+      this._sendTxEventHandler.confirmation(confirmationObj.receipt);
+    });
+  }
   async sendTransaction(transaction) {
     await this.init();
     let _transaction = __spreadProps(__spreadValues({}, transaction), {
@@ -6604,28 +6607,20 @@ var _Wallet = class {
     });
     let currentProvider = this.provider;
     try {
-      if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+      const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
+      if (isClientSide && this.provider !== this.clientSideProvider.provider) {
         this.provider = this.clientSideProvider.provider;
       }
       if (this._account && this._account.privateKey) {
         let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
-        return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        let promiEvent = this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        if (isClientSide) {
+          this.monitorTransactionEvents(promiEvent);
+        }
+        return await promiEvent;
       } else {
         let promiEvent = this._web3.eth.sendTransaction(_transaction);
-        promiEvent.on("error", (error) => {
-          if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-            return;
-          }
-          if (this._sendTxEventHandler.transactionHash)
-            this._sendTxEventHandler.transactionHash(error);
-        });
-        promiEvent.on("transactionHash", (receipt) => {
-          if (this._sendTxEventHandler.transactionHash)
-            this._sendTxEventHandler.transactionHash(null, receipt);
-        });
-        promiEvent.once("confirmation", (confirmationObj) => {
-          this._sendTxEventHandler.confirmation(confirmationObj.receipt);
-        });
+        this.monitorTransactionEvents(promiEvent);
         return await promiEvent;
       }
     } catch (err) {

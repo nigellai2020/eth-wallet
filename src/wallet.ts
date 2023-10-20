@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 
 let Web3 = initWeb3Lib(); // tslint:disable-line
-import {IWeb3, ConfirmationObject, TransactionReceipt} from './web3';
+import {IWeb3, ConfirmationObject, TransactionReceipt, PromiEvent} from './web3';
 import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
@@ -1548,21 +1548,7 @@ function initWeb3ModalLib(callback: () => void){
 					}
 
 					let promiEvent = _web3.eth.sendTransaction(tx);
-					promiEvent.on('error', (error: Error) =>{
-						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-							return;
-						}
-						if (this._sendTxEventHandler.transactionHash)
-							this._sendTxEventHandler.transactionHash(error);
-					});
-					promiEvent.on('transactionHash', (receipt: string) => {
-						if (this._sendTxEventHandler.transactionHash)
-							this._sendTxEventHandler.transactionHash(null, receipt);
-					});
-					promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
-						// if (this._sendTxEventHandler.confirmation && Number(confirmationObj.confirmationNumber) == 1)
-							this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
-					});
+					this.monitorTransactionEvents(promiEvent);
 					result = await promiEvent;
 					if (methodName == 'deploy')
 						return result.contractAddress;
@@ -2126,6 +2112,23 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			});
 		}
+		private monitorTransactionEvents(promiEvent: PromiEvent<TransactionReceipt>) {
+			promiEvent.on('error', (error: Error) =>{
+				if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+					return;
+				}
+				if (this._sendTxEventHandler.transactionHash)
+					this._sendTxEventHandler.transactionHash(error);
+			});
+			promiEvent.on('transactionHash', (receipt: string) => {
+				if (this._sendTxEventHandler.transactionHash)
+					this._sendTxEventHandler.transactionHash(null, receipt);
+			});
+			promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
+				// if (this._sendTxEventHandler.confirmation && Number(confNumber) == 1)
+					this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
+			});
+		}
 		async sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt> {
 			await this.init();
 			let _transaction = {...transaction, 
@@ -2134,30 +2137,21 @@ function initWeb3ModalLib(callback: () => void){
 			};
 			let currentProvider = this.provider;
 			try {
-				if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
+				const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
+				if (isClientSide && this.provider !== this.clientSideProvider.provider) {
 					this.provider = this.clientSideProvider.provider;
 				}
 				if (this._account && this._account.privateKey){
 					let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
-					return await this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+					let promiEvent =  this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+					if (isClientSide) {
+						this.monitorTransactionEvents(promiEvent);
+					}
+					return await promiEvent;
 				}
 				else {
 					let promiEvent = this._web3.eth.sendTransaction(_transaction);
-					promiEvent.on('error', (error: Error) =>{
-						if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-							return;
-						}
-						if (this._sendTxEventHandler.transactionHash)
-							this._sendTxEventHandler.transactionHash(error);
-					});
-					promiEvent.on('transactionHash', (receipt: string) => {
-						if (this._sendTxEventHandler.transactionHash)
-							this._sendTxEventHandler.transactionHash(null, receipt);
-					});
-					promiEvent.once('confirmation', (confirmationObj: ConfirmationObject) => {           
-						// if (this._sendTxEventHandler.confirmation && Number(confNumber) == 1)
-							this._sendTxEventHandler.confirmation(confirmationObj.receipt);                
-					});
+					this.monitorTransactionEvents(promiEvent);
 					return await promiEvent;
 				}
 			}
