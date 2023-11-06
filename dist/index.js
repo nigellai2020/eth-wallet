@@ -6259,8 +6259,13 @@ var _Wallet = class {
         address = [address];
       for (let i = 0; i < address.length; i++) {
         this._abiAddressDict[address[i]] = abiHash;
-        if (handler)
-          this._eventHandler[address[i]] = handler;
+        if (handler) {
+          if (this._eventHandler[address[i]]) {
+            this._eventHandler[address[i]].push(handler);
+          } else {
+            this._eventHandler[address[i]] = [handler];
+          }
+        }
       }
     }
   }
@@ -6304,9 +6309,12 @@ var _Wallet = class {
     }
     ;
     let log = this.decode(event, data);
-    let handler = this._eventHandler[data.address];
-    if (handler)
-      await handler(this, log);
+    let handlers = this._eventHandler[data.address];
+    if (handlers) {
+      for (let handler of handlers) {
+        await handler(this, log);
+      }
+    }
     return log;
   }
   scanEvents(param1, param2, param3, param4, param5) {

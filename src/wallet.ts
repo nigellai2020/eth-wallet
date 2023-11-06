@@ -829,7 +829,7 @@ function initWeb3ModalLib(callback: () => void){
 		private _accounts: IAccount[];
 		protected _provider: any;
 		private _eventTopicAbi: {[topic:string]:any} = {};
-		private _eventHandler = {};
+		private _eventHandler: {[address: string]: any[]} = {};
 		protected _sendTxEventHandler: ISendTxEventsOptions = {};
 		protected _contracts = {};
 		protected _blockGasLimit: number;
@@ -1739,8 +1739,13 @@ function initWeb3ModalLib(callback: () => void){
 					address = [address];
 				for (let i = 0; i < address.length; i ++){
 					this._abiAddressDict[address[i]] = abiHash;
-					if (handler)
-						this._eventHandler[address[i]] = handler;
+					if (handler) {
+						if (this._eventHandler[address[i]]) {
+							this._eventHandler[address[i]].push(handler);
+						} else {
+							this._eventHandler[address[i]] = [handler];
+						}
+					}
 				}
 			}
 		};
@@ -1785,9 +1790,12 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			};
 			let log = this.decode(event, data);
-			let handler = this._eventHandler[data.address]
-			if (handler)
-				await handler(this, log);
+			let handlers = this._eventHandler[data.address];
+			if (handlers) {
+                for (let handler of handlers) {
+                    await handler(this, log);
+                }
+			}
 			return log;
 		};
 		scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
