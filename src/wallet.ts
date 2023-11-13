@@ -14,6 +14,9 @@ import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 import { EventBus, IEventBusRegistry } from './eventBus';
 import { ClientWalletEvent, RpcWalletEvent } from './constants';
 import Providers from "./providers.json";
+// @ts-ignore
+import nacl from "./lib/nacl/nacl";
+
 export {TransactionReceipt, ConfirmationObject};
 
 let Web3Modal: any;
@@ -271,6 +274,8 @@ function initWeb3ModalLib(callback: () => void){
 		unregisterAllWalletEvents(): void;
 		destoryRpcWalletInstance(instanceId: string): void;
 		initRpcWallet(config: IRpcWalletConfig): string;
+		encrypt: (key: string) => Promise<string>;
+		decrypt: (data: string) => Promise<string>;
 	};
 	export interface IRpcWallet extends IWallet {
 		init(): Promise<void>;
@@ -453,6 +458,8 @@ function initWeb3ModalLib(callback: () => void){
 		connect: (eventPayload?: Record<string, any>) => Promise<void>;
 		disconnect: () => Promise<void>;
 		switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+		encrypt: (key: string) => Promise<string>;
+		decrypt: (data: string) => Promise<string>;
 	}
 	export class EthereumProvider implements IClientSideProvider {
 		protected wallet: Wallet;
@@ -710,6 +717,12 @@ function initWeb3ModalLib(callback: () => void){
 				}
 			})
 		}
+		encrypt(key: string): Promise<string> {
+			throw new Error("Method not implemented.");
+		}
+		decrypt(data: string): Promise<string> {
+			throw new Error("Method not implemented.");
+		}
 	}
 	export class MetaMaskProvider extends EthereumProvider {
 		get displayName() {
@@ -724,6 +737,64 @@ function initWeb3ModalLib(callback: () => void){
 		installed() {
 			let ethereum = window['ethereum'];
 			return !!ethereum && !!ethereum.isMetaMask;
+		}
+		async encrypt(key: string): Promise<string> {
+			// get public key
+			let response = await new Promise((resolve, reject) => {
+				(<any>this.provider).send({
+					jsonrpc: '2.0',
+					id: new Date().getTime(),
+					method: 'eth_getEncryptionPublicKey',
+					params: [this.wallet.address]
+				},
+					(error: any, result: any) => {
+						if (error) return reject(error);
+						if (typeof result === 'string') result = JSON.parse(result);
+						if (result.error) return reject(result.error)
+						resolve(result);
+					});
+			});
+
+			// key is in base64
+			let publicKey = new Uint8Array(
+				window.atob((response as any).result)
+					.split('').map(e => e.codePointAt(0) as number)
+			);
+
+			// nonce 192 bit / 24 bytes
+			// ephemPublicKey 256 bit / 32 bytes
+			// encKey 32+16
+			const encoder = new TextEncoder();
+			const msg = encoder.encode(key);
+			const nonce = nacl.randomBytes(nacl.box.nonceLength);
+			const ephemeralKeyPair = nacl.box.keyPair();
+			const encKey = nacl.box(msg, nonce, publicKey, ephemeralKeyPair.secretKey);
+			return Utils.uint8ArrayToHex(nonce) +
+				Utils.uint8ArrayToHex(ephemeralKeyPair.publicKey) +
+				Utils.uint8ArrayToHex(encKey);			
+		}
+		async decrypt(data: string): Promise<string> {
+			let encMsg = Utils.stringToUnicodeHex(JSON.stringify({
+				version: 'x25519-xsalsa20-poly1305',
+				nonce: window.btoa(Utils.hexToString(data.substring(0, 48))),
+				ephemPublicKey: window.btoa(Utils.hexToString(data.substring(48, 112))),
+				ciphertext: window.btoa(Utils.hexToString(data.substring(112)))
+			}));
+			let msg = await new Promise((resolve, reject) => {
+				(<any>this.provider).send({
+					jsonrpc: '2.0',
+					id: new Date().getTime(),
+					method: 'eth_decrypt',
+					params: [encMsg, this.wallet.address]
+				},
+					(error: any, result: any) => {
+						if (error) return reject(error);
+						if (typeof result === 'string') result = JSON.parse(result);
+						if (result.error) return reject(result.error)
+						resolve(result);
+					});
+			});
+			return (msg as any).result;			
 		}
 	}
 	export class Web3ModalProvider extends EthereumProvider {
@@ -1006,6 +1077,16 @@ function initWeb3ModalLib(callback: () => void){
 			}
 			this.setDefaultProvider();
 		}
+		async encrypt(key: string): Promise<string> {
+			if (this.clientSideProvider) {
+				return this.clientSideProvider.encrypt(key);
+			}
+		}
+		async decrypt(data: string): Promise<string> {
+			if (this.clientSideProvider) {
+				return this.clientSideProvider.decrypt(data);
+			}
+		}
 		get accounts(): Promise<string[]>{
 			return new Promise(async (resolve)=>{
 				await this.init();
@@ -1079,7 +1160,7 @@ function initWeb3ModalLib(callback: () => void){
 				this.setNetworkInfo(network);
 			}
 		}
-        createAccount():IAccount | undefined{
+        createAccount(): IAccount {
 			if (this._web3){
 				let acc = this._web3.eth.accounts.create();
 				return {
