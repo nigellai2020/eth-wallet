@@ -180,6 +180,8 @@ export interface IClientWallet extends IWallet {
     unregisterAllWalletEvents(): void;
     destoryRpcWalletInstance(instanceId: string): void;
     initRpcWallet(config: IRpcWalletConfig): string;
+    encrypt: (key: string) => Promise<string>;
+    decrypt: (data: string) => Promise<string>;
 }
 export interface IRpcWallet extends IWallet {
     init(): Promise<void>;
@@ -347,6 +349,8 @@ export interface IClientSideProvider {
     connect: (eventPayload?: Record<string, any>) => Promise<void>;
     disconnect: () => Promise<void>;
     switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+    encrypt: (key: string) => Promise<string>;
+    decrypt: (data: string) => Promise<string>;
 }
 export declare class EthereumProvider implements IClientSideProvider {
     protected wallet: Wallet;
@@ -382,12 +386,16 @@ export declare class EthereumProvider implements IClientSideProvider {
     isConnected(): boolean;
     addToken(option: ITokenOption, type?: string): Promise<boolean>;
     switchNetwork(chainId: number): Promise<boolean>;
+    encrypt(key: string): Promise<string>;
+    decrypt(data: string): Promise<string>;
 }
 export declare class MetaMaskProvider extends EthereumProvider {
     get displayName(): string;
     get image(): string;
     get homepage(): string;
     installed(): boolean;
+    encrypt(key: string): Promise<string>;
+    decrypt(data: string): Promise<string>;
 }
 export declare class Web3ModalProvider extends EthereumProvider {
     private _provider;
@@ -444,6 +452,8 @@ export declare class Wallet implements IClientWallet {
     setDefaultProvider(): void;
     connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload): Promise<void>;
     disconnect(): Promise<void>;
+    encrypt(key: string): Promise<string>;
+    decrypt(data: string): Promise<string>;
     get accounts(): Promise<string[]>;
     get address(): string;
     get account(): IAccount;
@@ -454,7 +464,7 @@ export declare class Wallet implements IClientWallet {
     getNetworkInfo(chainId: number): INetwork;
     setNetworkInfo(network: INetwork): void;
     setMultipleNetworksInfo(networks: INetwork[]): void;
-    createAccount(): IAccount | undefined;
+    createAccount(): IAccount;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     get defaultAccount(): string;
     set defaultAccount(address: string);

@@ -29,4 +29,7 @@ export declare function constructTypedMessageData(domain: IEIP712Domain, customT
 export declare function soliditySha3(...val: any[]): any;
 export declare function toChecksumAddress(address: string): any;
 export declare function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
+export declare function uint8ArrayToHex(byteArray: Uint8Array): string;
+export declare function stringToUnicodeHex(str: string): string;
+export declare function hexToString(hex: string): string;
 export {};

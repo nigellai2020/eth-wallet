@@ -8,15 +8,16 @@ import { BigNumber } from "bignumber.js";
 import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "./types";
 import { EIP712DomainAbi } from "./constants";
 import { ISendTxEventsOptions, Wallet } from "./wallet";
+
 let Web3 = initWeb3Lib(); // tslint:disable-line
 
 export function initWeb3Lib() {
-    if (typeof window !== "undefined"){
+    if (typeof window !== "undefined") {
         Web3 = window["Web3"];
         return window["Web3"]
     }
-    else{
-        let {Web3} = require("./web3");
+    else {
+        let { Web3 } = require("./web3");
         return Web3;
     };
 };
@@ -121,7 +122,7 @@ export function toNumber(value: string | number | BigNumber | bigint): number {
     } else if (typeof value === 'string') {
         return new BigNumber(value).toNumber();
     } else if (typeof value === "bigint") {
-        return Number(value); 
+        return Number(value);
     } else {
         return (value as BigNumber).toNumber();
     }
@@ -190,4 +191,20 @@ export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions) 
             }
         },
     })
+}
+
+export function uint8ArrayToHex(byteArray: Uint8Array): string {
+    let ret = '';
+    byteArray.forEach(e => { ret += e.toString(16).padStart(2, "0"); });
+    return ret;
+}
+export function stringToUnicodeHex(str: string): string {
+    return str.split('').map(e => (e.codePointAt(0) as number).toString(16).padStart(2, "0")).join('');
+}
+export function hexToString(hex: string): string {
+    let ret = '';
+    for (let i = 0; i < hex.length; i += 2) {
+        ret += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
+    }
+    return ret;
 }

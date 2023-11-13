@@ -1499,6 +1499,9 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     export function soliditySha3(...val: any[]): any;
     export function toChecksumAddress(address: string): any;
     export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
+    export function uint8ArrayToHex(byteArray: Uint8Array): string;
+    export function stringToUnicodeHex(str: string): string;
+    export function hexToString(hex: string): string;
 }
 /// <amd-module name="@ijstech/eth-wallet/contracts/erc20.ts" />
 declare module "@ijstech/eth-wallet/contracts/erc20.ts" {
@@ -1792,6 +1795,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         unregisterAllWalletEvents(): void;
         destoryRpcWalletInstance(instanceId: string): void;
         initRpcWallet(config: IRpcWalletConfig): string;
+        encrypt: (key: string) => Promise<string>;
+        decrypt: (data: string) => Promise<string>;
     }
     export interface IRpcWallet extends IWallet {
         init(): Promise<void>;
@@ -1959,6 +1964,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         connect: (eventPayload?: Record<string, any>) => Promise<void>;
         disconnect: () => Promise<void>;
         switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+        encrypt: (key: string) => Promise<string>;
+        decrypt: (data: string) => Promise<string>;
     }
     export class EthereumProvider implements IClientSideProvider {
         protected wallet: Wallet;
@@ -1994,12 +2001,16 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         isConnected(): boolean;
         addToken(option: ITokenOption, type?: string): Promise<boolean>;
         switchNetwork(chainId: number): Promise<boolean>;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
     }
     export class MetaMaskProvider extends EthereumProvider {
         get displayName(): string;
         get image(): string;
         get homepage(): string;
         installed(): boolean;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
     }
     export class Web3ModalProvider extends EthereumProvider {
         private _provider;
@@ -2056,6 +2067,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         setDefaultProvider(): void;
         connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload): Promise<void>;
         disconnect(): Promise<void>;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
         get accounts(): Promise<string[]>;
         get address(): string;
         get account(): IAccount;
@@ -2066,7 +2079,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
-        createAccount(): IAccount | undefined;
+        createAccount(): IAccount;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         get defaultAccount(): string;
         set defaultAccount(address: string);
