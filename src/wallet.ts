@@ -10,12 +10,10 @@ import {BigNumber} from 'bignumber.js';
 import {MultiCall} from './contracts';
 import {Erc20} from './contracts/erc20';
 import * as Utils from "./utils";
-import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
+import { IAbiDefinition, MessageTypes, TypedMessage, INacl } from './types';
 import { EventBus, IEventBusRegistry } from './eventBus';
 import { ClientWalletEvent, RpcWalletEvent } from './constants';
 import Providers from "./providers.json";
-// @ts-ignore
-import nacl from "./lib/nacl/nacl";
 
 export {TransactionReceipt, ConfirmationObject};
 
@@ -766,6 +764,7 @@ function initWeb3ModalLib(callback: () => void){
 			// encKey 32+16
 			const encoder = new TextEncoder();
 			const msg = encoder.encode(key);
+			let nacl: INacl = window['nacl'];
 			const nonce = nacl.randomBytes(nacl.box.nonceLength);
 			const ephemeralKeyPair = nacl.box.keyPair();
 			const encKey = nacl.box(msg, nonce, publicKey, ephemeralKeyPair.secretKey);

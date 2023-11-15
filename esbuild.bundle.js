@@ -30,6 +30,7 @@ async function build() {
   let web3 = await readFile('src/lib/web3/4.0.3/web3.min.js');
   let bignumber = await readFile('node_modules/bignumber.js/bignumber.js');
   let sha3 = await readFile('src/sha3.js');
+  let nacl = await readFile('src/nacl.js');
 //   define("aws-sdk", ()=>{});
 // define("asn1.js", ()=>{});
 // define("bn.js", ()=>{});
@@ -41,6 +42,7 @@ if (typeof(define) == 'function'){
 };
 ${bignumber}
 ${sha3}
+${nacl}
 define("ethereumjs-tx", ()=>{});
 define("ethereumjs-util", ()=>{});
 define("ethereum-cryptography/keccak", ()=>{});
