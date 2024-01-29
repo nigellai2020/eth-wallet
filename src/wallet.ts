@@ -421,7 +421,7 @@ function initWeb3ModalLib(callback: () => void){
 		to: string;
 		contract: IAbiDefinition;
 		methodName: string;
-		params: string[];
+		params: any[];
 	}
 	export interface IRpcWalletConfig {
 		networks: INetwork[];
