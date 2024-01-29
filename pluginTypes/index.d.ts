@@ -2009,7 +2009,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         to: string;
         contract: IAbiDefinition;
         methodName: string;
-        params: string[];
+        params: any[];
     }
     export interface IRpcWalletConfig {
         networks: INetwork[];
