@@ -1968,7 +1968,7 @@ function initWeb3ModalLib(callback: () => void){
 				await self.init();
         		let _web3 = self._web3;
         		try{
-        			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
+        			let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
         			let result;
         			if ((self._account && self._account.privateKey)){
 						let nonce = Number(await _web3.eth.getTransactionCount(address));        				
@@ -1993,7 +1993,7 @@ function initWeb3ModalLib(callback: () => void){
 						resolve(result);	
         			}
         			else{
-        				result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString()).toString()});	
+        				result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString(), "ether").toString()});	
         				resolve(result);	
         			}
         		}

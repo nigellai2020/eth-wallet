@@ -223,7 +223,7 @@ export class NodeWallet extends Wallet{
         let self = this;
         return new Promise(async function(resolve, reject){
             try{
-                let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString()));
+                let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
                 let result;
                 if ((self._account && self._account.privateKey) /*|| self.kms*/){
                     let nonce = Number(await _web3.eth.getTransactionCount(address));        				
@@ -255,7 +255,7 @@ export class NodeWallet extends Wallet{
                     resolve(result);	
                 }
                 else{
-                    result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString()).toString()});	
+                    result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString(), "ether").toString()});	
                     resolve(result);	
                 }
             }
