@@ -645,6 +645,14 @@ function initWeb3ModalLib(callback: () => void){
 			}
 			this.wallet.account = null;
 			this._isConnected = false;
+			await this.provider.request({
+				method: "wallet_revokePermissions",
+				params: [
+					{
+						eth_accounts: {},
+					},
+				],
+			});
 		}
 		isConnected() {
 			return this._isConnected;
