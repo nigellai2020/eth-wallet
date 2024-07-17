@@ -1156,6 +1156,12 @@ function initWeb3ModalLib(callback: () => void){
 		get networksMap() {
 			return this._networksMap;
 		}
+		get multicallInfoMap() {
+			return this._multicallInfoMap;
+		}
+		set multicallInfoMap(value: MulticallInfoMapType) {
+			this._multicallInfoMap = value;
+		}
 		getNetworkInfo(chainId: number){
 			return this._networksMap[chainId];
 		}

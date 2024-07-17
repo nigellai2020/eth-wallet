@@ -2156,6 +2156,8 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         get infuraId(): string;
         set infuraId(value: string);
         get networksMap(): NetworksMapType;
+        get multicallInfoMap(): MulticallInfoMapType;
+        set multicallInfoMap(value: MulticallInfoMapType);
         getNetworkInfo(chainId: number): INetwork;
         setNetworkInfo(network: INetwork): void;
         setMultipleNetworksInfo(networks: INetwork[]): void;
