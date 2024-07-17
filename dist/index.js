@@ -6898,6 +6898,12 @@ var _Wallet = class {
   get networksMap() {
     return this._networksMap;
   }
+  get multicallInfoMap() {
+    return this._multicallInfoMap;
+  }
+  set multicallInfoMap(value) {
+    this._multicallInfoMap = value;
+  }
   getNetworkInfo(chainId) {
     return this._networksMap[chainId];
   }
