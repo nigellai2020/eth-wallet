@@ -2401,14 +2401,27 @@ function initWeb3ModalLib(callback: () => void){
 					outputValues.push(outputValue);
 				}
 				else {
-					let outputValueArr = [];
-					for (let j = 0; j < outputs.length; j++) {
-						const output = outputs[j];
-						const decodedValue = decodedValues[j];
-						const outputValue = calculateOutputValue(decodedValue, output);
-						outputValueArr.push(outputValue);
+					let outputNames: string[] = outputs.map(v => v.name);
+					if (outputNames.every(v => v !== '')) {
+						let outputValueObj = {};
+						for (let j = 0; j < outputs.length; j++) {
+							const output = outputs[j];
+							const decodedValue = decodedValues[j];
+							const outputValue = calculateOutputValue(decodedValue, output);
+							outputValueObj[outputNames[j]] = outputValue;
+						}
+						outputValues.push(outputValueObj);
 					}
-					outputValues.push(outputValueArr);
+					else {
+						let outputValueArr = [];
+						for (let j = 0; j < outputs.length; j++) {
+							const output = outputs[j];
+							const decodedValue = decodedValues[j];
+							const outputValue = calculateOutputValue(decodedValue, output);
+							outputValueArr.push(outputValue);
+						}
+						outputValues.push(outputValueArr);
+					}
 				}
 			}
 			return outputValues;
