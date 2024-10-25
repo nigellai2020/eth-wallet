@@ -597,6 +597,7 @@ function initWeb3ModalLib(callback: () => void){
 						self.onConnect(connectInfo);
 				}
 				this.handleDisconnect = (error) => {
+					this._isConnected = false;
 					EventBus.getInstance().dispatch(ClientWalletEvent.Disconnect, error);
 					if (self.onDisconnect)
 						self.onDisconnect(error);
@@ -641,7 +642,12 @@ function initWeb3ModalLib(callback: () => void){
 				return;
 			}
 			if (this.provider.disconnect) {
-				await this.provider.disconnect()
+				try {
+					await this.provider.disconnect()
+				}
+				catch (error) {
+					console.error(error);
+				}
 			}
 			this.wallet.account = null;
 			this._isConnected = false;
@@ -891,7 +897,12 @@ function initWeb3ModalLib(callback: () => void){
 				return;
 			}
 			if (this.provider.disconnect) {
-				await this.provider.disconnect()
+				try {
+					await this.provider.disconnect()
+				}
+				catch (error) {
+					console.error(error);
+				}
 			}
 			this.wallet.account = null;
 			this._isConnected = false;
