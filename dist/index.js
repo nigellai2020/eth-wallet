@@ -6369,6 +6369,7 @@ var EthereumProvider = class {
           self.onConnect(connectInfo);
       };
       this.handleDisconnect = (error) => {
+        this._isConnected = false;
         EventBus.getInstance().dispatch(ClientWalletEvent.Disconnect, error);
         if (self.onDisconnect)
           self.onDisconnect(error);
@@ -6413,7 +6414,11 @@ var EthereumProvider = class {
       return;
     }
     if (this.provider.disconnect) {
-      await this.provider.disconnect();
+      try {
+        await this.provider.disconnect();
+      } catch (error) {
+        console.error(error);
+      }
     }
     this.wallet.account = null;
     this._isConnected = false;
@@ -6649,7 +6654,11 @@ var Web3ModalProvider = class extends EthereumProvider {
       return;
     }
     if (this.provider.disconnect) {
-      await this.provider.disconnect();
+      try {
+        await this.provider.disconnect();
+      } catch (error) {
+        console.error(error);
+      }
     }
     this.wallet.account = null;
     this._isConnected = false;
