@@ -6658,6 +6658,7 @@ var Web3ModalProvider = class extends EthereumProvider {
         await this.provider.disconnect();
       } catch (error) {
         console.error(error);
+        Object.keys(localStorage).filter((key) => key.startsWith("wc@2:")).forEach((key) => localStorage.removeItem(key));
       }
     }
     this.wallet.account = null;

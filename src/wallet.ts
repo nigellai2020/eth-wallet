@@ -902,6 +902,10 @@ function initWeb3ModalLib(callback: () => void){
 				}
 				catch (error) {
 					console.error(error);
+					//Workaround to clear WalletConnect session manually
+					Object.keys(localStorage)
+						.filter(key => key.startsWith("wc@2:"))
+						.forEach(key => localStorage.removeItem(key));
 				}
 			}
 			this.wallet.account = null;
