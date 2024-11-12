@@ -871,6 +871,7 @@ declare module "contracts/ERC1155/ERC1155" {
         approved: boolean;
     }
     export class ERC1155 extends _Contract {
+        static _abi: any;
         constructor(wallet: IWallet, address?: string);
         deploy(uri: string, options?: TransactionOptions): Promise<string>;
         parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
@@ -893,14 +894,17 @@ declare module "contracts/ERC1155/ERC1155" {
         safeBatchTransferFrom: {
             (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<string>;
         };
         safeTransferFrom: {
             (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<string>;
         };
         setApprovalForAll: {
             (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<string>;
         };
         supportsInterface: {
             (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
@@ -1017,6 +1021,7 @@ declare module "contracts/ERC20/ERC20" {
         amount: number | BigNumber;
     }
     export class ERC20 extends _Contract {
+        static _abi: any;
         constructor(wallet: IWallet, address?: string);
         deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
         parseApprovalEvent(receipt: TransactionReceipt): ERC20.ApprovalEvent[];
@@ -1029,10 +1034,10 @@ declare module "contracts/ERC20/ERC20" {
         approve: {
             (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
+            txData: (params: IApproveParams, options?: TransactionOptions) => Promise<string>;
         };
         balanceOf: {
             (account: string, options?: TransactionOptions): Promise<BigNumber>;
-            txData: (account: string, options?: TransactionOptions) => Promise<string>;
         };
         decimals: {
             (options?: TransactionOptions): Promise<BigNumber>;
@@ -1040,10 +1045,12 @@ declare module "contracts/ERC20/ERC20" {
         decreaseAllowance: {
             (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+            txData: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<string>;
         };
         increaseAllowance: {
             (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+            txData: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<string>;
         };
         name: {
             (options?: TransactionOptions): Promise<string>;
@@ -1057,10 +1064,12 @@ declare module "contracts/ERC20/ERC20" {
         transfer: {
             (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
+            txData: (params: ITransferParams, options?: TransactionOptions) => Promise<string>;
         };
         transferFrom: {
             (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
+            txData: (params: ITransferFromParams, options?: TransactionOptions) => Promise<string>;
         };
         private assign;
     }
@@ -1159,6 +1168,7 @@ declare module "contracts/ERC721/ERC721" {
         tokenId: number | BigNumber;
     }
     export class ERC721 extends _Contract {
+        static _abi: any;
         constructor(wallet: IWallet, address?: string);
         deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
         parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
@@ -1170,6 +1180,7 @@ declare module "contracts/ERC721/ERC721" {
         approve: {
             (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: IApproveParams, options?: TransactionOptions) => Promise<string>;
         };
         balanceOf: {
             (owner: string, options?: TransactionOptions): Promise<BigNumber>;
@@ -1189,14 +1200,17 @@ declare module "contracts/ERC721/ERC721" {
         safeTransferFrom: {
             (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<string>;
         };
         safeTransferFrom_1: {
             (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<string>;
         };
         setApprovalForAll: {
             (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<string>;
         };
         supportsInterface: {
             (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
@@ -1210,6 +1224,7 @@ declare module "contracts/ERC721/ERC721" {
         transferFrom: {
             (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
             call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
+            txData: (params: ITransferFromParams, options?: TransactionOptions) => Promise<string>;
         };
         private assign;
     }
@@ -1275,8 +1290,9 @@ declare module "contracts/MultiCall/MultiCall" {
         gasBuffer: number | BigNumber;
     }
     export class MultiCall extends _Contract {
+        static _abi: any;
         constructor(wallet: IWallet, address?: string);
-        deploy(options?: number | BigNumber | TransactionOptions): Promise<string>;
+        deploy(options?: TransactionOptions): Promise<string>;
         gasLeft: {
             (options?: TransactionOptions): Promise<BigNumber>;
         };
@@ -1292,6 +1308,10 @@ declare module "contracts/MultiCall/MultiCall" {
                 to: string;
                 data: string;
             }[], options?: TransactionOptions) => Promise<string[]>;
+            txData: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<string>;
         };
         multicallWithGas: {
             (calls: {
@@ -1305,6 +1325,10 @@ declare module "contracts/MultiCall/MultiCall" {
                 results: string[];
                 gasUsed: BigNumber[];
             }>;
+            txData: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<string>;
         };
         multicallWithGasLimitation: {
             (params: IMulticallWithGasLimitationParams, options?: TransactionOptions): Promise<TransactionReceipt>;
@@ -1312,6 +1336,7 @@ declare module "contracts/MultiCall/MultiCall" {
                 results: string[];
                 lastSuccessIndex: BigNumber;
             }>;
+            txData: (params: IMulticallWithGasLimitationParams, options?: TransactionOptions) => Promise<string>;
         };
         private assign;
     }

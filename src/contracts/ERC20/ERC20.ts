@@ -1,6 +1,5 @@
 import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";
 import Bin from "./ERC20.json";
-
 export interface IDeployParams {name:string;symbol:string}
 export interface IAllowanceParams {owner:string;spender:string}
 export interface IApproveParams {spender:string;amount:number|BigNumber}
@@ -9,6 +8,7 @@ export interface IIncreaseAllowanceParams {spender:string;addedValue:number|BigN
 export interface ITransferParams {to:string;amount:number|BigNumber}
 export interface ITransferFromParams {from:string;to:string;amount:number|BigNumber}
 export class ERC20 extends _Contract{
+    static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
         this.assign()
@@ -46,10 +46,10 @@ export class ERC20 extends _Contract{
     approve: {
         (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
+        txData: (params: IApproveParams, options?: TransactionOptions) => Promise<string>;
     }
     balanceOf: {
         (account:string, options?: TransactionOptions): Promise<BigNumber>;
-        txData: (account:string, options?: TransactionOptions) => Promise<string>;
     }
     decimals: {
         (options?: TransactionOptions): Promise<BigNumber>;
@@ -57,10 +57,12 @@ export class ERC20 extends _Contract{
     decreaseAllowance: {
         (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        txData: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<string>;
     }
     increaseAllowance: {
         (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        txData: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<string>;
     }
     name: {
         (options?: TransactionOptions): Promise<string>;
@@ -74,10 +76,12 @@ export class ERC20 extends _Contract{
     transfer: {
         (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
+        txData: (params: ITransferParams, options?: TransactionOptions) => Promise<string>;
     }
     transferFrom: {
         (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
+        txData: (params: ITransferFromParams, options?: TransactionOptions) => Promise<string>;
     }
     private assign(){
         let allowanceParams = (params: IAllowanceParams) => [params.owner,params.spender];
@@ -90,13 +94,7 @@ export class ERC20 extends _Contract{
             let result = await this.call('balanceOf',[account],options);
             return new BigNumber(result);
         }
-        let balanceOf_txData = async (account:string, options?: TransactionOptions): Promise<string> => {
-            let result = await this.txData('balanceOf',[account],options);
-            return result;
-        }       
-        this.balanceOf = Object.assign(balanceOf_call, {
-            txData:balanceOf_txData
-        });
+        this.balanceOf = balanceOf_call
         let decimals_call = async (options?: TransactionOptions): Promise<BigNumber> => {
             let result = await this.call('decimals',[],options);
             return new BigNumber(result);
@@ -126,8 +124,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('approve',approveParams(params),options);
             return result;
         }
+        let approve_txData = async (params: IApproveParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('approve',approveParams(params),options);
+            return result;
+        }
         this.approve = Object.assign(approve_send, {
             call:approve_call
+            , txData:approve_txData
         });
         let decreaseAllowanceParams = (params: IDecreaseAllowanceParams) => [params.spender,this.wallet.utils.toString(params.subtractedValue)];
         let decreaseAllowance_send = async (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -138,8 +141,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('decreaseAllowance',decreaseAllowanceParams(params),options);
             return result;
         }
+        let decreaseAllowance_txData = async (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('decreaseAllowance',decreaseAllowanceParams(params),options);
+            return result;
+        }
         this.decreaseAllowance = Object.assign(decreaseAllowance_send, {
             call:decreaseAllowance_call
+            , txData:decreaseAllowance_txData
         });
         let increaseAllowanceParams = (params: IIncreaseAllowanceParams) => [params.spender,this.wallet.utils.toString(params.addedValue)];
         let increaseAllowance_send = async (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -150,8 +158,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('increaseAllowance',increaseAllowanceParams(params),options);
             return result;
         }
+        let increaseAllowance_txData = async (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('increaseAllowance',increaseAllowanceParams(params),options);
+            return result;
+        }
         this.increaseAllowance = Object.assign(increaseAllowance_send, {
             call:increaseAllowance_call
+            , txData:increaseAllowance_txData
         });
         let transferParams = (params: ITransferParams) => [params.to,this.wallet.utils.toString(params.amount)];
         let transfer_send = async (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -162,8 +175,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('transfer',transferParams(params),options);
             return result;
         }
+        let transfer_txData = async (params: ITransferParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('transfer',transferParams(params),options);
+            return result;
+        }
         this.transfer = Object.assign(transfer_send, {
             call:transfer_call
+            , txData:transfer_txData
         });
         let transferFromParams = (params: ITransferFromParams) => [params.from,params.to,this.wallet.utils.toString(params.amount)];
         let transferFrom_send = async (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -174,8 +192,13 @@ export class ERC20 extends _Contract{
             let result = await this.call('transferFrom',transferFromParams(params),options);
             return result;
         }
+        let transferFrom_txData = async (params: ITransferFromParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('transferFrom',transferFromParams(params),options);
+            return result;
+        }
         this.transferFrom = Object.assign(transferFrom_send, {
             call:transferFrom_call
+            , txData:transferFrom_txData
         });
     }
 }

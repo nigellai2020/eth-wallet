@@ -32,6 +32,7 @@ export interface ITransferFromParams {
     tokenId: number | BigNumber;
 }
 export declare class ERC721 extends _Contract {
+    static _abi: any;
     constructor(wallet: IWallet, address?: string);
     deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
     parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
@@ -43,6 +44,7 @@ export declare class ERC721 extends _Contract {
     approve: {
         (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: IApproveParams, options?: TransactionOptions) => Promise<string>;
     };
     balanceOf: {
         (owner: string, options?: TransactionOptions): Promise<BigNumber>;
@@ -62,14 +64,17 @@ export declare class ERC721 extends _Contract {
     safeTransferFrom: {
         (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<string>;
     };
     safeTransferFrom_1: {
         (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<string>;
     };
     setApprovalForAll: {
         (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<string>;
     };
     supportsInterface: {
         (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
@@ -83,6 +88,7 @@ export declare class ERC721 extends _Contract {
     transferFrom: {
         (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ITransferFromParams, options?: TransactionOptions) => Promise<string>;
     };
     private assign;
 }
