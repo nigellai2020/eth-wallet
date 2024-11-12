@@ -30,6 +30,7 @@ export interface ISetApprovalForAllParams {
     approved: boolean;
 }
 export declare class ERC1155 extends _Contract {
+    static _abi: any;
     constructor(wallet: IWallet, address?: string);
     deploy(uri: string, options?: TransactionOptions): Promise<string>;
     parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
@@ -52,14 +53,17 @@ export declare class ERC1155 extends _Contract {
     safeBatchTransferFrom: {
         (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<string>;
     };
     safeTransferFrom: {
         (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<string>;
     };
     setApprovalForAll: {
         (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<string>;
     };
     supportsInterface: {
         (interfaceId: string, options?: TransactionOptions): Promise<boolean>;

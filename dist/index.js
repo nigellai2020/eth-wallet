@@ -5342,8 +5342,13 @@ var ERC1155 = class extends import_eth_contract.Contract {
       let result = await this.call("safeBatchTransferFrom", safeBatchTransferFromParams(params), options);
       return;
     };
+    let safeBatchTransferFrom_txData = async (params, options) => {
+      let result = await this.txData("safeBatchTransferFrom", safeBatchTransferFromParams(params), options);
+      return result;
+    };
     this.safeBatchTransferFrom = Object.assign(safeBatchTransferFrom_send, {
-      call: safeBatchTransferFrom_call
+      call: safeBatchTransferFrom_call,
+      txData: safeBatchTransferFrom_txData
     });
     let safeTransferFromParams = (params) => [params.from, params.to, this.wallet.utils.toString(params.id), this.wallet.utils.toString(params.amount), this.wallet.utils.stringToBytes(params.data)];
     let safeTransferFrom_send = async (params, options) => {
@@ -5354,8 +5359,13 @@ var ERC1155 = class extends import_eth_contract.Contract {
       let result = await this.call("safeTransferFrom", safeTransferFromParams(params), options);
       return;
     };
+    let safeTransferFrom_txData = async (params, options) => {
+      let result = await this.txData("safeTransferFrom", safeTransferFromParams(params), options);
+      return result;
+    };
     this.safeTransferFrom = Object.assign(safeTransferFrom_send, {
-      call: safeTransferFrom_call
+      call: safeTransferFrom_call,
+      txData: safeTransferFrom_txData
     });
     let setApprovalForAllParams = (params) => [params.operator, params.approved];
     let setApprovalForAll_send = async (params, options) => {
@@ -5366,11 +5376,17 @@ var ERC1155 = class extends import_eth_contract.Contract {
       let result = await this.call("setApprovalForAll", setApprovalForAllParams(params), options);
       return;
     };
+    let setApprovalForAll_txData = async (params, options) => {
+      let result = await this.txData("setApprovalForAll", setApprovalForAllParams(params), options);
+      return result;
+    };
     this.setApprovalForAll = Object.assign(setApprovalForAll_send, {
-      call: setApprovalForAll_call
+      call: setApprovalForAll_call,
+      txData: setApprovalForAll_txData
     });
   }
 };
+ERC1155._abi = ERC1155_json_default.abi;
 
 // src/contracts/ERC20/ERC20.ts
 var import_eth_contract2 = __toModule(require_lib());
@@ -5440,13 +5456,7 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("balanceOf", [account], options);
       return new import_eth_contract2.BigNumber(result);
     };
-    let balanceOf_txData = async (account, options) => {
-      let result = await this.txData("balanceOf", [account], options);
-      return result;
-    };
-    this.balanceOf = Object.assign(balanceOf_call, {
-      txData: balanceOf_txData
-    });
+    this.balanceOf = balanceOf_call;
     let decimals_call = async (options) => {
       let result = await this.call("decimals", [], options);
       return new import_eth_contract2.BigNumber(result);
@@ -5476,8 +5486,13 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("approve", approveParams(params), options);
       return result;
     };
+    let approve_txData = async (params, options) => {
+      let result = await this.txData("approve", approveParams(params), options);
+      return result;
+    };
     this.approve = Object.assign(approve_send, {
-      call: approve_call
+      call: approve_call,
+      txData: approve_txData
     });
     let decreaseAllowanceParams = (params) => [params.spender, this.wallet.utils.toString(params.subtractedValue)];
     let decreaseAllowance_send = async (params, options) => {
@@ -5488,8 +5503,13 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("decreaseAllowance", decreaseAllowanceParams(params), options);
       return result;
     };
+    let decreaseAllowance_txData = async (params, options) => {
+      let result = await this.txData("decreaseAllowance", decreaseAllowanceParams(params), options);
+      return result;
+    };
     this.decreaseAllowance = Object.assign(decreaseAllowance_send, {
-      call: decreaseAllowance_call
+      call: decreaseAllowance_call,
+      txData: decreaseAllowance_txData
     });
     let increaseAllowanceParams = (params) => [params.spender, this.wallet.utils.toString(params.addedValue)];
     let increaseAllowance_send = async (params, options) => {
@@ -5500,8 +5520,13 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("increaseAllowance", increaseAllowanceParams(params), options);
       return result;
     };
+    let increaseAllowance_txData = async (params, options) => {
+      let result = await this.txData("increaseAllowance", increaseAllowanceParams(params), options);
+      return result;
+    };
     this.increaseAllowance = Object.assign(increaseAllowance_send, {
-      call: increaseAllowance_call
+      call: increaseAllowance_call,
+      txData: increaseAllowance_txData
     });
     let transferParams = (params) => [params.to, this.wallet.utils.toString(params.amount)];
     let transfer_send = async (params, options) => {
@@ -5512,8 +5537,13 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("transfer", transferParams(params), options);
       return result;
     };
+    let transfer_txData = async (params, options) => {
+      let result = await this.txData("transfer", transferParams(params), options);
+      return result;
+    };
     this.transfer = Object.assign(transfer_send, {
-      call: transfer_call
+      call: transfer_call,
+      txData: transfer_txData
     });
     let transferFromParams = (params) => [params.from, params.to, this.wallet.utils.toString(params.amount)];
     let transferFrom_send = async (params, options) => {
@@ -5524,11 +5554,17 @@ var ERC20 = class extends import_eth_contract2.Contract {
       let result = await this.call("transferFrom", transferFromParams(params), options);
       return result;
     };
+    let transferFrom_txData = async (params, options) => {
+      let result = await this.txData("transferFrom", transferFromParams(params), options);
+      return result;
+    };
     this.transferFrom = Object.assign(transferFrom_send, {
-      call: transferFrom_call
+      call: transferFrom_call,
+      txData: transferFrom_txData
     });
   }
 };
+ERC20._abi = ERC20_json_default.abi;
 
 // src/contracts/ERC721/ERC721.ts
 var import_eth_contract3 = __toModule(require_lib());
@@ -5653,8 +5689,13 @@ var ERC721 = class extends import_eth_contract3.Contract {
       let result = await this.call("approve", approveParams(params), options);
       return;
     };
+    let approve_txData = async (params, options) => {
+      let result = await this.txData("approve", approveParams(params), options);
+      return result;
+    };
     this.approve = Object.assign(approve_send, {
-      call: approve_call
+      call: approve_call,
+      txData: approve_txData
     });
     let safeTransferFromParams = (params) => [params.from, params.to, this.wallet.utils.toString(params.tokenId)];
     let safeTransferFrom_send = async (params, options) => {
@@ -5665,8 +5706,13 @@ var ERC721 = class extends import_eth_contract3.Contract {
       let result = await this.call("safeTransferFrom", safeTransferFromParams(params), options);
       return;
     };
+    let safeTransferFrom_txData = async (params, options) => {
+      let result = await this.txData("safeTransferFrom", safeTransferFromParams(params), options);
+      return result;
+    };
     this.safeTransferFrom = Object.assign(safeTransferFrom_send, {
-      call: safeTransferFrom_call
+      call: safeTransferFrom_call,
+      txData: safeTransferFrom_txData
     });
     let safeTransferFrom_1Params = (params) => [params.from, params.to, this.wallet.utils.toString(params.tokenId), this.wallet.utils.stringToBytes(params.data)];
     let safeTransferFrom_1_send = async (params, options) => {
@@ -5677,8 +5723,13 @@ var ERC721 = class extends import_eth_contract3.Contract {
       let result = await this.call("safeTransferFrom", safeTransferFrom_1Params(params), options);
       return;
     };
+    let safeTransferFrom_1_txData = async (params, options) => {
+      let result = await this.txData("safeTransferFrom", safeTransferFrom_1Params(params), options);
+      return result;
+    };
     this.safeTransferFrom_1 = Object.assign(safeTransferFrom_1_send, {
-      call: safeTransferFrom_1_call
+      call: safeTransferFrom_1_call,
+      txData: safeTransferFrom_1_txData
     });
     let setApprovalForAllParams = (params) => [params.operator, params.approved];
     let setApprovalForAll_send = async (params, options) => {
@@ -5689,8 +5740,13 @@ var ERC721 = class extends import_eth_contract3.Contract {
       let result = await this.call("setApprovalForAll", setApprovalForAllParams(params), options);
       return;
     };
+    let setApprovalForAll_txData = async (params, options) => {
+      let result = await this.txData("setApprovalForAll", setApprovalForAllParams(params), options);
+      return result;
+    };
     this.setApprovalForAll = Object.assign(setApprovalForAll_send, {
-      call: setApprovalForAll_call
+      call: setApprovalForAll_call,
+      txData: setApprovalForAll_txData
     });
     let transferFromParams = (params) => [params.from, params.to, this.wallet.utils.toString(params.tokenId)];
     let transferFrom_send = async (params, options) => {
@@ -5701,11 +5757,17 @@ var ERC721 = class extends import_eth_contract3.Contract {
       let result = await this.call("transferFrom", transferFromParams(params), options);
       return;
     };
+    let transferFrom_txData = async (params, options) => {
+      let result = await this.txData("transferFrom", transferFromParams(params), options);
+      return result;
+    };
     this.transferFrom = Object.assign(transferFrom_send, {
-      call: transferFrom_call
+      call: transferFrom_call,
+      txData: transferFrom_txData
     });
   }
 };
+ERC721._abi = ERC721_json_default.abi;
 
 // src/contracts/MultiCall/MultiCall.ts
 var import_eth_contract4 = __toModule(require_lib());
@@ -5750,8 +5812,13 @@ var MultiCall = class extends import_eth_contract4.Contract {
       let result = await this.call("multicall", [calls.map((e) => [e.to, this.wallet.utils.stringToBytes(e.data)])], options);
       return result;
     };
+    let multicall_txData = async (calls, options) => {
+      let result = await this.txData("multicall", [calls.map((e) => [e.to, this.wallet.utils.stringToBytes(e.data)])], options);
+      return result;
+    };
     this.multicall = Object.assign(multicall_send, {
-      call: multicall_call
+      call: multicall_call,
+      txData: multicall_txData
     });
     let multicallWithGas_send = async (calls, options) => {
       let result = await this.send("multicallWithGas", [calls.map((e) => [e.to, this.wallet.utils.stringToBytes(e.data)])], options);
@@ -5764,8 +5831,13 @@ var MultiCall = class extends import_eth_contract4.Contract {
         gasUsed: result.gasUsed.map((e) => new import_eth_contract4.BigNumber(e))
       };
     };
+    let multicallWithGas_txData = async (calls, options) => {
+      let result = await this.txData("multicallWithGas", [calls.map((e) => [e.to, this.wallet.utils.stringToBytes(e.data)])], options);
+      return result;
+    };
     this.multicallWithGas = Object.assign(multicallWithGas_send, {
-      call: multicallWithGas_call
+      call: multicallWithGas_call,
+      txData: multicallWithGas_txData
     });
     let multicallWithGasLimitationParams = (params) => [params.calls.map((e) => [e.to, this.wallet.utils.stringToBytes(e.data)]), this.wallet.utils.toString(params.gasBuffer)];
     let multicallWithGasLimitation_send = async (params, options) => {
@@ -5779,11 +5851,17 @@ var MultiCall = class extends import_eth_contract4.Contract {
         lastSuccessIndex: new import_eth_contract4.BigNumber(result.lastSuccessIndex)
       };
     };
+    let multicallWithGasLimitation_txData = async (params, options) => {
+      let result = await this.txData("multicallWithGasLimitation", multicallWithGasLimitationParams(params), options);
+      return result;
+    };
     this.multicallWithGasLimitation = Object.assign(multicallWithGasLimitation_send, {
-      call: multicallWithGasLimitation_call
+      call: multicallWithGasLimitation_call,
+      txData: multicallWithGasLimitation_txData
     });
   }
 };
+MultiCall._abi = MultiCall_json_default.abi;
 
 // src/contracts/erc20.ts
 var import_contract = __toModule(require_contract());

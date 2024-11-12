@@ -1,6 +1,5 @@
 import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";
 import Bin from "./ERC721.json";
-
 export interface IDeployParams {name:string;symbol:string}
 export interface IApproveParams {to:string;tokenId:number|BigNumber}
 export interface IIsApprovedForAllParams {owner:string;operator:string}
@@ -9,6 +8,7 @@ export interface ISafeTransferFrom_1Params {from:string;to:string;tokenId:number
 export interface ISetApprovalForAllParams {operator:string;approved:boolean}
 export interface ITransferFromParams {from:string;to:string;tokenId:number|BigNumber}
 export class ERC721 extends _Contract{
+    static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
         this.assign()
@@ -55,6 +55,7 @@ export class ERC721 extends _Contract{
     approve: {
         (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: IApproveParams, options?: TransactionOptions) => Promise<string>;
     }
     balanceOf: {
         (owner:string, options?: TransactionOptions): Promise<BigNumber>;
@@ -74,14 +75,17 @@ export class ERC721 extends _Contract{
     safeTransferFrom: {
         (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<string>;
     }
     safeTransferFrom_1: {
         (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<string>;
     }
     setApprovalForAll: {
         (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<string>;
     }
     supportsInterface: {
         (interfaceId:string, options?: TransactionOptions): Promise<boolean>;
@@ -95,6 +99,7 @@ export class ERC721 extends _Contract{
     transferFrom: {
         (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
         call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
+        txData: (params: ITransferFromParams, options?: TransactionOptions) => Promise<string>;
     }
     private assign(){
         let balanceOf_call = async (owner:string, options?: TransactionOptions): Promise<BigNumber> => {
@@ -147,8 +152,13 @@ export class ERC721 extends _Contract{
             let result = await this.call('approve',approveParams(params),options);
             return;
         }
+        let approve_txData = async (params: IApproveParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('approve',approveParams(params),options);
+            return result;
+        }
         this.approve = Object.assign(approve_send, {
             call:approve_call
+            , txData:approve_txData
         });
         let safeTransferFromParams = (params: ISafeTransferFromParams) => [params.from,params.to,this.wallet.utils.toString(params.tokenId)];
         let safeTransferFrom_send = async (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -159,8 +169,13 @@ export class ERC721 extends _Contract{
             let result = await this.call('safeTransferFrom',safeTransferFromParams(params),options);
             return;
         }
+        let safeTransferFrom_txData = async (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('safeTransferFrom',safeTransferFromParams(params),options);
+            return result;
+        }
         this.safeTransferFrom = Object.assign(safeTransferFrom_send, {
             call:safeTransferFrom_call
+            , txData:safeTransferFrom_txData
         });
         let safeTransferFrom_1Params = (params: ISafeTransferFrom_1Params) => [params.from,params.to,this.wallet.utils.toString(params.tokenId),this.wallet.utils.stringToBytes(params.data)];
         let safeTransferFrom_1_send = async (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -171,8 +186,13 @@ export class ERC721 extends _Contract{
             let result = await this.call('safeTransferFrom',safeTransferFrom_1Params(params),options);
             return;
         }
+        let safeTransferFrom_1_txData = async (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('safeTransferFrom',safeTransferFrom_1Params(params),options);
+            return result;
+        }
         this.safeTransferFrom_1 = Object.assign(safeTransferFrom_1_send, {
             call:safeTransferFrom_1_call
+            , txData:safeTransferFrom_1_txData
         });
         let setApprovalForAllParams = (params: ISetApprovalForAllParams) => [params.operator,params.approved];
         let setApprovalForAll_send = async (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -183,8 +203,13 @@ export class ERC721 extends _Contract{
             let result = await this.call('setApprovalForAll',setApprovalForAllParams(params),options);
             return;
         }
+        let setApprovalForAll_txData = async (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('setApprovalForAll',setApprovalForAllParams(params),options);
+            return result;
+        }
         this.setApprovalForAll = Object.assign(setApprovalForAll_send, {
             call:setApprovalForAll_call
+            , txData:setApprovalForAll_txData
         });
         let transferFromParams = (params: ITransferFromParams) => [params.from,params.to,this.wallet.utils.toString(params.tokenId)];
         let transferFrom_send = async (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt> => {
@@ -195,8 +220,13 @@ export class ERC721 extends _Contract{
             let result = await this.call('transferFrom',transferFromParams(params),options);
             return;
         }
+        let transferFrom_txData = async (params: ITransferFromParams, options?: TransactionOptions): Promise<string> => {
+            let result = await this.txData('transferFrom',transferFromParams(params),options);
+            return result;
+        }
         this.transferFrom = Object.assign(transferFrom_send, {
             call:transferFrom_call
+            , txData:transferFrom_txData
         });
     }
 }
