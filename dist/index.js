@@ -8288,7 +8288,7 @@ var approveERC20Max = async (token, spenderAddress, callback, confirmationCallba
   return receipt;
 };
 var getERC20Allowance = async (wallet, token, spenderAddress) => {
-  if (!(token == null ? void 0 : token.address))
+  if (!(token == null ? void 0 : token.address) || token.address === nullAddress)
     return null;
   let erc20 = new ERC20(wallet, token.address);
   let allowance = await erc20.allowance({

@@ -21,7 +21,7 @@ const approveERC20Max = async (token: ITokenObject, spenderAddress: string, call
 }
 
 export const getERC20Allowance = async (wallet: IRpcWallet, token: ITokenObject, spenderAddress: string) => {
-    if (!token?.address) return null;
+    if (!token?.address || token.address === Utils.nullAddress) return null;
     let erc20 = new Contracts.ERC20(wallet, token.address);
     let allowance = await erc20.allowance({
       owner: wallet.account.address,
