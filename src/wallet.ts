@@ -393,7 +393,9 @@ function initWeb3ModalLib(callback: () => void){
 	export interface INetwork {	
 		image?: string;
 		//Same as the AddEthereumChainParameter interface at https://docs.metamask.io/guide/rpc-api.html 
-		chainId: number; 
+		networkCode?: string;
+		networkType?: string;
+		chainId?: number; 
 		chainName: string;
 		nativeCurrency: {
 			name: string;

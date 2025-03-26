@@ -282,7 +282,9 @@ export interface ITokenOption {
 }
 export interface INetwork {
     image?: string;
-    chainId: number;
+    networkCode?: string;
+    networkType?: string;
+    chainId?: number;
     chainName: string;
     nativeCurrency: {
         name: string;

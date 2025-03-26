@@ -2002,7 +2002,9 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export interface INetwork {
         image?: string;
-        chainId: number;
+        networkCode?: string;
+        networkType?: string;
+        chainId?: number;
         chainName: string;
         nativeCurrency: {
             name: string;
