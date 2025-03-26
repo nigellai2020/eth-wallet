@@ -1,6 +1,7 @@
 const dependencies = require('./package.json').dependencies || {};
 const packageName = require('./package.json').name;
-
+const packName = require('./package.json').name;
+const packVersion = require('./package.json').version;
 const Fs = require('fs');
 
 async function readFile(fileName) {
@@ -72,6 +73,11 @@ if (typeof(define) == 'function')
   define.amd = __defineAmdValue;
 `;
   Fs.writeFileSync('dist/web3.js', content);
+  Fs.writeFileSync('dist/scconfg.json', JSON.stringify({
+    "name": packName,
+    "version": packVersion,
+    "type": "lib"
+  }, null, 4));
   // Fs.copyFileSync('src/lib/web3/1.9.0/web3.min.js', 'dist/web3.js');
 };
 build();
