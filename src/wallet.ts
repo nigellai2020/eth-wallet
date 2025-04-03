@@ -1681,7 +1681,10 @@ function initWeb3ModalLib(callback: () => void){
 						if (network.nativeCurrency && network.nativeCurrency.decimals) {
 							decimals = network.nativeCurrency.decimals;
 						}
-						const url = network.rpcUrls[0];
+						let url = network.rpcUrls[0];
+						if (url.indexOf('{INFURA_ID}')) {
+							url = url.replace('{INFURA_ID}', this._infuraId ?? '');
+						}
 						const data = {
 							id: 1,
 							jsonrpc: '2.0',

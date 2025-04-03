@@ -7468,6 +7468,7 @@ var _Wallet = class {
   balanceOf(address) {
     let self = this;
     return new Promise(async function(resolve) {
+      var _a;
       try {
         let network = self._networksMap[self.chainId];
         let decimals = 18;
@@ -7475,7 +7476,10 @@ var _Wallet = class {
           if (network.nativeCurrency && network.nativeCurrency.decimals) {
             decimals = network.nativeCurrency.decimals;
           }
-          const url = network.rpcUrls[0];
+          let url = network.rpcUrls[0];
+          if (url.indexOf("{INFURA_ID}")) {
+            url = url.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
+          }
           const data = {
             id: 1,
             jsonrpc: "2.0",
