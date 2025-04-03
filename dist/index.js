@@ -7468,7 +7468,7 @@ var _Wallet = class {
   balanceOf(address) {
     let self = this;
     return new Promise(async function(resolve) {
-      var _a;
+      var _a, _b;
       try {
         let network = self._networksMap[self.chainId];
         let decimals = 18;
@@ -7477,27 +7477,38 @@ var _Wallet = class {
             decimals = network.nativeCurrency.decimals;
           }
           let url = network.rpcUrls[0];
-          if (url.indexOf("{INFURA_ID}")) {
-            url = url.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
+          if (!url || url.indexOf("{INFURA_ID}") && !self._infuraId) {
+            if (typeof window === "undefined" || !((_a = self.clientSideProvider) == null ? void 0 : _a.provider)) {
+              throw new Error("No provider available");
+            }
+            const balance = await self.clientSideProvider.provider.request({
+              method: "eth_getBalance",
+              params: [address, "latest"]
+            });
+            resolve(new import_bignumber3.BigNumber(balance).div(10 ** decimals));
+          } else {
+            if (url.indexOf("{INFURA_ID}")) {
+              url = url.replace("{INFURA_ID}", (_b = this._infuraId) != null ? _b : "");
+            }
+            const data = {
+              id: 1,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: [address, "latest"]
+            };
+            const response = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(data)
+            });
+            const json = await response.json();
+            if (json.error) {
+              resolve(new import_bignumber3.BigNumber(0));
+            }
+            resolve(new import_bignumber3.BigNumber(json.result).div(10 ** decimals));
           }
-          const data = {
-            id: 1,
-            jsonrpc: "2.0",
-            method: "eth_getBalance",
-            params: [address, "latest"]
-          };
-          const response = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-          });
-          const json = await response.json();
-          if (json.error) {
-            resolve(new import_bignumber3.BigNumber(0));
-          }
-          resolve(new import_bignumber3.BigNumber(json.result).div(10 ** decimals));
         } else {
           await self.init();
           let _web3 = self._web3;

@@ -1682,27 +1682,40 @@ function initWeb3ModalLib(callback: () => void){
 							decimals = network.nativeCurrency.decimals;
 						}
 						let url = network.rpcUrls[0];
-						if (url.indexOf('{INFURA_ID}')) {
-							url = url.replace('{INFURA_ID}', this._infuraId ?? '');
+						if (!url || (url.indexOf('{INFURA_ID}') && !self._infuraId)) {
+							if (typeof window === "undefined" || !self.clientSideProvider?.provider) {
+								throw new Error("No provider available");
+							} 
+							const balance = await self.clientSideProvider.provider.request({
+								method: 'eth_getBalance',
+								params: [address, 'latest'],
+							});
+			
+							resolve(new BigNumber(balance).div(10 ** decimals));
 						}
-						const data = {
-							id: 1,
-							jsonrpc: '2.0',
-							method: 'eth_getBalance',
-							params: [address, 'latest'],
-						};		
-						const response = await fetch(url, {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-							},
-							body: JSON.stringify(data),
-						});		
-						const json = await response.json();		
-						if (json.error) {
-							resolve(new BigNumber(0));
-						}	
-						resolve(new BigNumber(json.result).div(10 ** decimals));
+						else {
+							if (url.indexOf('{INFURA_ID}')) {
+								url = url.replace('{INFURA_ID}', this._infuraId ?? '');
+							}
+							const data = {
+								id: 1,
+								jsonrpc: '2.0',
+								method: 'eth_getBalance',
+								params: [address, 'latest'],
+							};		
+							const response = await fetch(url, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json',
+								},
+								body: JSON.stringify(data),
+							});		
+							const json = await response.json();		
+							if (json.error) {
+								resolve(new BigNumber(0));
+							}	
+							resolve(new BigNumber(json.result).div(10 ** decimals));
+						}
 					}
 					else {
 						await self.init();
