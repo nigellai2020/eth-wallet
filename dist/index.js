@@ -6900,10 +6900,13 @@ var _Wallet = class {
     var _a;
     if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
       let rpc = this._networksMap[this.chainId].rpcUrls[0];
-      if (rpc.indexOf("{INFURA_ID}")) {
-        rpc = rpc.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
+      if (!rpc || rpc.indexOf("{INFURA_ID}") && !this._infuraId) {
+      } else {
+        if (rpc.indexOf("{INFURA_ID}")) {
+          rpc = rpc.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
+        }
+        this.provider = rpc;
       }
-      this.provider = rpc;
     }
   }
   async connect(clientSideProvider, eventPayload) {
@@ -7477,15 +7480,14 @@ var _Wallet = class {
             decimals = network.nativeCurrency.decimals;
           }
           let url = network.rpcUrls[0];
-          if (!url || url.indexOf("{INFURA_ID}") && !self._infuraId) {
-            if (typeof window === "undefined" || !((_a = self.clientSideProvider) == null ? void 0 : _a.provider)) {
-              throw new Error("No provider available");
-            }
+          if (typeof window !== "undefined" && ((_a = self.clientSideProvider) == null ? void 0 : _a.provider)) {
             const balance = await self.clientSideProvider.provider.request({
               method: "eth_getBalance",
               params: [address, "latest"]
             });
             resolve(new import_bignumber3.BigNumber(balance).div(10 ** decimals));
+          } else if (!url || url.indexOf("{INFURA_ID}") && !self._infuraId) {
+            throw new Error("No provider available");
           } else {
             if (url.indexOf("{INFURA_ID}")) {
               url = url.replace("{INFURA_ID}", (_b = this._infuraId) != null ? _b : "");
