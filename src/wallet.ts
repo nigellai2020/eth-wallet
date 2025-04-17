@@ -1694,12 +1694,12 @@ function initWeb3ModalLib(callback: () => void){
 			
 							resolve(new BigNumber(balance).div(10 ** decimals));
 						} 
-						else if (!url || (url.indexOf('{INFURA_ID}') && !self._infuraId)) {
+						else if (!url || (url.indexOf('{INFURA_ID}') > 0 && !self._infuraId)) {
 							throw new Error("No provider available");
 						}
 						else {
 							if (url.indexOf('{INFURA_ID}')) {
-								url = url.replace('{INFURA_ID}', this._infuraId ?? '');
+								url = url.replace('{INFURA_ID}', self._infuraId ?? '');
 							}
 							const data = {
 								id: 1,

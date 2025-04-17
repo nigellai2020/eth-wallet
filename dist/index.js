@@ -7486,11 +7486,11 @@ var _Wallet = class {
               params: [address, "latest"]
             });
             resolve(new import_bignumber3.BigNumber(balance).div(10 ** decimals));
-          } else if (!url || url.indexOf("{INFURA_ID}") && !self._infuraId) {
+          } else if (!url || url.indexOf("{INFURA_ID}") > 0 && !self._infuraId) {
             throw new Error("No provider available");
           } else {
             if (url.indexOf("{INFURA_ID}")) {
-              url = url.replace("{INFURA_ID}", (_b = this._infuraId) != null ? _b : "");
+              url = url.replace("{INFURA_ID}", (_b = self._infuraId) != null ? _b : "");
             }
             const data = {
               id: 1,
