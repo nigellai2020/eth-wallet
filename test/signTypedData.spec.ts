@@ -1,18 +1,12 @@
 import 'mocha';
 import {Wallet, Utils, Types, IAccount} from "../src";
-import * as Ganache from "ganache";
+import hardhat from "hardhat";
 import * as assert from 'assert';
 import { HashTypedData } from './contracts';
 
 suite('##Wallet Sign Typed Data', async function() {
     this.timeout(20000);
-    let provider = Ganache.provider({
-        logging: {
-            logger: {
-                log: () => {} // don't do anything
-            }
-        }
-    })
+    let provider = hardhat.network.provider;
     let accounts: string[];
     let wallet = new Wallet(provider); 
     let hashTypedData: HashTypedData;

@@ -1,6 +1,6 @@
 import 'mocha';
 import {Wallet, Utils, Types, MerkleTree} from "../src";
-import * as Ganache from "ganache";
+import hardhat from "hardhat";
 import * as assert from 'assert';
 import { TestWhitelistTree } from './contracts';
 
@@ -8,13 +8,7 @@ suite('##Wallet Merkle Proof', async function() {
     this.timeout(20000);
     let rawData: Record<string, any>[] = [];
     let tree: MerkleTree;
-    let provider = Ganache.provider({
-        logging: {
-            logger: {
-                log: () => {} // don't do anything
-            }
-        }
-    })
+    let provider = hardhat.network.provider;
     let accounts: string[];
     const wallet = new Wallet(provider); 
     let whitelistTree: TestWhitelistTree;
