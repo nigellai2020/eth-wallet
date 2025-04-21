@@ -100,6 +100,8 @@ export interface IWallet {
     decodeErrorMessage(msg: string): any;
     decodeEventData(data: Log, events?: any): Promise<Event>;
     decodeLog(inputs: any, hexString: string, topics: any): any;
+    decodeParameters(types: string[], hexString: string): any;
+    encodeParameters(types: string[], values: any[]): string;
     defaultAccount: string;
     getAbiEvents(abi: any[]): any;
     getAbiTopics(abi: any[], eventNames: string[]): any[];
@@ -514,6 +516,8 @@ export declare class Wallet implements IClientWallet {
         topics: string[];
     }): Event;
     decodeEventData(data: Log, events?: any): Promise<Event>;
+    encodeParameters(types: string[], values: any[]): string;
+    decodeParameters(types: string[], hexString: string): any;
     scanEvents(params: {
         fromBlock: number;
         toBlock?: number | string;

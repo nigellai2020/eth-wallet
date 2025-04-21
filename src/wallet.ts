@@ -196,6 +196,8 @@ function initWeb3ModalLib(callback: () => void){
 		decodeErrorMessage(msg: string): any;
 		decodeEventData(data: Log, events?: any): Promise<Event>;
 		decodeLog(inputs: any, hexString: string, topics: any): any;
+		decodeParameters(types: string[], hexString: string): any;
+		encodeParameters(types: string[], values: any[]): string;		
 		defaultAccount: string;
 		getAbiEvents(abi: any[]): any;
 		getAbiTopics(abi: any[], eventNames: string[]): any[];
@@ -1928,6 +1930,12 @@ function initWeb3ModalLib(callback: () => void){
                 }
 			}
 			return log;
+		};
+		encodeParameters(types: string[], values: any[]): string{
+			return this._web3.eth.abi.encodeParameters(types, values);
+		};
+		decodeParameters(types: string[], hexString: string): any{
+			return this._web3.eth.abi.decodeParameters(types, hexString);
 		};
 		scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]}): Promise<Event[]>;
         scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Event[]>;
