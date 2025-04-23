@@ -4784,37 +4784,50 @@ define("bignumber.js", (require,exports)=>{
 define("@ijstech/eth-wallet",(require, exports)=>{
 var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
 var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  return fn && (res = (0, fn[Object.keys(fn)[0]])(fn = 0)), res;
 };
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __export = (target, all) => {
+  __markAsModule(target);
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+var __reExport = (target, module2, desc) => {
+  if (module2 && typeof module2 === "object" || typeof module2 === "function") {
+    for (let key of __getOwnPropNames(module2))
+      if (!__hasOwnProp.call(target, key) && key !== "default")
+        __defProp(target, key, { get: () => module2[key], enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable });
   }
-  return to;
+  return target;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __toModule = (module2) => {
+  return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
+};
 
 // src/web3.ts
 var web3_exports = {};
@@ -4833,9 +4846,6 @@ var init_web3 = __esm({
         this.utils = utils;
         this.eth = new eth(provider);
       }
-      static {
-        this.utils = utils;
-      }
       get currentProvider() {
         return this.eth.currentProvider;
       }
@@ -4843,6 +4853,7 @@ var init_web3 = __esm({
         return this.eth.setProvider(provider);
       }
     };
+    Web3.utils = utils;
   }
 });
 
@@ -4953,10 +4964,6 @@ var require_lib = __commonJS({
           return ["NULL"];
         return [result];
       }
-      // registerEvents(handler: any) {
-      //     if (this._address)
-      //         this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
-      // }
       scanEvents(fromBlock, toBlock, eventNames) {
         if (typeof fromBlock == "number") {
           let topics = this.getAbiTopics(eventNames);
@@ -5010,7 +5017,6 @@ var require_lib = __commonJS({
         let receipt = this._send(methodName, params, options);
         return receipt;
       }
-      // backward compatability
       _deploy(...params) {
         return this.__deploy(params);
       }
@@ -5043,7 +5049,7 @@ var require_lib = __commonJS({
 var require_contract = __commonJS({
   "src/contract.ts"(exports, module2) {
     var Contract3;
-    ((_Contract5) => {
+    (function(_Contract5) {
       class Contract4 {
         constructor(wallet, address, abi, bytecode) {
           this.wallet = wallet;
@@ -5136,10 +5142,6 @@ var require_contract = __commonJS({
             return ["NULL"];
           return [result];
         }
-        // registerEvents(handler: any) {
-        //     if (this._address)
-        //         this.wallet.registerEvent(this._abi, this.getAbiEvents(), this._address, handler);
-        // }
         scanEvents(fromBlock, toBlock, eventNames) {
           let topics = this.getAbiTopics(eventNames);
           let events = this.getAbiEvents();
@@ -5165,7 +5167,6 @@ var require_contract = __commonJS({
           let receipt = this._send(methodName, params, options);
           return receipt;
         }
-        // backward compatability
         _deploy(...params) {
           return this.__deploy(params);
         }
@@ -5198,8 +5199,7 @@ var require_erc20 = __commonJS({
 });
 
 // src/plugin.ts
-var plugin_exports = {};
-__export(plugin_exports, {
+__export(exports, {
   BigNumber: () => import_bignumber5.BigNumber,
   Constants: () => constants_exports,
   Contract: () => import_contract2.Contract,
@@ -5216,11 +5216,10 @@ __export(plugin_exports, {
   Web3ModalProvider: () => Web3ModalProvider,
   getERC20Allowance: () => getERC20Allowance
 });
-module.exports = __toCommonJS(plugin_exports);
 
 // src/wallet.ts
 init_web3();
-var import_bignumber3 = require("bignumber.js");
+var import_bignumber3 = __toModule(require("bignumber.js"));
 
 // src/contracts/index.ts
 var contracts_exports = {};
@@ -5232,7 +5231,7 @@ __export(contracts_exports, {
 });
 
 // src/contracts/ERC1155/ERC1155.ts
-var import_eth_contract = __toESM(require_lib());
+var import_eth_contract = __toModule(require_lib());
 
 // src/contracts/ERC1155/ERC1155.json.ts
 var ERC1155_json_default = {
@@ -5256,9 +5255,6 @@ var ERC1155_json_default = {
 
 // src/contracts/ERC1155/ERC1155.ts
 var ERC1155 = class extends import_eth_contract.Contract {
-  static {
-    this._abi = ERC1155_json_default.abi;
-  }
   constructor(wallet, address) {
     super(wallet, address, ERC1155_json_default.abi, ERC1155_json_default.bytecode);
     this.assign();
@@ -5399,9 +5395,10 @@ var ERC1155 = class extends import_eth_contract.Contract {
     });
   }
 };
+ERC1155._abi = ERC1155_json_default.abi;
 
 // src/contracts/ERC20/ERC20.ts
-var import_eth_contract2 = __toESM(require_lib());
+var import_eth_contract2 = __toModule(require_lib());
 
 // src/contracts/ERC20/ERC20.json.ts
 var ERC20_json_default = {
@@ -5426,9 +5423,6 @@ var ERC20_json_default = {
 
 // src/contracts/ERC20/ERC20.ts
 var ERC20 = class extends import_eth_contract2.Contract {
-  static {
-    this._abi = ERC20_json_default.abi;
-  }
   constructor(wallet, address) {
     super(wallet, address, ERC20_json_default.abi, ERC20_json_default.bytecode);
     this.assign();
@@ -5579,9 +5573,10 @@ var ERC20 = class extends import_eth_contract2.Contract {
     });
   }
 };
+ERC20._abi = ERC20_json_default.abi;
 
 // src/contracts/ERC721/ERC721.ts
-var import_eth_contract3 = __toESM(require_lib());
+var import_eth_contract3 = __toModule(require_lib());
 
 // src/contracts/ERC721/ERC721.json.ts
 var ERC721_json_default = {
@@ -5609,9 +5604,6 @@ var ERC721_json_default = {
 
 // src/contracts/ERC721/ERC721.ts
 var ERC721 = class extends import_eth_contract3.Contract {
-  static {
-    this._abi = ERC721_json_default.abi;
-  }
   constructor(wallet, address) {
     super(wallet, address, ERC721_json_default.abi, ERC721_json_default.bytecode);
     this.assign();
@@ -5784,9 +5776,10 @@ var ERC721 = class extends import_eth_contract3.Contract {
     });
   }
 };
+ERC721._abi = ERC721_json_default.abi;
 
 // src/contracts/MultiCall/MultiCall.ts
-var import_eth_contract4 = __toESM(require_lib());
+var import_eth_contract4 = __toModule(require_lib());
 
 // src/contracts/MultiCall/MultiCall.json.ts
 var MultiCall_json_default = {
@@ -5802,9 +5795,6 @@ var MultiCall_json_default = {
 
 // src/contracts/MultiCall/MultiCall.ts
 var MultiCall = class extends import_eth_contract4.Contract {
-  static {
-    this._abi = MultiCall_json_default.abi;
-  }
   constructor(wallet, address) {
     super(wallet, address, MultiCall_json_default.abi, MultiCall_json_default.bytecode);
     this.assign();
@@ -5880,10 +5870,11 @@ var MultiCall = class extends import_eth_contract4.Contract {
     });
   }
 };
+MultiCall._abi = MultiCall_json_default.abi;
 
 // src/contracts/erc20.ts
-var import_contract = __toESM(require_contract());
-var import_bignumber2 = require("bignumber.js");
+var import_contract = __toModule(require_contract());
+var import_bignumber2 = __toModule(require("bignumber.js"));
 
 // src/utils.ts
 var utils_exports = {};
@@ -5912,7 +5903,7 @@ __export(utils_exports, {
   toString: () => toString,
   uint8ArrayToHex: () => uint8ArrayToHex
 });
-var import_bignumber = require("bignumber.js");
+var import_bignumber = __toModule(require("bignumber.js"));
 
 // src/constants.ts
 var constants_exports = {};
@@ -5951,19 +5942,19 @@ var TYPED_MESSAGE_SCHEMA = {
   },
   required: ["types", "primaryType", "domain", "message"]
 };
-var ClientWalletEvent = /* @__PURE__ */ ((ClientWalletEvent2) => {
+var ClientWalletEvent;
+(function(ClientWalletEvent2) {
   ClientWalletEvent2["AccountsChanged"] = "accountsChanged";
   ClientWalletEvent2["ChainChanged"] = "chainChanged";
   ClientWalletEvent2["Connect"] = "connect";
   ClientWalletEvent2["Disconnect"] = "disconnect";
-  return ClientWalletEvent2;
-})(ClientWalletEvent || {});
-var RpcWalletEvent = /* @__PURE__ */ ((RpcWalletEvent2) => {
+})(ClientWalletEvent || (ClientWalletEvent = {}));
+var RpcWalletEvent;
+(function(RpcWalletEvent2) {
   RpcWalletEvent2["Connected"] = "connected";
   RpcWalletEvent2["Disconnected"] = "disconnected";
   RpcWalletEvent2["ChainChanged"] = "chainChanged";
-  return RpcWalletEvent2;
-})(RpcWalletEvent || {});
+})(RpcWalletEvent || (RpcWalletEvent = {}));
 
 // src/utils.ts
 var Web32 = initWeb3Lib();
@@ -5972,7 +5963,7 @@ function initWeb3Lib() {
     Web32 = window["Web3"];
     return window["Web3"];
   } else {
-    let { Web3: Web34 } = (init_web3(), __toCommonJS(web3_exports));
+    let { Web3: Web34 } = (init_web3(), web3_exports);
     return Web34;
   }
   ;
@@ -6102,10 +6093,9 @@ function toString(value) {
 var nullAddress = "0x0000000000000000000000000000000000000000";
 function constructTypedMessageData(domain, customTypes, primaryType, message) {
   let data = {
-    types: {
-      EIP712Domain: EIP712DomainAbi,
-      ...customTypes
-    },
+    types: __spreadValues({
+      EIP712Domain: EIP712DomainAbi
+    }, customTypes),
     primaryType,
     domain,
     message
@@ -6239,9 +6229,6 @@ var Erc20 = class extends import_contract.Contract {
       }
     });
   }
-  // async _mint(params:{address: string, amount: number|BigNumber}): Promise<Transaction>{
-  //     return this._methods('mint', params.address, await Utils.toDecimals(params.amount, await this.decimals))
-  // }
   minter() {
     return this.methods("minter");
   }
@@ -6263,22 +6250,13 @@ var Erc20 = class extends import_contract.Contract {
   async transfer(params) {
     return this.methods("transfer", params.address, await toDecimals(params.amount, await this.decimals));
   }
-  // async _transfer(params:{address: string, amount: number | BigNumber}): Promise<Transaction>{            
-  // 	return this._methods('transfer', params.address, await Utils.toDecimals(params.amount, await this.decimals));
-  // }
 };
 
 // src/eventBus.ts
-var EventBus = class _EventBus {
+var _EventBus = class {
   constructor() {
     this.idEventMap = {};
     this.subscribers = {};
-  }
-  static {
-    this.nextId = 0;
-  }
-  static {
-    this.instance = void 0;
   }
   static getInstance() {
     if (this.instance === void 0) {
@@ -6295,7 +6273,8 @@ var EventBus = class _EventBus {
   }
   register(sender, event, callback) {
     const id = this.getNextId();
-    if (!this.subscribers[event]) this.subscribers[event] = {};
+    if (!this.subscribers[event])
+      this.subscribers[event] = {};
     this.subscribers[event][id] = callback.bind(sender);
     this.idEventMap[id] = event;
     return {
@@ -6318,6 +6297,9 @@ var EventBus = class _EventBus {
     return _EventBus.nextId++;
   }
 };
+var EventBus = _EventBus;
+EventBus.nextId = 0;
+EventBus.instance = void 0;
 
 // src/providers.json.ts
 var providers_json_default = {
@@ -6349,7 +6331,7 @@ function initWeb3Lib2() {
     Web33 = window["Web3"];
     return window["Web3"];
   } else {
-    let { Web3: Web34 } = (init_web3(), __toCommonJS(web3_exports));
+    let { Web3: Web34 } = (init_web3(), web3_exports);
     return Web34;
   }
   ;
@@ -6444,10 +6426,9 @@ var EthereumProvider = class {
       };
     }
     this._isConnected = hasAccounts;
-    EventBus.getInstance().dispatch("accountsChanged" /* AccountsChanged */, {
-      ...eventPayload,
+    EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
       account: accountAddress
-    });
+    }));
     if (this.onAccountChanged)
       this.onAccountChanged(accountAddress);
   }
@@ -6461,21 +6442,22 @@ var EthereumProvider = class {
       this.handleChainChanged = (chainId) => {
         self.wallet.chainId = parseInt(chainId);
         if (this._options && this._options.useDefaultProvider) {
-          if (this._options.infuraId) this.wallet.infuraId = this._options.infuraId;
+          if (this._options.infuraId)
+            this.wallet.infuraId = this._options.infuraId;
           self.wallet.setDefaultProvider();
         }
-        EventBus.getInstance().dispatch("chainChanged" /* ChainChanged */, chainId);
+        EventBus.getInstance().dispatch(ClientWalletEvent.ChainChanged, chainId);
         if (self.onChainChanged)
           self.onChainChanged(chainId);
       };
       this.handleConnect = (connectInfo) => {
-        EventBus.getInstance().dispatch("connect" /* Connect */, connectInfo);
+        EventBus.getInstance().dispatch(ClientWalletEvent.Connect, connectInfo);
         if (self.onConnect)
           self.onConnect(connectInfo);
       };
       this.handleDisconnect = (error) => {
         this._isConnected = false;
-        EventBus.getInstance().dispatch("disconnect" /* Disconnect */, error);
+        EventBus.getInstance().dispatch(ClientWalletEvent.Disconnect, error);
         if (self.onDisconnect)
           self.onDisconnect(error);
       };
@@ -6499,7 +6481,7 @@ var EthereumProvider = class {
     let self = this;
     try {
       if (this.installed()) {
-        if (eventPayload?.userTriggeredConnect) {
+        if (eventPayload == null ? void 0 : eventPayload.userTriggeredConnect) {
           await this.provider.request({ method: "eth_requestAccounts" }).then((accounts) => {
             self._handleAccountsChanged(accounts, eventPayload);
           });
@@ -6572,7 +6554,8 @@ var EthereumProvider = class {
           if (error.code === 4902) {
             try {
               let network = self.wallet.networksMap[chainId];
-              if (!network) resolve(false);
+              if (!network)
+                resolve(false);
               let { chainName, nativeCurrency, rpcUrls, blockExplorerUrls, iconUrls } = network;
               if (!Array.isArray(rpcUrls))
                 rpcUrls = [rpcUrls];
@@ -6626,24 +6609,22 @@ var MetaMaskProvider = class extends EthereumProvider {
   }
   async encrypt(key) {
     let response = await new Promise((resolve, reject) => {
-      this.provider.send(
-        {
-          jsonrpc: "2.0",
-          id: (/* @__PURE__ */ new Date()).getTime(),
-          method: "eth_getEncryptionPublicKey",
-          params: [this.wallet.address]
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          if (typeof result === "string") result = JSON.parse(result);
-          if (result.error) return reject(result.error);
-          resolve(result);
-        }
-      );
+      this.provider.send({
+        jsonrpc: "2.0",
+        id: new Date().getTime(),
+        method: "eth_getEncryptionPublicKey",
+        params: [this.wallet.address]
+      }, (error, result) => {
+        if (error)
+          return reject(error);
+        if (typeof result === "string")
+          result = JSON.parse(result);
+        if (result.error)
+          return reject(result.error);
+        resolve(result);
+      });
     });
-    let publicKey = new Uint8Array(
-      window.atob(response.result).split("").map((e) => e.codePointAt(0))
-    );
+    let publicKey = new Uint8Array(window.atob(response.result).split("").map((e) => e.codePointAt(0)));
     const encoder = new TextEncoder();
     const msg = encoder.encode(key);
     let nacl = window["nacl"];
@@ -6660,20 +6641,20 @@ var MetaMaskProvider = class extends EthereumProvider {
       ciphertext: window.btoa(hexToString(data.substring(112)))
     }));
     let msg = await new Promise((resolve, reject) => {
-      this.provider.send(
-        {
-          jsonrpc: "2.0",
-          id: (/* @__PURE__ */ new Date()).getTime(),
-          method: "eth_decrypt",
-          params: [encMsg, this.wallet.address]
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          if (typeof result === "string") result = JSON.parse(result);
-          if (result.error) return reject(result.error);
-          resolve(result);
-        }
-      );
+      this.provider.send({
+        jsonrpc: "2.0",
+        id: new Date().getTime(),
+        method: "eth_decrypt",
+        params: [encMsg, this.wallet.address]
+      }, (error, result) => {
+        if (error)
+          return reject(error);
+        if (typeof result === "string")
+          result = JSON.parse(result);
+        if (result.error)
+          return reject(result.error);
+        resolve(result);
+      });
     });
     return msg.result;
   }
@@ -6714,13 +6695,12 @@ var Web3ModalProvider = class extends EthereumProvider {
       this.initializeWeb3Modal(this._options);
     }
     await this.disconnect();
-    this._provider = await Web3Modal.init({
+    this._provider = await Web3Modal.init(__spreadValues({
       showQrModal: true,
       qrModalOptions: { themeMode: "light" },
       methods: ["eth_sendTransaction", "personal_sign"],
-      events: ["chainChanged", "accountsChanged"],
-      ...this._options
-    });
+      events: ["chainChanged", "accountsChanged"]
+    }, this._options));
     await this._provider.enable();
     this.wallet.chainId = this.provider.chainId;
     this.wallet.provider = this.provider;
@@ -6745,10 +6725,9 @@ var Web3ModalProvider = class extends EthereumProvider {
         this.wallet.account = {
           address: accountAddress
         };
-        EventBus.getInstance().dispatch("accountsChanged" /* AccountsChanged */, {
-          ...eventPayload,
+        EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, __spreadProps(__spreadValues({}, eventPayload), {
           account: accountAddress
-        });
+        }));
         if (self.onAccountChanged)
           self.onAccountChanged(accountAddress);
       }
@@ -6773,7 +6752,7 @@ var Web3ModalProvider = class extends EthereumProvider {
     this._isConnected = false;
   }
 };
-var Wallet = class _Wallet {
+var _Wallet = class {
   constructor(provider, account) {
     this._eventTopicAbi = {};
     this._eventHandler = {};
@@ -6781,8 +6760,7 @@ var Wallet = class _Wallet {
     this._contracts = {};
     this._networksMap = {};
     this._multicallInfoMap = {};
-    this._walletEventIds = /* @__PURE__ */ new Set();
-    // rollback
+    this._walletEventIds = new Set();
     this._abiHashDict = {};
     this._abiContractDict = {};
     this._abiAddressDict = {};
@@ -6797,12 +6775,6 @@ var Wallet = class _Wallet {
     ;
     if (Web33)
       this.init();
-  }
-  static {
-    this._rpcWalletPoolMap = {};
-  }
-  static {
-    this.instance = new _Wallet();
   }
   static getInstance() {
     return _Wallet.instance;
@@ -6900,7 +6872,6 @@ var Wallet = class _Wallet {
       return v.toString(16);
     });
   }
-  //To be removed
   initRpcWallet(config) {
     const wallet = new RpcWallet();
     const defaultNetwork = config.defaultChainId ? config.networks.find((v) => v.chainId === config.defaultChainId) : config.networks[0];
@@ -6926,12 +6897,13 @@ var Wallet = class _Wallet {
     return instanceId;
   }
   setDefaultProvider() {
+    var _a;
     if (this._networksMap[this.chainId] && this._networksMap[this.chainId].rpcUrls.length > 0) {
       let rpc = this._networksMap[this.chainId].rpcUrls[0];
       if (!rpc || rpc.indexOf("{INFURA_ID}") && !this._infuraId) {
       } else {
         if (rpc.indexOf("{INFURA_ID}")) {
-          rpc = rpc.replace("{INFURA_ID}", this._infuraId ?? "");
+          rpc = rpc.replace("{INFURA_ID}", (_a = this._infuraId) != null ? _a : "");
         }
         this.provider = rpc;
       }
@@ -6942,7 +6914,8 @@ var Wallet = class _Wallet {
     await this.clientSideProvider.connect(eventPayload);
     const providerOptions = this.clientSideProvider.options;
     if (providerOptions && providerOptions.useDefaultProvider) {
-      if (providerOptions.infuraId) this._infuraId = providerOptions.infuraId;
+      if (providerOptions.infuraId)
+        this._infuraId = providerOptions.infuraId;
       this.setDefaultProvider();
     } else {
       this.provider = this.clientSideProvider.provider;
@@ -6952,7 +6925,7 @@ var Wallet = class _Wallet {
     if (this.clientSideProvider) {
       await this.clientSideProvider.disconnect();
       this.clientSideProvider = null;
-      EventBus.getInstance().dispatch("accountsChanged" /* AccountsChanged */, {
+      EventBus.getInstance().dispatch(ClientWalletEvent.AccountsChanged, {
         account: null
       });
     }
@@ -7108,7 +7081,6 @@ var Wallet = class _Wallet {
     if (privateKey || this._account && this._account.privateKey) {
       let signedTx = await _web3.eth.accounts.signTransaction({
         nonce,
-        // gasPrice: gasPrice,
         gas,
         gasLimit,
         data: tx.data,
@@ -7120,7 +7092,6 @@ var Wallet = class _Wallet {
       let t = await _web3.eth.signTransaction({
         from: this.address,
         nonce,
-        // gasPrice: gasPrice,
         gasLimit,
         gas,
         to: tx.to,
@@ -7167,7 +7138,7 @@ var Wallet = class _Wallet {
     if (options && (options.gas || options.gasLimit)) {
       tx.gas = options.gas || options.gasLimit;
     }
-    let result = await method.call({ from: this.address, ...tx });
+    let result = await method.call(__spreadValues({ from: this.address }, tx));
     return result;
   }
   _getMethod(abiHash, address, methodName, params) {
@@ -7210,6 +7181,7 @@ var Wallet = class _Wallet {
     return method;
   }
   async _txObj(abiHash, address, methodName, params, options) {
+    var _a;
     let method = this._getMethod(abiHash, address, methodName, params);
     let tx = {};
     tx.from = this.address;
@@ -7235,7 +7207,7 @@ var Wallet = class _Wallet {
       tx.gas = options.gas || options.gasLimit;
     } else {
       try {
-        tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: tx.value?.toFixed() }));
+        tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: (_a = tx.value) == null ? void 0 : _a.toFixed() }));
         tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
       } catch (e) {
         if (e.message == "Returned error: out of gas") {
@@ -7246,7 +7218,7 @@ var Wallet = class _Wallet {
             throw e;
           }
           try {
-            await method.call({ from: this.address, ...tx });
+            await method.call(__spreadValues({ from: this.address }, tx));
           } catch (e2) {
             if (e2.message.includes("VM execution error.")) {
               var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
@@ -7348,15 +7320,11 @@ var Wallet = class _Wallet {
       method = contract.methods[methodName].apply(contract, args);
     }
     let tx = {
-      // from: this.address,
-      // nonce: nonce,
-      // gas: gas,
       to: address,
       data: method.encodeABI()
     };
     return tx;
   }
-  // rollback
   async methods(...args) {
     await this.init();
     let _web3 = this._web3;
@@ -7497,13 +7465,13 @@ var Wallet = class _Wallet {
       }
     }
   }
-  // end of rollback
   get balance() {
     return this.balanceOf(this.address);
   }
   balanceOf(address) {
     let self = this;
     return new Promise(async function(resolve) {
+      var _a, _b;
       try {
         let network = self._networksMap[self.chainId];
         let decimals = 18;
@@ -7512,7 +7480,7 @@ var Wallet = class _Wallet {
             decimals = network.nativeCurrency.decimals;
           }
           let url = network.rpcUrls[0];
-          if (typeof window !== "undefined" && self.clientSideProvider?.provider) {
+          if (typeof window !== "undefined" && ((_a = self.clientSideProvider) == null ? void 0 : _a.provider)) {
             const balance = await self.clientSideProvider.provider.request({
               method: "eth_getBalance",
               params: [address, "latest"]
@@ -7522,7 +7490,7 @@ var Wallet = class _Wallet {
             throw new Error("No provider available");
           } else {
             if (url.indexOf("{INFURA_ID}")) {
-              url = url.replace("{INFURA_ID}", self._infuraId ?? "");
+              url = url.replace("{INFURA_ID}", (_b = self._infuraId) != null ? _b : "");
             }
             const data = {
               id: 1,
@@ -7697,7 +7665,6 @@ var Wallet = class _Wallet {
       }
     }
   }
-  // end of rollback
   decode(abi, event, raw) {
     if (!raw)
       raw = event;
@@ -7846,35 +7813,29 @@ var Wallet = class _Wallet {
     return new Promise(async (resolve, reject) => {
       await this.init();
       let method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
-      this._web3.currentProvider.send(
-        {
-          jsonrpc: "2.0",
-          method,
-          params: [time],
-          id: (/* @__PURE__ */ new Date()).getTime()
-        },
-        (err, result) => {
-          if (err)
-            return reject(err);
-          if (method == "evm_mine") {
-            return resolve(result);
-          } else {
-            this._web3.currentProvider.send(
-              {
-                jsonrpc: "2.0",
-                method: "evm_mine",
-                params: [],
-                id: (/* @__PURE__ */ new Date()).getTime()
-              },
-              (err2, result2) => {
-                if (err2)
-                  return reject(err2);
-                return resolve(result2);
-              }
-            );
-          }
+      this._web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method,
+        params: [time],
+        id: new Date().getTime()
+      }, (err, result) => {
+        if (err)
+          return reject(err);
+        if (method == "evm_mine") {
+          return resolve(result);
+        } else {
+          this._web3.currentProvider.send({
+            jsonrpc: "2.0",
+            method: "evm_mine",
+            params: [],
+            id: new Date().getTime()
+          }, (err2, result2) => {
+            if (err2)
+              return reject(err2);
+            return resolve(result2);
+          });
         }
-      );
+      });
     });
   }
   increaseBlockTime(value) {
@@ -7884,13 +7845,13 @@ var Wallet = class _Wallet {
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [value],
-        id: (/* @__PURE__ */ new Date()).getTime()
+        id: new Date().getTime()
       }, (err, result) => {
         this._web3.currentProvider.send({
           jsonrpc: "2.0",
           method: "evm_mine",
           params: [],
-          id: (/* @__PURE__ */ new Date()).getTime()
+          id: new Date().getTime()
         }, (err2, result2) => {
           resolve(result2);
         });
@@ -8050,11 +8011,10 @@ var Wallet = class _Wallet {
   }
   async sendTransaction(transaction) {
     await this.init();
-    let _transaction = {
-      ...transaction,
+    let _transaction = __spreadProps(__spreadValues({}, transaction), {
       value: typeof transaction.value == "string" ? transaction.value : transaction.value ? transaction.value.toFixed() : void 0,
       gasPrice: typeof transaction.gasPrice == "string" ? transaction.gasPrice : transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0
-    };
+    });
     let currentProvider = this.provider;
     try {
       const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
@@ -8100,7 +8060,7 @@ var Wallet = class _Wallet {
   }
   async call(transaction) {
     await this.init();
-    let _transaction = { ...transaction, value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 };
+    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
     return this._web3.eth.call(_transaction);
   }
   newContract(abi, address) {
@@ -8140,23 +8100,25 @@ var Wallet = class _Wallet {
     if (this._web3)
       return this._web3.utils.isAddress(address);
   }
-  //To be removed
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
     const multicallInfo = this._multicallInfoMap[chainId];
-    if (!multicallInfo) return null;
+    if (!multicallInfo)
+      return null;
     const multiCall = new MultiCall(this, multicallInfo.contractAddress);
     const result = await multiCall.multicallWithGasLimitation.call({
       calls,
-      gasBuffer: new import_bignumber3.BigNumber(gasBuffer ?? multicallInfo.gasBuffer)
+      gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : multicallInfo.gasBuffer)
     });
     return result;
   }
   async doMulticall(contracts, gasBuffer) {
-    if (!this._web3) return null;
+    if (!this._web3)
+      return null;
     const chainId = await this.getChainId();
     const multicallInfo = this._multicallInfoMap[chainId];
-    if (!multicallInfo) return null;
+    if (!multicallInfo)
+      return null;
     const multiCall = new MultiCall(this, multicallInfo.contractAddress);
     let calls = [];
     for (let i = 0; i < contracts.length; i++) {
@@ -8170,7 +8132,7 @@ var Wallet = class _Wallet {
     }
     const multicallResult = await multiCall.multicallWithGasLimitation.call({
       calls,
-      gasBuffer: new import_bignumber3.BigNumber(gasBuffer ?? multicallInfo.gasBuffer)
+      gasBuffer: new import_bignumber3.BigNumber(gasBuffer != null ? gasBuffer : multicallInfo.gasBuffer)
     });
     const calculateOutputValue = (decodedValue, abiOutput) => {
       let outputValue;
@@ -8201,7 +8163,7 @@ var Wallet = class _Wallet {
         continue;
       }
       const abi = contracts[i].contract._abi.find((v) => v.name == contracts[i].methodName);
-      const outputs = abi?.outputs || [];
+      const outputs = (abi == null ? void 0 : abi.outputs) || [];
       const decodedValues = this._web3.eth.abi.decodeParameters(outputs, callResult);
       if (outputs.length == 0) {
         outputValues.push(null);
@@ -8242,7 +8204,7 @@ var Wallet = class _Wallet {
   decodeAbiEncodedParameters(contract, methodName, hexString) {
     if (this._web3) {
       const abi = contract._abi.find((v) => v.name == methodName);
-      const outputs = abi?.outputs || [];
+      const outputs = (abi == null ? void 0 : abi.outputs) || [];
       return abi ? this._web3.eth.abi.decodeParameters(outputs, hexString) : {};
     }
   }
@@ -8250,10 +8212,10 @@ var Wallet = class _Wallet {
     return this._web3;
   }
 };
+var Wallet = _Wallet;
+Wallet._rpcWalletPoolMap = {};
+Wallet.instance = new _Wallet();
 var RpcWallet = class extends Wallet {
-  static {
-    this.rpcWalletRegistry = {};
-  }
   get address() {
     return this._address;
   }
@@ -8271,18 +8233,20 @@ var RpcWallet = class extends Wallet {
     return clientWallet.isConnected && this.chainId === clientWallet.chainId;
   }
   static getRpcWallet(chainId) {
+    var _a, _b, _c;
     if (this.rpcWalletRegistry[chainId]) {
       return this.rpcWalletRegistry[chainId];
     }
     const application = window["application"];
-    if (!application) throw new Error("application is not initialized");
+    if (!application)
+      throw new Error("application is not initialized");
     const clientWallet = Wallet.getClientInstance();
-    const networkList = Object.values(application.store?.networkMap || []);
+    const networkList = Object.values(((_a = application.store) == null ? void 0 : _a.networkMap) || []);
     const instanceId = clientWallet.initRpcWallet({
       networks: networkList,
       defaultChainId: chainId,
-      infuraId: application.store?.infuraId,
-      multicalls: application.store?.multicalls
+      infuraId: (_b = application.store) == null ? void 0 : _b.infuraId,
+      multicalls: (_c = application.store) == null ? void 0 : _c.multicalls
     });
     const rpcWallet = Wallet.getRpcWalletInstance(instanceId);
     this.rpcWalletRegistry[chainId] = rpcWallet;
@@ -8296,18 +8260,18 @@ var RpcWallet = class extends Wallet {
     this.chainId = chainId;
     const rpc = this.networksMap[chainId].rpcUrls[0];
     this._web3.setProvider(rpc);
-    const eventId = `${this.instanceId}:${"chainChanged" /* ChainChanged */}`;
+    const eventId = `${this.instanceId}:${RpcWalletEvent.ChainChanged}`;
     EventBus.getInstance().dispatch(eventId, chainId);
     return null;
   }
   initWalletEvents() {
-    const eventId = `${this.instanceId}:${"connected" /* Connected */}`;
+    const eventId = `${this.instanceId}:${RpcWalletEvent.Connected}`;
     const eventBus = EventBus.getInstance();
-    const accountsChangedRegistry = eventBus.register(this, "accountsChanged" /* AccountsChanged */, (payload) => {
+    const accountsChangedRegistry = eventBus.register(this, ClientWalletEvent.AccountsChanged, (payload) => {
       this.address = payload.account;
       eventBus.dispatch(eventId, this.isConnected);
     });
-    const chainChangedRegistry = eventBus.register(this, "chainChanged" /* ChainChanged */, (chainIdHex) => {
+    const chainChangedRegistry = eventBus.register(this, ClientWalletEvent.ChainChanged, (chainIdHex) => {
       eventBus.dispatch(eventId, this.isConnected);
     });
     this._walletEventIds.add(accountsChangedRegistry.id);
@@ -8321,25 +8285,26 @@ var RpcWallet = class extends Wallet {
     return registry;
   }
 };
+RpcWallet.rpcWalletRegistry = {};
 
 // src/plugin.ts
-var import_contract2 = __toESM(require_contract());
-var import_bignumber5 = require("bignumber.js");
+var import_contract2 = __toModule(require_contract());
+var import_bignumber5 = __toModule(require("bignumber.js"));
 
 // src/types.ts
 var types_exports = {};
 __export(types_exports, {
   SignTypedDataVersion: () => SignTypedDataVersion
 });
-var SignTypedDataVersion = /* @__PURE__ */ ((SignTypedDataVersion2) => {
+var SignTypedDataVersion;
+(function(SignTypedDataVersion2) {
   SignTypedDataVersion2["V1"] = "V1";
   SignTypedDataVersion2["V3"] = "V3";
   SignTypedDataVersion2["V4"] = "V4";
-  return SignTypedDataVersion2;
-})(SignTypedDataVersion || {});
+})(SignTypedDataVersion || (SignTypedDataVersion = {}));
 
 // src/approvalModel/ERC20ApprovalModel.ts
-var import_bignumber4 = require("bignumber.js");
+var import_bignumber4 = __toModule(require("bignumber.js"));
 var approveERC20Max = async (token, spenderAddress, callback, confirmationCallback) => {
   let wallet = Wallet.getInstance();
   let amount = new import_bignumber4.BigNumber(2).pow(256).minus(1);
@@ -8355,7 +8320,8 @@ var approveERC20Max = async (token, spenderAddress, callback, confirmationCallba
   return receipt;
 };
 var getERC20Allowance = async (wallet, token, spenderAddress) => {
-  if (!token?.address || token.address === nullAddress) return null;
+  if (!(token == null ? void 0 : token.address) || token.address === nullAddress)
+    return null;
   let erc20 = new ERC20(wallet, token.address);
   let allowance = await erc20.allowance({
     owner: wallet.account.address,
@@ -8447,15 +8413,11 @@ var ERC20ApprovalModel = class {
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-/*! Bundled license information:
-
-@ijstech/eth-contract/lib/index.js:
-  (*!-----------------------------------------------------------
-  * Copyright (c) IJS Technologies. All rights reserved.
-  * Released under dual BSL 1.1/commercial license
-  * https://ijs.network
-  *-----------------------------------------------------------*)
-*/
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual BSL 1.1/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 
 });
 if (typeof(define) == 'function')
