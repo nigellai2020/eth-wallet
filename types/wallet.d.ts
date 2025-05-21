@@ -421,6 +421,9 @@ export interface ISendTxEventsOptions {
 }
 export declare class Wallet implements IClientWallet {
     protected _web3: IWeb3;
+    protected _ethersProvider: any;
+    protected _ethersSigner: any;
+    protected _defaultAccount: string;
     protected _account: IAccount;
     private _accounts;
     protected _provider: any;
@@ -444,6 +447,7 @@ export declare class Wallet implements IClientWallet {
     static getRpcWalletInstance(instanceId: string): IRpcWallet;
     static initWeb3(): Promise<void>;
     init(): Promise<void>;
+    protected privateKeyToAccount(privateKey: string): IAccount;
     get isConnected(): boolean;
     switchNetwork(chainId: number): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;
@@ -484,6 +488,7 @@ export declare class Wallet implements IClientWallet {
     _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
     private _getMethod;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+    protected getSigner(): Promise<any>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     _methods(...args: any[]): Promise<{
@@ -498,6 +503,7 @@ export declare class Wallet implements IClientWallet {
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     set privateKey(value: string);
+    private sha3;
     registerEvent(abi: any, eventMap: {
         [topics: string]: any;
     }, address: string, handler: any): Promise<void>;
@@ -547,9 +553,9 @@ export declare class Wallet implements IClientWallet {
     newContract(abi: any, address?: string): IContract;
     decodeErrorMessage(msg: string): any;
     newBatchRequest(): Promise<IBatchRequestObj>;
-    soliditySha3(...val: any[]): string;
-    toChecksumAddress(address: string): string;
-    isAddress(address: string): boolean;
+    soliditySha3(...val: any[]): any;
+    toChecksumAddress(address: string): any;
+    isAddress(address: string): any;
     multiCall(calls: {
         to: string;
         data: string;
@@ -563,9 +569,7 @@ export declare class Wallet implements IClientWallet {
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
-    }[keyof T]>>(contract: T, methodName: F, hexString: string): {
-        [key: string]: any;
-    };
+    }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
     get web3(): typeof Web3;
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {

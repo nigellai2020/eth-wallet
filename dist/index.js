@@ -6316,6 +6316,7 @@ var providers_json_default = {
 
 // src/wallet.ts
 var Web33 = initWeb3Lib2();
+var EthersLib;
 var Web3Modal;
 var RequireJS = {
   require(reqs, callback) {
@@ -6335,6 +6336,24 @@ function initWeb3Lib2() {
     return Web34;
   }
   ;
+}
+function requireAsync(modules) {
+  return new Promise((resolve, reject) => {
+    RequireJS.require(modules, (result) => {
+      resolve(result);
+    });
+  });
+}
+async function initEthersLib() {
+  if (typeof window !== "undefined") {
+    const ethers = await requireAsync(["ethers"]);
+    window["ethers"] = ethers;
+    EthersLib = ethers;
+    return ethers;
+  } else {
+    EthersLib = require("ethers");
+    return EthersLib;
+  }
 }
 function initWeb3ModalLib(callback) {
   if (typeof window !== "undefined") {
@@ -6794,6 +6813,20 @@ var _Wallet = class {
     ;
   }
   async init() {
+    if (!EthersLib) {
+      if (typeof window !== "undefined") {
+        await window["application"].loadScript(currentModuleDir + "/ethers.js");
+      }
+      EthersLib = await initEthersLib();
+    }
+    if (this._provider) {
+      const ethers = EthersLib.ethers;
+      if (typeof this._provider === "string") {
+        this._ethersProvider = new ethers.JsonRpcProvider(this._provider);
+      } else {
+        this._ethersProvider = new ethers.BrowserProvider(this._provider);
+      }
+    }
     if (!this._web3) {
       if (!Web33 && currentModuleDir && !window["Web3"]) {
         await window["application"].loadScript(currentModuleDir + "/web3.js");
@@ -6807,7 +6840,7 @@ var _Wallet = class {
         fromDecimals,
         fromWei: this._web3.utils.fromWei,
         hexToUtf8: this._web3.utils.hexToUtf8,
-        sha3: this._web3.utils.sha3,
+        sha3: this.sha3,
         toDecimals,
         toString,
         toUtf8: this._web3.utils.toUtf8,
@@ -6815,10 +6848,13 @@ var _Wallet = class {
         stringToBytes,
         stringToBytes32
       };
-      if (this._account && this._account.privateKey && !this._account.address)
-        this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+      if (this._account && this._account.privateKey && !this._account.address) {
+        this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
+      }
     }
-    ;
+  }
+  privateKeyToAccount(privateKey) {
+    return new EthersLib.Wallet(privateKey);
   }
   get isConnected() {
     return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
@@ -6947,14 +6983,19 @@ var _Wallet = class {
       if (this._accounts) {
         let result = [];
         for (let i = 0; i < this._accounts.length; i++) {
-          if (!this._accounts[i].address && this._accounts[i].privateKey)
-            this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
+          if (!this._accounts[i].address && this._accounts[i].privateKey) {
+            this._accounts[i].address = this.privateKeyToAccount(this._accounts[i].privateKey).address;
+          }
           result.push(this._accounts[i].address);
         }
         return resolve(result);
       } else if (this._account)
         return resolve([this._account.address]);
-      resolve(this._web3.eth.getAccounts());
+      if (this._ethersProvider) {
+        const hardhatAccounts = await this._ethersProvider.listAccounts();
+        const addresses = hardhatAccounts.map((account) => account.address);
+        resolve(addresses);
+      }
     });
   }
   get address() {
@@ -6962,8 +7003,9 @@ var _Wallet = class {
       return this.clientSideProvider.selectedAddress;
     } else if (this._web3) {
       if (this._account && this._account.privateKey) {
-        if (!this._account.address)
-          this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+        if (!this._account.address) {
+          this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
+        }
         return this._account.address;
       } else if (this._web3.selectedAddress) {
         return this._web3.selectedAddress;
@@ -7016,43 +7058,84 @@ var _Wallet = class {
     }
   }
   createAccount() {
-    if (this._web3) {
-      let acc = this._web3.eth.accounts.create();
+    if (EthersLib) {
+      let acc = EthersLib.Wallet.createRandom();
+      this._accounts = this._accounts || [];
+      this._accounts.push({
+        address: acc.address,
+        privateKey: acc.privateKey
+      });
       return {
         address: acc.address,
         privateKey: acc.privateKey
       };
     }
-    ;
   }
   decodeLog(inputs, hexString, topics) {
-    return this.web3.eth.abi.decodeLog(inputs, hexString, topics);
+    try {
+      const indexedInputs = inputs.filter((input) => input.indexed);
+      const nonIndexedInputs = inputs.filter((input) => !input.indexed);
+      const eventName = "MyDecodedEvent";
+      const paramTypes = inputs.map((input) => `${input.type}${input.indexed ? " indexed" : ""} ${input.name || ""}`).join(", ");
+      const eventSignature = `event ${eventName}(${paramTypes})`;
+      const ethers = EthersLib.ethers;
+      const iface = new ethers.Interface([eventSignature]);
+      const eventFragment = iface.getEvent(eventName);
+      if (!eventFragment) {
+        throw new Error("Could not create event fragment from inputs.");
+      }
+      const decoded = iface.decodeEventLog(eventFragment, hexString, topics);
+      const result = {};
+      let i = 0;
+      eventFragment.inputs.forEach((input) => {
+        result[i] = decoded[input.name];
+        if (input.name) {
+          result[input.name] = decoded[input.name];
+        }
+        i++;
+      });
+      result.__length__ = i;
+      return result;
+    } catch (error) {
+      console.error("Error decoding log with ethers.js:", error);
+      throw error;
+    }
   }
   get defaultAccount() {
     if (this._account)
       return this._account.address;
-    else if (this._web3)
-      return this._web3.eth.defaultAccount;
+    else {
+      return this._defaultAccount;
+    }
   }
   set defaultAccount(address) {
+    this._defaultAccount = address;
     if (this._accounts) {
       for (let i = 0; i < this._accounts.length; i++) {
-        if (!this._accounts[i].address && this._accounts[i].privateKey && this._web3)
-          this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
+        if (!this._accounts[i].address && this._accounts[i].privateKey && this._web3) {
+          this._accounts[i].address = this.privateKeyToAccount(this._accounts[i].privateKey).address;
+        }
         if (this._accounts[i].address && this._accounts[i].address.toLowerCase() == address.toLowerCase()) {
           this._account = this._accounts[i];
+          if (EthersLib) {
+            const ethers = EthersLib.ethers;
+            this._ethersSigner = new ethers.Wallet(this._account.privateKey, this._ethersProvider);
+          }
           return;
         }
       }
     } else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()) {
       return;
-    } else if (this._web3)
+    } else if (this._web3) {
       this._web3.eth.defaultAccount = address;
+    }
   }
   async getChainId() {
     await this.init();
-    if (!this.chainId)
-      this.chainId = Number(await this._web3.eth.getChainId());
+    if (!this.chainId) {
+      const network = await this._ethersProvider.getNetwork();
+      this.chainId = Number(network.chainId);
+    }
     return this.chainId;
   }
   get provider() {
@@ -7061,6 +7144,14 @@ var _Wallet = class {
   set provider(value) {
     if (this._web3)
       this._web3.setProvider(value);
+    if (EthersLib) {
+      const ethers = EthersLib.ethers;
+      if (typeof value === "string") {
+        this._ethersProvider = new ethers.JsonRpcProvider(value);
+      } else {
+        this._ethersProvider = new ethers.BrowserProvider(value);
+      }
+    }
     this._provider = value;
   }
   async sendSignedTransaction(tx) {
@@ -7077,7 +7168,7 @@ var _Wallet = class {
       data: tx.data
     }));
     let gasLimit = tx.gasLimit || gas;
-    let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
+    let nonce = tx.nonce || await this.transactionCount();
     if (privateKey || this._account && this._account.privateKey) {
       let signedTx = await _web3.eth.accounts.signTransaction({
         nonce,
@@ -7114,31 +7205,9 @@ var _Wallet = class {
     return this._abiContractDict[abiHash];
   }
   async _call(abiHash, address, methodName, params, options) {
-    if (!address || !methodName)
-      throw new Error("no contract address or method name");
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let tx = {};
-    tx.to = address;
-    tx.data = method.encodeABI();
-    if (options) {
-      if (typeof options === "number") {
-        tx.value = new import_bignumber3.BigNumber(options);
-      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
-        tx.value = options;
-      } else if (options.value) {
-        if (typeof options.value === "number") {
-          tx.value = new import_bignumber3.BigNumber(options.value);
-        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
-          tx.value = options.value;
-        }
-      }
-    }
-    options = options;
-    tx.from = options && options.from || this.address;
-    if (options && (options.gas || options.gasLimit)) {
-      tx.gas = options.gas || options.gasLimit;
-    }
-    let result = await method.call(__spreadValues({ from: this.address }, tx));
+    const ethers = EthersLib.ethers;
+    const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
+    const result = await contract[methodName](...params);
     return result;
   }
   _getMethod(abiHash, address, methodName, params) {
@@ -7181,73 +7250,112 @@ var _Wallet = class {
     return method;
   }
   async _txObj(abiHash, address, methodName, params, options) {
-    var _a;
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let tx = {};
-    tx.from = this.address;
-    tx.to = address || void 0;
-    tx.data = method.encodeABI();
-    if (options) {
-      if (typeof options === "number") {
-        tx.value = new import_bignumber3.BigNumber(options);
-        options = void 0;
-      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
-        tx.value = options;
-        options = void 0;
-      } else if (options.value) {
-        if (typeof options.value === "number") {
-          tx.value = new import_bignumber3.BigNumber(options.value);
-        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
-          tx.value = options.value;
-        }
+    const abi = this._abiHashDict[abiHash];
+    const ethers = EthersLib.ethers;
+    let signer = await this.getSigner();
+    const contract = new ethers.Contract(address, abi, signer);
+    const txParams = [];
+    for (let item of params) {
+      if (item instanceof import_bignumber3.BigNumber) {
+        txParams.push(item.toFixed());
+      } else {
+        txParams.push(item);
       }
     }
-    options = options;
-    if (options && (options.gas || options.gasLimit)) {
-      tx.gas = options.gas || options.gasLimit;
-    } else {
-      try {
-        tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: (_a = tx.value) == null ? void 0 : _a.toFixed() }));
-        tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
-      } catch (e) {
-        if (e.message == "Returned error: out of gas") {
-          console.log(e.message);
-          tx.gas = Math.round(await this.blockGasLimit() * 0.5);
-        } else {
-          if (e.message.includes("Returned error: execution reverted: ")) {
-            throw e;
-          }
-          try {
-            await method.call(__spreadValues({ from: this.address }, tx));
-          } catch (e2) {
-            if (e2.message.includes("VM execution error.")) {
-              var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
-              if (msg && msg.length) {
-                msg = msg[0];
-                if (msg.startsWith("0x08c379a")) {
-                  msg = this.decodeErrorMessage(msg);
-                  throw new Error("Returned error: execution reverted: " + msg);
-                }
-              }
-            }
-          }
-          throw e;
-        }
+    const txData = await contract[methodName].populateTransaction(...txParams);
+    const tx = {
+      to: address,
+      data: txData.data,
+      from: this.address
+    };
+    if (options) {
+      if (typeof options === "number" || ethers.BigNumber.isBigNumber(options)) {
+        tx.value = ethers.BigNumber.from(options);
+      } else if (options && typeof options === "object" && "gas" in options || "gasLimit" in options || "value" in options) {
+        if (options.value)
+          tx.value = ethers.BigNumber.from(options.value);
+        if (options.gas || options.gasLimit)
+          tx.gas = ethers.BigNumber.from(options.gas || options.gasLimit);
+        if (options.gasPrice)
+          tx.gasPrice = ethers.BigNumber.from(options.gasPrice);
+        if (options.nonce)
+          tx.nonce = options.nonce;
       }
+    }
+    if (!tx.gas) {
+      tx.gas = Number(await this._ethersProvider.estimateGas(tx));
+      tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
     }
     if (!tx.gasPrice) {
-      tx.gasPrice = await this.getGasPrice();
+      tx.gasPrice = new import_bignumber3.BigNumber((await this._ethersProvider.getFeeData()).gasPrice);
     }
-    if (options && options.nonce) {
-      tx.nonce = options.nonce;
-    } else {
+    if (!tx.nonce) {
       tx.nonce = await this.transactionCount();
     }
     return tx;
   }
+  async getSigner() {
+    let signer;
+    if (this._accounts && this._accounts.some((v) => v.address == this.address)) {
+      const account = this._accounts.find((v) => v.address == this.address);
+      const ethers = EthersLib.ethers;
+      signer = new ethers.Wallet(account.privateKey, this._ethersProvider);
+    } else {
+      signer = await this._ethersProvider.getSigner(this.address);
+    }
+    return signer;
+  }
   async _send(abiHash, address, methodName, params, options) {
-    let tx = await this._txObj(abiHash, address, methodName, params, options);
-    let receipt = await this.sendTransaction(tx);
+    let receipt;
+    try {
+      if (!methodName) {
+        const bytecode = params.shift();
+        const abi = this._abiHashDict[abiHash];
+        const ethers = EthersLib.ethers;
+        let signer = await this.getSigner();
+        const factory = new ethers.ContractFactory(abi, bytecode, signer);
+        const contract = await factory.deploy(...params);
+        const ethersReceipt = await contract.deploymentTransaction().wait();
+        receipt = {
+          status: BigInt(ethersReceipt.status),
+          transactionHash: ethersReceipt.hash,
+          transactionIndex: BigInt(ethersReceipt.index),
+          blockHash: ethersReceipt.blockHash,
+          blockNumber: BigInt(ethersReceipt.blockNumber),
+          from: ethersReceipt.from,
+          to: ethersReceipt.to,
+          contractAddress: ethersReceipt.contractAddress,
+          cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
+          gasUsed: ethersReceipt.gasUsed,
+          effectiveGasPrice: ethersReceipt.gasPrice,
+          logs: ethersReceipt.logs,
+          logsBloom: ethersReceipt.logsBloom
+        };
+      } else {
+        let tx = await this._txObj(abiHash, address, methodName, params, options);
+        let signer = await this.getSigner();
+        const ethersReceipt = await signer.sendTransaction(__spreadProps(__spreadValues({}, tx), {
+          gasPrice: tx.gasPrice instanceof import_bignumber3.BigNumber ? tx.gasPrice.toFixed() : tx.gasPrice
+        }));
+        receipt = {
+          status: BigInt(1),
+          transactionHash: ethersReceipt.hash,
+          transactionIndex: ethersReceipt.index ? BigInt(ethersReceipt.index) : BigInt(0),
+          blockHash: ethersReceipt.blockHash,
+          blockNumber: ethersReceipt.blockNumber ? BigInt(ethersReceipt.blockNumber) : BigInt(0),
+          from: ethersReceipt.from,
+          to: ethersReceipt.to,
+          contractAddress: ethersReceipt.contractAddress,
+          cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
+          gasUsed: ethersReceipt.gasUsed,
+          effectiveGasPrice: ethersReceipt.gasPrice,
+          logs: ethersReceipt.logs,
+          logsBloom: ethersReceipt.logsBloom
+        };
+      }
+    } catch (e) {
+      console.error("Error sending transaction:", methodName);
+    }
     return receipt;
   }
   async _txData(abiHash, address, methodName, params, options) {
@@ -7273,7 +7381,7 @@ var _Wallet = class {
     if (this._contracts[address])
       contract = this._contracts[address];
     else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
+      hash = this.sha3(JSON.stringify(abi));
       if (this._contracts[hash]) {
         contract = this._contracts[hash];
       }
@@ -7346,7 +7454,7 @@ var _Wallet = class {
       if (address && this._contracts[address])
         contract = this._contracts[address];
       else {
-        hash = this._web3.utils.sha3(JSON.stringify(abi));
+        hash = this.sha3(JSON.stringify(abi));
         if (this._contracts[hash]) {
           contract = this._contracts[hash];
         }
@@ -7446,7 +7554,7 @@ var _Wallet = class {
         return result;
       } else {
         contract.options.address = address;
-        let nonce = Number(await _web3.eth.getTransactionCount(this.address));
+        let nonce = await this.transactionCount();
         let tx = {
           from: this.address,
           nonce,
@@ -7513,11 +7621,14 @@ var _Wallet = class {
           }
         } else {
           await self.init();
-          let _web3 = self._web3;
-          let result = Number(await _web3.eth.getBalance(address));
-          resolve(new import_bignumber3.BigNumber(result).div(10 ** decimals));
+          const ethers = EthersLib.ethers;
+          const ethersProvider = new ethers.BrowserProvider(self._provider);
+          const balance = await ethersProvider.getBalance(address);
+          const balanceInEther = ethers.formatEther(balance);
+          resolve(new import_bignumber3.BigNumber(balanceInEther));
         }
       } catch (err) {
+        console.log("err", err);
         resolve(new import_bignumber3.BigNumber(0));
       }
     });
@@ -7545,15 +7656,18 @@ var _Wallet = class {
   }
   async getBlockNumber() {
     await this.init();
-    return Number(await this._web3.eth.getBlockNumber());
+    if (this._ethersProvider) {
+      return await this._ethersProvider.getBlockNumber();
+    }
+    throw new Error("Ethers provider is not initialized");
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
     await this.init();
-    let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
-    if (typeof block.timestamp == "string")
-      return parseInt(block.timestamp);
-    else
-      return Number(block.timestamp);
+    if (this._ethersProvider) {
+      const block = await this._ethersProvider.getBlock(blockHashOrBlockNumber || "latest");
+      return block.timestamp;
+    }
+    throw new Error("Ethers provider is not initialized");
   }
   set privateKey(value) {
     if (value && this._web3) {
@@ -7564,14 +7678,19 @@ var _Wallet = class {
       privateKey: value
     };
   }
+  sha3(value) {
+    const ethers = EthersLib.ethers;
+    const hashedData = ethers.keccak256(ethers.toUtf8Bytes(value));
+    return hashedData;
+  }
   async registerEvent(abi, eventMap, address, handler) {
     await this.init();
     let hash = "";
     if (typeof abi == "string") {
-      hash = this._web3.utils.sha3(abi);
+      hash = this.sha3(abi);
       abi = JSON.parse(abi);
     } else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
+      hash = this.sha3(JSON.stringify(abi));
     }
     this.registerAbiContracts(hash, address, handler);
     this._eventTopicAbi[hash] = {};
@@ -7581,11 +7700,10 @@ var _Wallet = class {
   }
   getAbiEvents(abi) {
     if (this._web3) {
-      let _web3 = this._web3;
       let events = abi.filter((e) => e.type == "event");
       let eventMap = {};
       for (let i = 0; i < events.length; i++) {
-        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+        let topic = this.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
         eventMap[topic] = events[i];
       }
       return eventMap;
@@ -7596,12 +7714,11 @@ var _Wallet = class {
     if (this._web3) {
       if (!eventNames || eventNames.length == 0)
         eventNames = null;
-      let _web3 = this._web3;
       let result = [];
       let events = abi.filter((e) => e.type == "event");
       for (let i = 0; i < events.length; i++) {
         if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
-          let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+          let topic = this.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
           result.push(topic);
         }
       }
@@ -7629,10 +7746,10 @@ var _Wallet = class {
     if (this._web3) {
       let hash = "";
       if (typeof abi == "string") {
-        hash = this._web3.utils.sha3(abi);
+        hash = this.sha3(abi);
         abi = JSON.parse(abi);
       } else {
-        hash = this._web3.utils.sha3(JSON.stringify(abi));
+        hash = this.sha3(JSON.stringify(abi));
       }
       if (!address && !handler && this._abiHashDict[hash])
         return hash;
@@ -7714,10 +7831,12 @@ var _Wallet = class {
     return log;
   }
   encodeParameters(types, values) {
-    return this._web3.eth.abi.encodeParameters(types, values);
+    const ethers = EthersLib.ethers;
+    return ethers.AbiCoder.defaultAbiCoder().encode(types, values);
   }
   decodeParameters(types, hexString) {
-    return this._web3.eth.abi.decodeParameters(types, hexString);
+    const ethers = EthersLib.ethers;
+    return ethers.AbiCoder.defaultAbiCoder().decode(types, hexString);
   }
   scanEvents(param1, param2, param3, param4, param5) {
     let fromBlock;
@@ -7965,8 +8084,10 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await self.init();
       try {
-        if (!this._gasLimit)
-          this._gasLimit = Number((await this._web3.eth.getBlock("latest")).gasLimit);
+        if (!this._gasLimit) {
+          const latestBlock = await this._ethersProvider.getBlock("latest");
+          this._gasLimit = Number(latestBlock.gasLimit);
+        }
         resolve(this._gasLimit);
       } catch (e) {
         reject(e);
@@ -7977,7 +8098,8 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(new import_bignumber3.BigNumber(Number(await this._web3.eth.getGasPrice())));
+        const gasPrice = Number((await this._ethersProvider.getFeeData()).gasPrice);
+        resolve(new import_bignumber3.BigNumber(gasPrice));
       } catch (e) {
         reject(e);
       }
@@ -7987,7 +8109,8 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(Number(await this._web3.eth.getTransactionCount(this.address)));
+        const transactionCount = await this._ethersProvider.getTransactionCount(this.address);
+        resolve(transactionCount);
       } catch (e) {
         reject(e);
       }
@@ -8089,16 +8212,36 @@ var _Wallet = class {
     });
   }
   soliditySha3(...val) {
-    if (this._web3)
-      return this._web3.utils.soliditySha3(...val);
+    if (!EthersLib) {
+      return "";
+    }
+    const ethers = EthersLib.ethers;
+    const types = [];
+    const values = [];
+    val.forEach((arg) => {
+      if (typeof arg === "object" && arg !== null && "type" in arg && "value" in arg) {
+        types.push(arg.type);
+        values.push(arg.value);
+      } else {
+        throw new Error("Invalid input format for soliditySha3. Expected {type: string, value: any}.");
+      }
+    });
+    const soliditySha3Value = ethers.solidityPackedKeccak256(types, values);
+    return soliditySha3Value;
   }
   toChecksumAddress(address) {
-    if (this._web3)
-      return this._web3.utils.toChecksumAddress(address);
+    if (!EthersLib) {
+      return address;
+    }
+    const ethers = EthersLib.ethers;
+    return ethers.getAddress(address);
   }
   isAddress(address) {
-    if (this._web3)
-      return this._web3.utils.isAddress(address);
+    if (!EthersLib) {
+      return false;
+    }
+    const ethers = EthersLib.ethers;
+    return ethers.isAddress(address);
   }
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
@@ -8164,7 +8307,7 @@ var _Wallet = class {
       }
       const abi = contracts[i].contract._abi.find((v) => v.name == contracts[i].methodName);
       const outputs = (abi == null ? void 0 : abi.outputs) || [];
-      const decodedValues = this._web3.eth.abi.decodeParameters(outputs, callResult);
+      const decodedValues = this.decodeParameters(outputs, callResult);
       if (outputs.length == 0) {
         outputValues.push(null);
       } else if (outputs.length == 1) {
@@ -8205,7 +8348,7 @@ var _Wallet = class {
     if (this._web3) {
       const abi = contract._abi.find((v) => v.name == methodName);
       const outputs = (abi == null ? void 0 : abi.outputs) || [];
-      return abi ? this._web3.eth.abi.decodeParameters(outputs, hexString) : {};
+      return abi ? this.decodeParameters(outputs, hexString) : {};
     }
   }
   get web3() {

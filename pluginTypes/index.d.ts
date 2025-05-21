@@ -2141,6 +2141,9 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
     }
     export class Wallet implements IClientWallet {
         protected _web3: IWeb3;
+        protected _ethersProvider: any;
+        protected _ethersSigner: any;
+        protected _defaultAccount: string;
         protected _account: IAccount;
         private _accounts;
         protected _provider: any;
@@ -2164,6 +2167,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         static getRpcWalletInstance(instanceId: string): IRpcWallet;
         static initWeb3(): Promise<void>;
         init(): Promise<void>;
+        protected privateKeyToAccount(privateKey: string): IAccount;
         get isConnected(): boolean;
         switchNetwork(chainId: number): Promise<any>;
         initClientWallet(config: IClientWalletConfig): void;
@@ -2204,6 +2208,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         private _getMethod;
         _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        protected getSigner(): Promise<any>;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
         _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
         _methods(...args: any[]): Promise<{
@@ -2218,6 +2223,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         getBlockNumber(): Promise<number>;
         getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
         set privateKey(value: string);
+        private sha3;
         registerEvent(abi: any, eventMap: {
             [topics: string]: any;
         }, address: string, handler: any): Promise<void>;
@@ -2267,9 +2273,9 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
         newBatchRequest(): Promise<IBatchRequestObj>;
-        soliditySha3(...val: any[]): string;
-        toChecksumAddress(address: string): string;
-        isAddress(address: string): boolean;
+        soliditySha3(...val: any[]): any;
+        toChecksumAddress(address: string): any;
+        isAddress(address: string): any;
         multiCall(calls: {
             to: string;
             data: string;
@@ -2283,9 +2289,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
         decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
-        }[keyof T]>>(contract: T, methodName: F, hexString: string): {
-            [key: string]: any;
-        };
+        }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
         get web3(): typeof Web3;
     }
     export class RpcWallet extends Wallet implements IRpcWallet {
