@@ -6835,7 +6835,6 @@ var _Wallet = class {
       }
       ;
       this._web3 = new Web33(this._provider);
-      this._web3.eth.transactionConfirmationBlocks = 1;
       this._utils = {
         fromDecimals,
         fromWei: this._web3.utils.fromWei,
@@ -7009,8 +7008,8 @@ var _Wallet = class {
         return this._account.address;
       } else if (this._web3.selectedAddress) {
         return this._web3.selectedAddress;
-      } else if (this._web3.eth.defaultAccount) {
-        return this._web3.eth.defaultAccount;
+      } else if (this._defaultAccount) {
+        return this._defaultAccount;
       }
       if (!this._account) {
         this._account = this.createAccount();
@@ -7026,8 +7025,7 @@ var _Wallet = class {
     };
   }
   set account(value) {
-    if (this._web3)
-      this._web3.eth.defaultAccount = "";
+    this._defaultAccount = "";
     this._account = value;
   }
   get infuraId() {
@@ -7126,8 +7124,6 @@ var _Wallet = class {
       }
     } else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()) {
       return;
-    } else if (this._web3) {
-      this._web3.eth.defaultAccount = address;
     }
   }
   async getChainId() {
@@ -7142,8 +7138,6 @@ var _Wallet = class {
     return this._provider;
   }
   set provider(value) {
-    if (this._web3)
-      this._web3.setProvider(value);
     if (EthersLib) {
       const ethers = EthersLib.ethers;
       if (typeof value === "string") {
@@ -7156,103 +7150,68 @@ var _Wallet = class {
   }
   async sendSignedTransaction(tx) {
     await this.init();
-    let _web3 = this._web3;
-    return _web3.eth.sendSignedTransaction(tx);
+    try {
+      const txResponse = await this._ethersProvider.broadcastTransaction(tx);
+      const receipt = await txResponse.wait();
+      return {
+        transactionHash: receipt.hash,
+        transactionIndex: BigInt(receipt.index),
+        blockHash: receipt.blockHash,
+        blockNumber: BigInt(receipt.blockNumber),
+        from: receipt.from,
+        to: receipt.to,
+        contractAddress: receipt.contractAddress || null,
+        cumulativeGasUsed: receipt.cumulativeGasUsed,
+        gasUsed: receipt.gasUsed,
+        logs: receipt.logs,
+        logsBloom: receipt.logsBloom,
+        status: BigInt(receipt.status || 0),
+        effectiveGasPrice: receipt.gasPrice
+      };
+    } catch (error) {
+      console.error("Error sending signed transaction:", error);
+      throw error;
+    }
   }
   async signTransaction(tx, privateKey) {
     await this.init();
-    let _web3 = this._web3;
-    let gas = tx.gas || Number(await _web3.eth.estimateGas({
+    const ethers = EthersLib.ethers;
+    const gas = tx.gas || await this._ethersProvider.estimateGas({
       from: this.address,
       to: tx.to,
       data: tx.data
-    }));
-    let gasLimit = tx.gasLimit || gas;
-    let nonce = tx.nonce || await this.transactionCount();
+    });
+    const gasLimit = tx.gasLimit || gas;
+    const nonce = tx.nonce || await this.transactionCount();
+    const transaction = {
+      nonce,
+      gasLimit,
+      gasPrice: tx.gasPrice || (await this._ethersProvider.getFeeData()).gasPrice,
+      to: tx.to,
+      value: tx.value || 0,
+      data: tx.data
+    };
     if (privateKey || this._account && this._account.privateKey) {
-      let signedTx = await _web3.eth.accounts.signTransaction({
-        nonce,
-        gas,
-        gasLimit,
-        data: tx.data,
-        from: this.address,
-        to: tx.to
-      }, privateKey ? privateKey : this._account.privateKey);
-      return signedTx.rawTransaction;
-    } else {
-      let t = await _web3.eth.signTransaction({
-        from: this.address,
-        nonce,
-        gasLimit,
-        gas,
-        to: tx.to,
-        data: tx.data
-      }, this.address);
-      return t.raw;
+      const wallet = new ethers.Wallet(privateKey || this._account.privateKey, this._ethersProvider);
+      const signedTx2 = await wallet.signTransaction(transaction);
+      return signedTx2;
     }
+    const signer = await this.getSigner();
+    const signedTx = await signer.signTransaction(transaction);
+    return signedTx;
   }
   registerSendTxEvents(eventsOptions) {
     this._sendTxEventHandler = eventsOptions;
   }
-  getContract(abiHash) {
-    let contract;
-    if (!this._abiContractDict[abiHash]) {
-      contract = this.newContract(this._abiHashDict[abiHash]);
-      this._abiContractDict[abiHash] = contract;
-      return contract;
-    }
-    ;
-    return this._abiContractDict[abiHash];
-  }
   async _call(abiHash, address, methodName, params, options) {
     const ethers = EthersLib.ethers;
     const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
-    const result = await contract[methodName](...params);
+    const result = await contract[methodName].staticCall(...params);
     return result;
   }
-  _getMethod(abiHash, address, methodName, params) {
-    let contract = this.getContract(abiHash);
-    params = params || [];
-    let bytecode;
-    if (!methodName) {
-      bytecode = params.shift();
-      contract.options.address = void 0;
-    } else
-      contract.options.address = address;
-    let abi = this._abiHashDict[abiHash];
-    let methodAbi = abi.find((e) => methodName ? e.name == methodName : e.type == "constructor");
-    if (methodAbi)
-      for (let i = 0; i < methodAbi.inputs.length; i++) {
-        if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-          params[i] = params[i] || "";
-          if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-            let a = [];
-            for (let k = 0; k < params[i].length; k++) {
-              let s = params[i][k] || "";
-              if (!params[i][k])
-                a.push("0x");
-              else
-                a.push(s);
-            }
-            params[i] = a;
-          } else if (!params[i])
-            params[i] = "0x";
-        } else if (methodAbi.inputs[i].type == "address") {
-          if (!params[i])
-            params[i] = nullAddress;
-        }
-      }
-    let method;
-    if (!methodName)
-      method = contract.deploy({ data: bytecode, arguments: params });
-    else
-      method = contract.methods[methodName].apply(this, params);
-    return method;
-  }
-  async _txObj(abiHash, address, methodName, params, options) {
+  async _createTxData(signer, abiHash, address, methodName, params) {
     const abi = this._abiHashDict[abiHash];
     const ethers = EthersLib.ethers;
-    let signer = await this.getSigner();
     const contract = new ethers.Contract(address, abi, signer);
     const txParams = [];
     for (let item of params) {
@@ -7263,27 +7222,35 @@ var _Wallet = class {
       }
     }
     const txData = await contract[methodName].populateTransaction(...txParams);
+    return txData;
+  }
+  async _createTxObj(address, txData, options) {
+    const ethers = EthersLib.ethers;
     const tx = {
       to: address,
-      data: txData.data,
       from: this.address
     };
+    if (txData) {
+      tx.data = txData.data;
+    }
     if (options) {
-      if (typeof options === "number" || ethers.BigNumber.isBigNumber(options)) {
-        tx.value = ethers.BigNumber.from(options);
+      if (typeof options === "number" || import_bignumber3.BigNumber.isBigNumber(options)) {
+        tx.value = typeof options === "number" ? new import_bignumber3.BigNumber(options) : options;
       } else if (options && typeof options === "object" && "gas" in options || "gasLimit" in options || "value" in options) {
         if (options.value)
-          tx.value = ethers.BigNumber.from(options.value);
+          tx.value = new import_bignumber3.BigNumber(options.value);
         if (options.gas || options.gasLimit)
-          tx.gas = ethers.BigNumber.from(options.gas || options.gasLimit);
+          tx.gas = new import_bignumber3.BigNumber(options.gas || options.gasLimit);
         if (options.gasPrice)
-          tx.gasPrice = ethers.BigNumber.from(options.gasPrice);
+          tx.gasPrice = new import_bignumber3.BigNumber(options.gasPrice);
         if (options.nonce)
           tx.nonce = options.nonce;
       }
     }
     if (!tx.gas) {
-      tx.gas = Number(await this._ethersProvider.estimateGas(tx));
+      tx.gas = Number(await this._ethersProvider.estimateGas(__spreadProps(__spreadValues({}, tx), {
+        value: tx.value instanceof import_bignumber3.BigNumber ? tx.value.toFixed() : tx.value
+      })));
       tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
     }
     if (!tx.gasPrice) {
@@ -7294,9 +7261,20 @@ var _Wallet = class {
     }
     return tx;
   }
+  async _txObj(abiHash, address, methodName, params, options) {
+    let signer = await this.getSigner();
+    const txData = await this._createTxData(signer, abiHash, address, methodName, params);
+    const txObj = await this._createTxObj(address, txData, options);
+    return txObj;
+  }
   async getSigner() {
     let signer;
-    if (this._accounts && this._accounts.some((v) => v.address == this.address)) {
+    const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
+    if (isClientSide) {
+      const ethers = EthersLib.ethers;
+      this._ethersProvider = new ethers.BrowserProvider(this.clientSideProvider.provider);
+      signer = this._ethersProvider.getSigner();
+    } else if (this._accounts && this._accounts.some((v) => v.address == this.address)) {
       const account = this._accounts.find((v) => v.address == this.address);
       const ethers = EthersLib.ethers;
       signer = new ethers.Wallet(account.privateKey, this._ethersProvider);
@@ -7333,105 +7311,25 @@ var _Wallet = class {
         };
       } else {
         let tx = await this._txObj(abiHash, address, methodName, params, options);
-        let signer = await this.getSigner();
-        const ethersReceipt = await signer.sendTransaction(__spreadProps(__spreadValues({}, tx), {
-          gasPrice: tx.gasPrice instanceof import_bignumber3.BigNumber ? tx.gasPrice.toFixed() : tx.gasPrice
-        }));
-        receipt = {
-          status: BigInt(1),
-          transactionHash: ethersReceipt.hash,
-          transactionIndex: ethersReceipt.index ? BigInt(ethersReceipt.index) : BigInt(0),
-          blockHash: ethersReceipt.blockHash,
-          blockNumber: ethersReceipt.blockNumber ? BigInt(ethersReceipt.blockNumber) : BigInt(0),
-          from: ethersReceipt.from,
-          to: ethersReceipt.to,
-          contractAddress: ethersReceipt.contractAddress,
-          cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
-          gasUsed: ethersReceipt.gasUsed,
-          effectiveGasPrice: ethersReceipt.gasPrice,
-          logs: ethersReceipt.logs,
-          logsBloom: ethersReceipt.logsBloom
-        };
+        receipt = await this.sendTransaction(tx);
       }
     } catch (e) {
       console.error("Error sending transaction:", methodName);
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(e);
     }
     return receipt;
   }
   async _txData(abiHash, address, methodName, params, options) {
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let data = method.encodeABI();
-    return data;
-  }
-  async _methods(...args) {
     await this.init();
-    let _web3 = this._web3;
-    let result;
-    let value;
-    let method;
-    let methodAbi;
-    let byteCode;
-    let abi = args.shift();
-    let address = args.shift();
-    let methodName = args.shift();
-    if (methodName == "deploy")
-      byteCode = args.shift();
-    let contract;
-    let hash;
-    if (this._contracts[address])
-      contract = this._contracts[address];
-    else {
-      hash = this.sha3(JSON.stringify(abi));
-      if (this._contracts[hash]) {
-        contract = this._contracts[hash];
-      }
+    const abi = this._abiHashDict[abiHash];
+    if (!abi) {
+      throw new Error(`ABI not found for hash: ${abiHash}`);
     }
-    if (!contract) {
-      contract = new this._web3.eth.Contract(abi);
-      this._contracts[address] = contract;
-      this._contracts[hash] = contract;
-    }
-    if (methodName == "deploy") {
-      method = contract[methodName]({
-        data: byteCode,
-        arguments: args
-      });
-    } else {
-      for (let i = 0; i < abi.length; i++) {
-        if (abi[i].name == methodName) {
-          methodAbi = abi[i];
-          break;
-        }
-      }
-      if (methodAbi.payable)
-        value = args.pop();
-      for (let i = 0; i < methodAbi.inputs.length; i++) {
-        if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-          args[i] = args[i] || "";
-          if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-            let a = [];
-            for (let k = 0; k < args[i].length; k++) {
-              let s = args[i][k] || "";
-              if (s.indexOf("0x") != 0)
-                a.push(_web3.utils.fromAscii(s));
-              else
-                a.push(s);
-            }
-            args[i] = a;
-          } else if (args[i].indexOf("0x") != 0)
-            args[i] = _web3.utils.fromAscii(args[i]);
-        } else if (methodAbi.inputs[i].type == "address") {
-          if (!args[i])
-            args[i] = _web3.eth.abi.encodeParameter("address", 0);
-        }
-      }
-      method = contract.methods[methodName].apply(contract, args);
-    }
-    let tx = {
-      to: address,
-      data: method.encodeABI()
-    };
-    return tx;
+    const ethers = EthersLib.ethers;
+    const iface = new ethers.Interface(abi);
+    const data = iface.encodeFunctionData(methodName, params || []);
+    return data;
   }
   async methods(...args) {
     await this.init();
@@ -7633,19 +7531,16 @@ var _Wallet = class {
       }
     });
   }
-  recoverSigner(msg, signature) {
-    let self = this;
-    return new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let signing_address = await _web3.eth.accounts.recover(msg, signature);
-        resolve(signing_address);
-      } catch (err) {
-        reject(err);
-      }
-      ;
-    });
+  async recoverSigner(msg, signature) {
+    await this.init();
+    const ethers = EthersLib.ethers;
+    try {
+      const signingAddress = ethers.verifyMessage(msg, signature);
+      return signingAddress;
+    } catch (error) {
+      console.error("Error recovering signer:", error);
+      throw error;
+    }
   }
   async getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
     await this.init();
@@ -7670,9 +7565,6 @@ var _Wallet = class {
     throw new Error("Ethers provider is not initialized");
   }
   set privateKey(value) {
-    if (value && this._web3) {
-      this._web3.eth.defaultAccount = "";
-    }
     this._account = {
       address: "",
       privateKey: value
@@ -7879,54 +7771,12 @@ var _Wallet = class {
       }
     });
   }
-  send(to, amount) {
-    let address = this.address;
-    let self = this;
-    let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
-      this.provider = this.clientSideProvider.provider;
-    }
-    let promise = new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
-        let result;
-        if (self._account && self._account.privateKey) {
-          let nonce = Number(await _web3.eth.getTransactionCount(address));
-          let gas = Number(await _web3.eth.estimateGas({
-            from: address,
-            nonce,
-            to,
-            value
-          }));
-          let price = Number(await _web3.eth.getGasPrice());
-          let tx = {
-            from: address,
-            nonce,
-            gasPrice: price,
-            gasLimit: gas,
-            gas,
-            to,
-            value
-          };
-          let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-          result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-          resolve(result);
-        } else {
-          result = await _web3.eth.sendTransaction({ from: address, to, value: _web3.utils.toWei(amount.toString(), "ether").toString() });
-          resolve(result);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-    promise.finally(() => {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
-    });
-    return promise;
+  async send(to, amount) {
+    await this.init();
+    const value = this.utils.toDecimals(amount);
+    const tx = await this._createTxObj(to, null, value);
+    const receipt = await this.sendTransaction(tx);
+    return receipt;
   }
   setBlockTime(time) {
     return new Promise(async (resolve, reject) => {
@@ -7977,43 +7827,20 @@ var _Wallet = class {
       });
     });
   }
-  signMessage(msg) {
-    let address = this.address;
-    let self = this;
-    let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
-      this.provider = this.clientSideProvider.provider;
+  async signMessage(msg) {
+    await this.init();
+    const ethers = EthersLib.ethers;
+    if (this._account && this._account.privateKey) {
+      const wallet = new ethers.Wallet(this._account.privateKey);
+      const signature = await wallet.signMessage(msg);
+      return signature;
     }
-    let promise = new Promise(async function(resolve, reject) {
-      try {
-        let result;
-        if (self._account && self._account.privateKey) {
-          await self.init();
-          let _web3 = self._web3;
-          result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
-          resolve(result.signature);
-        } else if (typeof window !== "undefined" && self.clientSideProvider) {
-          result = await self.clientSideProvider.provider.request({
-            method: "personal_sign",
-            params: [msg, address]
-          });
-          resolve(result);
-        } else {
-          await self.init();
-          let _web3 = self._web3;
-          result = await _web3.eth.sign(msg, address);
-          resolve(result);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-    promise.finally(() => {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
-    });
-    return promise;
+    if (this._ethersProvider) {
+      const signer = await this._ethersProvider.getSigner(this.address);
+      const signature = await signer.signMessage(msg);
+      return signature;
+    }
+    throw new Error("No valid signer available to sign the message.");
   }
   signTypedDataV4(data) {
     let self = this;
@@ -8065,19 +7892,16 @@ var _Wallet = class {
   get utils() {
     return this._utils;
   }
-  verifyMessage(account, msg, signature) {
-    let self = this;
-    return new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let signing_address = await _web3.eth.accounts.recover(msg, signature);
-        resolve(signing_address && account.toLowerCase() == signing_address.toLowerCase());
-      } catch (err) {
-        reject(err);
-      }
-      ;
-    });
+  async verifyMessage(account, msg, signature) {
+    await this.init();
+    const ethers = EthersLib.ethers;
+    try {
+      const signingAddress = ethers.verifyMessage(msg, signature);
+      return signingAddress.toLowerCase() === account.toLowerCase();
+    } catch (error) {
+      console.error("Error verifying message:", error);
+      throw error;
+    }
   }
   blockGasLimit() {
     let self = this;
@@ -8134,47 +7958,53 @@ var _Wallet = class {
   }
   async sendTransaction(transaction) {
     await this.init();
-    let _transaction = __spreadProps(__spreadValues({}, transaction), {
-      value: typeof transaction.value == "string" ? transaction.value : transaction.value ? transaction.value.toFixed() : void 0,
-      gasPrice: typeof transaction.gasPrice == "string" ? transaction.gasPrice : transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0
+    let signer = await this.getSigner();
+    const signerTx = __spreadProps(__spreadValues({}, transaction), {
+      gasPrice: transaction.gasPrice instanceof import_bignumber3.BigNumber ? transaction.gasPrice.toFixed() : transaction.gasPrice
     });
-    let currentProvider = this.provider;
-    try {
-      const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
-      if (isClientSide && this.provider !== this.clientSideProvider.provider) {
-        this.provider = this.clientSideProvider.provider;
-      }
-      if (this._account && this._account.privateKey) {
-        let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
-        let promiEvent = this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        if (isClientSide) {
-          this.monitorTransactionEvents(promiEvent);
-        }
-        return await promiEvent;
-      } else {
-        let promiEvent = this._web3.eth.sendTransaction(_transaction);
-        this.monitorTransactionEvents(promiEvent);
-        return await promiEvent;
-      }
-    } catch (err) {
-      throw err;
-    } finally {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
+    if (transaction.value) {
+      signerTx.value = transaction.value instanceof import_bignumber3.BigNumber ? transaction.value.toFixed() : transaction.value;
     }
+    const ethersReceipt = await signer.sendTransaction(signerTx);
+    const receipt = {
+      status: BigInt(1),
+      transactionHash: ethersReceipt.hash,
+      transactionIndex: ethersReceipt.index ? BigInt(ethersReceipt.index) : BigInt(0),
+      blockHash: ethersReceipt.blockHash,
+      blockNumber: ethersReceipt.blockNumber ? BigInt(ethersReceipt.blockNumber) : BigInt(0),
+      from: ethersReceipt.from,
+      to: ethersReceipt.to,
+      contractAddress: ethersReceipt.contractAddress,
+      cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
+      gasUsed: ethersReceipt.gasUsed,
+      effectiveGasPrice: ethersReceipt.gasPrice,
+      logs: ethersReceipt.logs,
+      logsBloom: ethersReceipt.logsBloom
+    };
+    if (this._sendTxEventHandler.transactionHash)
+      this._sendTxEventHandler.transactionHash(null, receipt.transactionHash);
+    ethersReceipt.wait().then((receipt2) => {
+      this._sendTxEventHandler.confirmation(receipt2);
+    }).catch((error) => {
+      if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+        return;
+      }
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(error);
+    });
+    return receipt;
   }
   async getTransaction(transactionHash) {
     await this.init();
-    let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
+    const ethersTransaction = await this._ethersProvider.getTransaction(transactionHash);
     return {
-      from: web3Receipt.from,
-      to: web3Receipt.to,
-      nonce: Number(web3Receipt.nonce),
-      gas: Number(web3Receipt.gas),
-      gasPrice: new import_bignumber3.BigNumber(web3Receipt.gasPrice),
-      data: web3Receipt.input,
-      value: new import_bignumber3.BigNumber(web3Receipt.value)
+      from: ethersTransaction.from,
+      to: ethersTransaction.to,
+      nonce: ethersTransaction.nonce,
+      gas: Number(ethersTransaction.gasLimit),
+      gasPrice: new import_bignumber3.BigNumber(ethersTransaction.gasPrice.toString()),
+      data: ethersTransaction.data,
+      value: ethersTransaction.value ? new import_bignumber3.BigNumber(ethersTransaction.value.toString()) : new import_bignumber3.BigNumber(0)
     };
   }
   async getTransactionReceipt(transactionHash) {
@@ -8183,33 +8013,25 @@ var _Wallet = class {
   }
   async call(transaction) {
     await this.init();
-    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
-    return this._web3.eth.call(_transaction);
-  }
-  newContract(abi, address) {
-    if (this._web3)
-      return new this._web3.eth.Contract(abi, address);
+    const _transaction = {
+      to: transaction.to,
+      data: transaction.data,
+      gasPrice: transaction.gasPrice instanceof import_bignumber3.BigNumber ? transaction.gasPrice.toFixed() : transaction.gasPrice
+    };
+    if (transaction.value) {
+      _transaction.value = transaction.value instanceof import_bignumber3.BigNumber ? transaction.value.toFixed() : transaction.value;
+    }
+    try {
+      const result = await this._ethersProvider.call(_transaction);
+      return result;
+    } catch (error) {
+      console.error("Error during call:", error);
+      throw error;
+    }
   }
   decodeErrorMessage(msg) {
     if (this._web3)
       return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
-  }
-  async newBatchRequest() {
-    return new Promise(async (resolve, reject) => {
-      await this.init();
-      try {
-        resolve({
-          batch: new this._web3.eth.BatchRequest(),
-          promises: [],
-          execute: (batch, promises) => {
-            batch.execute();
-            return Promise.all(promises);
-          }
-        });
-      } catch (e) {
-        reject(e);
-      }
-    });
   }
   soliditySha3(...val) {
     if (!EthersLib) {
@@ -8266,8 +8088,7 @@ var _Wallet = class {
     let calls = [];
     for (let i = 0; i < contracts.length; i++) {
       const { to, contract, methodName, params } = contracts[i];
-      const abi = contract._abi.find((v) => v.name == methodName);
-      const callData = abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+      const callData = this.encodeFunctionCall(contract, methodName, params);
       calls.push({
         to,
         data: callData
@@ -8339,9 +8160,14 @@ var _Wallet = class {
     return outputValues;
   }
   encodeFunctionCall(contract, methodName, params) {
-    if (this._web3) {
+    if (EthersLib) {
+      const ethers = EthersLib.ethers;
       const abi = contract._abi.find((v) => v.name == methodName);
-      return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+      if (!abi) {
+        throw new Error(`Method ${String(methodName)} not found in ABI`);
+      }
+      const iface = new ethers.Interface(contract._abi);
+      return iface.encodeFunctionData(String(methodName), params);
     }
   }
   decodeAbiEncodedParameters(contract, methodName, hexString) {
@@ -8401,8 +8227,8 @@ var RpcWallet = class extends Wallet {
   async switchNetwork(chainId) {
     await this.init();
     this.chainId = chainId;
-    const rpc = this.networksMap[chainId].rpcUrls[0];
-    this._web3.setProvider(rpc);
+    const ethers = EthersLib.ethers;
+    this._ethersProvider = new ethers.JsonRpcProvider(this._provider);
     const eventId = `${this.instanceId}:${RpcWalletEvent.ChainChanged}`;
     EventBus.getInstance().dispatch(eventId, chainId);
     return null;

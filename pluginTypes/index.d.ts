@@ -1432,6 +1432,7 @@ declare module "@ijstech/eth-wallet/types.ts" {
     }
     export interface IAbiDefinition {
         _abi: any;
+        [key: string]: any;
     }
     export interface ITokenObject {
         address?: string;
@@ -1883,7 +1884,6 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         isConnected: boolean;
-        newContract(abi: any, address?: string): IContract;
         provider: any;
         registerEvent(abi: any, eventMap: {
             [topics: string]: any;
@@ -2204,17 +2204,13 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
         registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
-        private getContract;
         _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
-        private _getMethod;
+        protected _createTxData(signer: any, abiHash: string, address: string, methodName: string, params?: any[]): Promise<any>;
+        protected _createTxObj(address: string, txData: any, options?: number | BigNumber | TransactionOptions): Promise<any>;
         _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
         protected getSigner(): Promise<any>;
         _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
         _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
-        _methods(...args: any[]): Promise<{
-            to: any;
-            data: any;
-        }>;
         methods(...args: any): Promise<any>;
         get balance(): Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;
@@ -2270,9 +2266,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         call(transaction: Transaction): Promise<any>;
-        newContract(abi: any, address?: string): IContract;
         decodeErrorMessage(msg: string): any;
-        newBatchRequest(): Promise<IBatchRequestObj>;
         soliditySha3(...val: any[]): any;
         toChecksumAddress(address: string): any;
         isAddress(address: string): any;
@@ -2286,7 +2280,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
-        }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
+        }[keyof T]>>(contract: T, methodName: F, params: string[]): any;
         decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
         }[keyof T]>>(contract: T, methodName: F, hexString: string): any;

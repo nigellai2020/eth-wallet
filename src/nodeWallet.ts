@@ -217,53 +217,53 @@ export class NodeWallet extends Wallet{
         // };
         super.privateKey = value;
     };
-    send(to: string, amount: number): Promise<TransactionReceipt>{
-        let _web3 = this._web3;
-        let address = this.address;
-        let self = this;
-        return new Promise(async function(resolve, reject){
-            try{
-                let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
-                let result;
-                if ((self._account && self._account.privateKey) /*|| self.kms*/){
-                    let nonce = Number(await _web3.eth.getTransactionCount(address));        				
-                    let gas = Number(await _web3.eth.estimateGas({
-                         from: address,       
-                         nonce: nonce, 
-                         to: to,     
-                         value: value
-                    }));
-                    let price = _web3.utils.numberToHex(Number(await _web3.eth.getGasPrice()));
-                    let tx: TransactionOptions = {
-                        from: address,
-                        nonce: nonce,
-                        gasPrice: price,
-                        gasLimit: gas,
-                        gas: gas,
-                        to: to,     
-                        value: value
-                    };
-                    // if (self.kms){
-                    // 	let chainId = await self.getChainId();
-                    // 	let txHash = await self.kms.signTransaction(chainId, tx);
-                    // 	result = await _web3.eth.sendSignedTransaction(txHash);
-                    // }
-                    // else{
-                        let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-                        result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
-                    // }						
-                    resolve(result);	
-                }
-                else{
-                    result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString(), "ether").toString()});	
-                    resolve(result);	
-                }
-            }
-            catch(err){					
-                reject(err);
-            }
-        })
-    };
+    // send(to: string, amount: number): Promise<TransactionReceipt>{
+    //     let _web3 = this._web3;
+    //     let address = this.address;
+    //     let self = this;
+    //     return new Promise(async function(resolve, reject){
+    //         try{
+    //             let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
+    //             let result;
+    //             if ((self._account && self._account.privateKey) /*|| self.kms*/){
+    //                 let nonce = Number(await _web3.eth.getTransactionCount(address));        				
+    //                 let gas = Number(await _web3.eth.estimateGas({
+    //                      from: address,       
+    //                      nonce: nonce, 
+    //                      to: to,     
+    //                      value: value
+    //                 }));
+    //                 let price = _web3.utils.numberToHex(Number(await _web3.eth.getGasPrice()));
+    //                 let tx: TransactionOptions = {
+    //                     from: address,
+    //                     nonce: nonce,
+    //                     gasPrice: price,
+    //                     gasLimit: gas,
+    //                     gas: gas,
+    //                     to: to,     
+    //                     value: value
+    //                 };
+    //                 // if (self.kms){
+    //                 // 	let chainId = await self.getChainId();
+    //                 // 	let txHash = await self.kms.signTransaction(chainId, tx);
+    //                 // 	result = await _web3.eth.sendSignedTransaction(txHash);
+    //                 // }
+    //                 // else{
+    //                     let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
+    //                     result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);			
+    //                 // }						
+    //                 resolve(result);	
+    //             }
+    //             else{
+    //                 result = await _web3.eth.sendTransaction({from: address, to: to, value: _web3.utils.toWei(amount.toString(), "ether").toString()});	
+    //                 resolve(result);	
+    //             }
+    //         }
+    //         catch(err){					
+    //             reject(err);
+    //         }
+    //     })
+    // };
     async sendTransaction(transaction: Transaction): Promise<TransactionReceipt> {
         this.init();
         let _transaction = {...transaction, value:transaction.value?transaction.value.toFixed():undefined, gasPrice:transaction.gasPrice?transaction.gasPrice.toFixed():undefined};

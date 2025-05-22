@@ -39,6 +39,7 @@ export interface TypedMessage<T extends MessageTypes> {
 }
 export interface IAbiDefinition {
     _abi: any;
+    [key: string]: any;
 }
 export interface ITokenObject {
     address?: string;

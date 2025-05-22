@@ -5,7 +5,6 @@ export declare class NodeWallet extends Wallet {
     get address(): string;
     methods(...args: any): Promise<any>;
     set privateKey(value: string);
-    send(to: string, amount: number): Promise<TransactionReceipt>;
     sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
