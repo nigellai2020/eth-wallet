@@ -3,16 +3,13 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-declare let Web3: any;
-import { IWeb3, ConfirmationObject, TransactionReceipt } from './web3';
+import { ConfirmationObject, TransactionReceipt } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 import { IEventBusRegistry } from './eventBus';
 export { TransactionReceipt, ConfirmationObject };
 export declare function toString(value: any): any;
-export declare function stringToBytes32(value: string | stringArray): string | string[];
-export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
 export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
@@ -419,7 +416,6 @@ export interface ISendTxEventsOptions {
     confirmation?: (receipt: any) => void;
 }
 export declare class Wallet implements IClientWallet {
-    protected _web3: IWeb3;
     protected _ethersProvider: any;
     protected _ethersSigner: any;
     protected _defaultAccount: string;
@@ -445,6 +441,10 @@ export declare class Wallet implements IClientWallet {
     static getClientInstance(): IClientWallet;
     static getRpcWalletInstance(instanceId: string): IRpcWallet;
     static initWeb3(): Promise<void>;
+    private fromWei;
+    private toWei;
+    private hexToUtf8;
+    private toUtf8;
     init(): Promise<void>;
     protected privateKeyToAccount(privateKey: string): IAccount;
     get isConnected(): boolean;
@@ -532,6 +532,7 @@ export declare class Wallet implements IClientWallet {
     increaseBlockTime(value: number): Promise<any>;
     signMessage(msg: string): Promise<string>;
     signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+    recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): Promise<string>;
     token(tokenAddress: string, decimals?: number): Erc20;
     tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
     get utils(): IWalletUtils;
@@ -541,11 +542,12 @@ export declare class Wallet implements IClientWallet {
     getGasPrice(): Promise<BigNumber>;
     transactionCount(): Promise<number>;
     private monitorTransactionEvents;
+    protected convertEthersTransactionReceipt(ethersReceipt: any): TransactionReceipt;
     sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
     getTransaction(transactionHash: string): Promise<Transaction>;
     getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
     call(transaction: Transaction): Promise<any>;
-    decodeErrorMessage(msg: string): any;
+    decodeErrorMessage(msg: string): string;
     soliditySha3(...val: any[]): any;
     toChecksumAddress(address: string): any;
     isAddress(address: string): any;
@@ -563,7 +565,6 @@ export declare class Wallet implements IClientWallet {
     decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
-    get web3(): typeof Web3;
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {
     static rpcWalletRegistry: Record<string, IRpcWallet>;

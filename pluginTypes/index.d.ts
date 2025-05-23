@@ -1582,7 +1582,6 @@ declare module "@ijstech/eth-wallet/utils.ts" {
     import { BigNumber } from "bignumber.js";
     import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "@ijstech/eth-wallet/types.ts";
     import { ISendTxEventsOptions } from "@ijstech/eth-wallet/wallet.ts";
-    export function initWeb3Lib(): any;
     export function sleep(millisecond: number): Promise<unknown>;
     export function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
     export function padLeft(string: string, chars: number, sign?: string): string;
@@ -1719,21 +1718,13 @@ declare module "@ijstech/eth-wallet/providers.json.ts" {
 }
 /// <amd-module name="@ijstech/eth-wallet/wallet.ts" />
 declare module "@ijstech/eth-wallet/wallet.ts" {
-    /*!-----------------------------------------------------------
-    * Copyright (c) IJS Technologies. All rights reserved.
-    * Released under dual AGPLv3/commercial license
-    * https://ijs.network
-    *-----------------------------------------------------------*/
-    let Web3: any;
-    import { IWeb3, ConfirmationObject, TransactionReceipt } from "@ijstech/eth-wallet/web3.ts";
+    import { ConfirmationObject, TransactionReceipt } from "@ijstech/eth-wallet/web3.ts";
     import { BigNumber } from 'bignumber.js';
     import { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";
     import { IAbiDefinition, MessageTypes, TypedMessage } from "@ijstech/eth-wallet/types.ts";
     import { IEventBusRegistry } from "@ijstech/eth-wallet/eventBus.ts";
     export { TransactionReceipt, ConfirmationObject };
     export function toString(value: any): any;
-    export function stringToBytes32(value: string | stringArray): string | string[];
-    export function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     export type stringArray = string | _stringArray;
     export interface _stringArray extends Array<stringArray> {
     }
@@ -2140,7 +2131,6 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         confirmation?: (receipt: any) => void;
     }
     export class Wallet implements IClientWallet {
-        protected _web3: IWeb3;
         protected _ethersProvider: any;
         protected _ethersSigner: any;
         protected _defaultAccount: string;
@@ -2166,6 +2156,10 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         static getClientInstance(): IClientWallet;
         static getRpcWalletInstance(instanceId: string): IRpcWallet;
         static initWeb3(): Promise<void>;
+        private fromWei;
+        private toWei;
+        private hexToUtf8;
+        private toUtf8;
         init(): Promise<void>;
         protected privateKeyToAccount(privateKey: string): IAccount;
         get isConnected(): boolean;
@@ -2253,6 +2247,7 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         increaseBlockTime(value: number): Promise<any>;
         signMessage(msg: string): Promise<string>;
         signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+        recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): Promise<string>;
         token(tokenAddress: string, decimals?: number): Erc20;
         tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
         get utils(): IWalletUtils;
@@ -2262,11 +2257,12 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         getGasPrice(): Promise<BigNumber>;
         transactionCount(): Promise<number>;
         private monitorTransactionEvents;
+        protected convertEthersTransactionReceipt(ethersReceipt: any): TransactionReceipt;
         sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
         getTransaction(transactionHash: string): Promise<Transaction>;
         getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
         call(transaction: Transaction): Promise<any>;
-        decodeErrorMessage(msg: string): any;
+        decodeErrorMessage(msg: string): string;
         soliditySha3(...val: any[]): any;
         toChecksumAddress(address: string): any;
         isAddress(address: string): any;
@@ -2284,7 +2280,6 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
             [K in keyof T]: T[K] extends Function ? K : never;
         }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
-        get web3(): typeof Web3;
     }
     export class RpcWallet extends Wallet implements IRpcWallet {
         static rpcWalletRegistry: Record<string, IRpcWallet>;

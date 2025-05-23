@@ -67,12 +67,12 @@ suite('##Wallet Hardhat', async function() {
         // await wallet2.sendSignedTransaction(signedTx);        
         // assert.strictEqual((await token.balanceOf(wallet.address)).toNumber(), 100);
     });
-    // test('setBlockTime', async function(){        
-    //     let block1 = await wallet.getBlock('latest');
-    //     await wallet.setBlockTime(Utils.toNumber(block1.timestamp) + 60);
-    //     let block2 = await wallet.getBlock('latest');        
-    //     assert.strictEqual((Utils.toNumber(block1.timestamp) + 60), block2.timestamp)
-    // });
+    test('setBlockTime', async function(){        
+        let block1 = await wallet.getBlock('latest');
+        await wallet.setBlockTime(Utils.toNumber(block1.timestamp) + 60);
+        let block2 = await wallet.getBlock('latest');        
+        assert.strictEqual((Utils.toNumber(block1.timestamp) + 60), Number(block2.timestamp))
+    });
     test('Erc20.deploy', async function(){
         // assert.strictEqual(blockNum, 1);
         wallet.defaultAccount = accounts[0];
@@ -100,6 +100,7 @@ suite('##Wallet Hardhat', async function() {
         assert.strictEqual((await erc20.balanceOf(accounts[1])).toNumber(), 1001);        
         let events = await erc20.scanEvents(fromBlock, 'latest', ['Transfer']);
         let event = events[0];        
+
         assert.strictEqual(wallet.utils.fromWei(event.data.value), '1001');
         events = await wallet.scanEvents({fromBlock: fromBlock, toBlock: 'latest', topics: erc20.getAbiTopics(['Transfer']), events: erc20.getAbiEvents()});
         event = events[0];        

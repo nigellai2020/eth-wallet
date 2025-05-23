@@ -45,7 +45,13 @@ suite('##Wallet Sign Typed Data', async function() {
             address: '0x80E2fE38D90608b4Bc253C940dB372F44f290816',
             privateKey: 'd447c9ae6e1e19910a4035c8acfd0a7facdad2c86c7f42050a694bc25a8e66b1'
         })
-        let data = Utils.constructTypedMessageData(domain, customTypes, primaryType, message);
+        // let data2 = Utils.constructTypedMessageData(domain, customTypes, primaryType, message);
+        let data: any = {
+            types: customTypes,
+            primaryType: primaryType,
+            domain: domain,
+            message: message
+        };
         let signature = await wallet2.signTypedDataV4(data);
         
         let paramsHash = await hashTypedData.hashUnstakeParams({
@@ -53,7 +59,7 @@ suite('##Wallet Sign Typed Data', async function() {
             player: accounts[0],
             requestId: 1
         })
-        let signerFromWallet = wallet2.recoverTypedSignatureV4(data, signature);
+        let signerFromWallet = await wallet2.recoverTypedSignatureV4(data, signature);
         let signerFromContract = await hashTypedData.getSigner({
             paramsHash: paramsHash,
             signature: signature
