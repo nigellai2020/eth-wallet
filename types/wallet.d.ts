@@ -488,6 +488,12 @@ export declare class Wallet implements IClientWallet {
     protected _createTxObj(address: string, txData: any, options?: number | BigNumber | TransactionOptions): Promise<any>;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
     protected getSigner(): Promise<any>;
+    protected extractEthersErrorInfo(errorString: string): {
+        action: string;
+        reason: string;
+        errorCode: number;
+        message: string;
+    };
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     methods(...args: any): Promise<any>;
@@ -548,7 +554,8 @@ export declare class Wallet implements IClientWallet {
     getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
     call(transaction: Transaction): Promise<any>;
     decodeErrorMessage(msg: string): string;
-    soliditySha3(...val: any[]): any;
+    protected inferSolidityType(value: any): string;
+    soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): any;
     isAddress(address: string): any;
     multiCall(calls: {

@@ -992,11 +992,11 @@ export class Wallet implements IClientWallet {
 			if (typeof window !== "undefined") {
 				await window['application'].loadScript(currentModuleDir + '/ethers.js');
 			}
-			EthersLib = await initEthersLib();	
+			EthersLib = await initEthersLib();
 			// Utils.initWeb3Lib();
 			if (this._account && this._account.privateKey && !this._account.address) {
 				this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
-			}		
+			}
 		}
 		if (this._provider) {
 			const ethers = EthersLib.ethers;
@@ -1141,7 +1141,7 @@ export class Wallet implements IClientWallet {
 			if (this._accounts) {
 				let result = [];
 				for (let i = 0; i < this._accounts.length; i++) {
-					if (!this._accounts[i].address && this._accounts[i].privateKey) {			
+					if (!this._accounts[i].address && this._accounts[i].privateKey) {
 						this._accounts[i].address = this.privateKeyToAccount(this._accounts[i].privateKey).address;
 					}
 					result.push(this._accounts[i].address)
@@ -1238,34 +1238,34 @@ export class Wallet implements IClientWallet {
 	decodeLog(inputs: any, hexString: string, topics: any): any {
 		try {
 			const eventName = "MyDecodedEvent"; // Dummy name
-	
+
 			const eventInputsAbi = inputs.map(input => ({
 				name: input.name || '',
 				type: input.type,
 				indexed: !!input.indexed,
 			}));
-			
+
 			const ethers = EthersLib.ethers;
 			const iface = new ethers.Interface([{
 				type: "event",
 				name: eventName,
 				inputs: eventInputsAbi,
-				anonymous: true, 
+				anonymous: true,
 			}]);
-	
+
 			const eventFragment = iface.getEvent(eventName);
-	
+
 			if (!eventFragment) {
 				throw new Error("Could not create event fragment from inputs.");
 			}
-			
+
 			const decoded = iface.decodeEventLog(eventFragment, hexString, topics);
 			const result: any = {};
 			let i = 0;
-	
+
 			eventFragment.inputs.forEach((input, index) => {
 				const value = decoded[index];
-	
+
 				result[i] = value; // web3 style numeric index
 				if (input.name) {
 					// web3 style named property
@@ -1278,10 +1278,10 @@ export class Wallet implements IClientWallet {
 				}
 				i++;
 			});
-	
+
 			result.__length__ = i; // web3 style length property
 			return result;
-	
+
 		} catch (error) {
 			console.error("Error decoding log with ethers.js:", error);
 			throw error;
@@ -1339,8 +1339,8 @@ export class Wallet implements IClientWallet {
 		this._provider = value;
 	}
 	async sendSignedTransaction(tx: string): Promise<TransactionReceipt> {
-		await this.init(); 
-	
+		await this.init();
+
 		try {
 			const txResponse = await this._ethersProvider.broadcastTransaction(tx);
 			const ethersReceipt = await txResponse.wait();
@@ -1362,7 +1362,7 @@ export class Wallet implements IClientWallet {
 		});
 		const gasLimit = tx.gasLimit || gas;
 		const nonce = tx.nonce || await this.transactionCount();
-	
+
 		const transaction = {
 			nonce,
 			gasLimit,
@@ -1371,13 +1371,13 @@ export class Wallet implements IClientWallet {
 			value: tx.value || 0,
 			data: tx.data,
 		};
-	
+
 		if (privateKey || (this._account && this._account.privateKey)) {
 			const wallet = new ethers.Wallet(privateKey || this._account.privateKey, this._ethersProvider);
 			const signedTx = await wallet.signTransaction(transaction);
 			return signedTx;
 		}
-	
+
 		const signer = await this.getSigner();
 		const signedTx = await signer.signTransaction(transaction);
 		return signedTx;
@@ -1387,16 +1387,16 @@ export class Wallet implements IClientWallet {
 	};
 	async _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any> {
 		if (!address || !methodName)
-            throw new Error("no contract address or method name");
+			throw new Error("no contract address or method name");
 		const ethers = EthersLib.ethers;
 		const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
 		let result;
-        if (params) {
-            result = await contract[methodName].staticCall(...params);
-        }
-        else {
-            result = await contract[methodName].staticCall();
-        }
+		if (params) {
+			result = await contract[methodName].staticCall(...params);
+		}
+		else {
+			result = await contract[methodName].staticCall();
+		}
 		return result;
 	}
 	protected async _createTxData(
@@ -1423,7 +1423,7 @@ export class Wallet implements IClientWallet {
 	}
 	protected async _createTxObj(
 		address: string,
-		txData: any, 
+		txData: any,
 		options?: number | BigNumber | TransactionOptions
 	) {
 		const ethers = EthersLib.ethers;
@@ -1434,11 +1434,11 @@ export class Wallet implements IClientWallet {
 		if (txData) {
 			tx.data = txData.data;
 		}
-	
+
 		if (options) {
 			if (typeof options === "number" || BigNumber.isBigNumber(options)) {
 				tx.value = typeof options === "number" ? new BigNumber(options) : options;
-			} 
+			}
 			else if (options && typeof options === "object" && "gas" in options || "gasLimit" in options || "value" in options) {
 				if (options.value) tx.value = new BigNumber(options.value);
 				if (options.gas || options.gasLimit) tx.gas = new BigNumber(options.gas || options.gasLimit);
@@ -1446,28 +1446,28 @@ export class Wallet implements IClientWallet {
 				if (options.nonce) tx.nonce = options.nonce;
 			}
 		}
-	
+
 		if (!tx.gas) {
 			tx.gas = Number(await this._ethersProvider.estimateGas({
 				...tx,
 				value: tx.value instanceof BigNumber ? tx.value.toFixed() : tx.value
 			}));
 			tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
-		}	
+		}
 		if (!tx.gasPrice) {
 			tx.gasPrice = new BigNumber((await this._ethersProvider.getFeeData()).gasPrice);
 		}
 		if (!tx.nonce) {
 			tx.nonce = await this.transactionCount();
 		}
-	
-		return tx;		
+
+		return tx;
 	}
 	async _txObj(
-		abiHash: string, 
+		abiHash: string,
 		address: string,
 		methodName: string,
-		params?: any[], 
+		params?: any[],
 		options?: number | BigNumber | TransactionOptions
 	): Promise<Transaction> {
 		let signer = await this.getSigner();
@@ -1497,6 +1497,33 @@ export class Wallet implements IClientWallet {
 		}
 		return signer;
 	}
+	protected extractEthersErrorInfo(errorString: string) {
+		try {
+			const actionMatch = errorString.match(/action="([^"]+)"/);
+			const reasonMatch = errorString.match(/reason="([^"]+)"/);
+			const errorCodeMatch = errorString.match(/"code":\s*(\d+)/);
+			const messageMatch = errorString.match(/"message":\s*"([^"]+)"/);
+
+			if (!actionMatch || !reasonMatch || !errorCodeMatch || !messageMatch) {
+				throw new Error("Failed to extract required fields from error string");
+			}
+
+			const action = actionMatch[1]; 
+			const reason = reasonMatch[1]; 
+			const errorCode = parseInt(errorCodeMatch[1], 10); 
+			const message = messageMatch[1]; 
+
+			return {
+				action,
+				reason,
+				errorCode,
+				message,
+			};
+		} catch (error) {
+			console.error("Error parsing Ethers.js error string:", error);
+			return null;
+		}
+	}
 	async _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt> {
 		let receipt: TransactionReceipt;
 		try {
@@ -1506,7 +1533,7 @@ export class Wallet implements IClientWallet {
 				const ethers = EthersLib.ethers;
 				let signer = await this.getSigner();
 				const factory = new ethers.ContractFactory(abi, bytecode, signer);
-				const contract = await factory.deploy(...params); 
+				const contract = await factory.deploy(...params);
 				const ethersReceipt = await contract.deploymentTransaction().wait();
 				receipt = this.convertEthersTransactionReceipt(ethersReceipt);
 			}
@@ -1514,11 +1541,16 @@ export class Wallet implements IClientWallet {
 				let tx: TransactionOptions = await this._txObj(abiHash, address, methodName, params, options);
 				receipt = await this.sendTransaction(tx);
 			}
-		} 
+		}
 		catch (e) {
 			console.error("Error sending transaction:", methodName);
+			const errorInfo = this.extractEthersErrorInfo(e.message);
+			let error: Error = e;
+			if (errorInfo) {
+				error = new Error(errorInfo.message);
+			}
 			if (this._sendTxEventHandler.transactionHash)
-				this._sendTxEventHandler.transactionHash(e);
+				this._sendTxEventHandler.transactionHash(error);
 		}
 		return receipt;
 	}
@@ -1827,7 +1859,7 @@ export class Wallet implements IClientWallet {
 		})
 	};
 	async recoverSigner(msg: string, signature: string): Promise<string> {
-		await this.init(); 
+		await this.init();
 		const ethers = EthersLib.ethers;
 		try {
 			const signingAddress = ethers.verifyMessage(msg, signature);
@@ -1841,7 +1873,7 @@ export class Wallet implements IClientWallet {
 		await this.init();
 		try {
 			const block = await this._ethersProvider.getBlock(blockHashOrBlockNumber || "latest", returnTransactionObjects);
-	
+
 			return {
 				number: BigInt(block.number),
 				hash: block.hash,
@@ -1882,9 +1914,9 @@ export class Wallet implements IClientWallet {
 		}
 	}
 	async getBlockNumber(): Promise<number> {
-		await this.init(); 
+		await this.init();
 		if (this._ethersProvider) {
-			return await this._ethersProvider.getBlockNumber(); 
+			return await this._ethersProvider.getBlockNumber();
 		}
 		throw new Error("Ethers provider is not initialized");
 	}
@@ -2114,7 +2146,7 @@ export class Wallet implements IClientWallet {
 					transactionHash: log.transactionHash,
 					blockHash: log.blockHash,
 					blockNumber: log.blockNumber,
-					removed: log.removed, 
+					removed: log.removed,
 				}));
 				let result = [];
 				for (let i = 0; i < logs.length; i++) {
@@ -2136,8 +2168,8 @@ export class Wallet implements IClientWallet {
 		return receipt;
 	};
 	async setBlockTime(time: number): Promise<any> {
-		await this.init(); 
-	
+		await this.init();
+
 		try {
 			const method = time > 1000000000 ? 'evm_mine' : 'evm_increaseTime';
 			const result = await this._ethersProvider.send(method, [time]);
@@ -2145,7 +2177,7 @@ export class Wallet implements IClientWallet {
 			if (method === 'evm_increaseTime') {
 				await this._ethersProvider.send('evm_mine', []);
 			}
-	
+
 			return result;
 		} catch (error) {
 			console.error("Error setting block time:", error);
@@ -2153,12 +2185,12 @@ export class Wallet implements IClientWallet {
 		}
 	}
 	async increaseBlockTime(value: number): Promise<any> {
-		await this.init(); 
-	
+		await this.init();
+
 		try {
 			const result = await this._ethersProvider.send("evm_increaseTime", [value]);
 			await this._ethersProvider.send("evm_mine", []);
-	
+
 			return result;
 		} catch (error) {
 			console.error("Error increasing block time:", error);
@@ -2166,7 +2198,7 @@ export class Wallet implements IClientWallet {
 		}
 	}
 	async signMessage(msg: string): Promise<string> {
-		await this.init(); 
+		await this.init();
 		const ethers = EthersLib.ethers;
 		if (this._account && this._account.privateKey) {
 			const wallet = new ethers.Wallet(this._account.privateKey);
@@ -2185,12 +2217,12 @@ export class Wallet implements IClientWallet {
 				return signature;
 			}
 		}
-	
+
 		throw new Error("No valid signer available to sign the message.");
 	};
 	async signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
-		await this.init(); 
-	
+		await this.init();
+
 		try {
 			const signer = await this.getSigner();
 			console.log("signer", data.domain, data.types, data.message);
@@ -2203,14 +2235,14 @@ export class Wallet implements IClientWallet {
 		}
 	}
 	async recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): Promise<string> {
-		await this.init(); 
+		await this.init();
 		try {
 			const ethers = EthersLib.ethers;
 			const recoveredAddress = ethers.verifyTypedData(data.domain as any, data.types, data.message, signature);
 			return this.toChecksumAddress(recoveredAddress);
 		} catch (error) {
 			console.error("Error recovering signer address:", error);
-			throw error; 
+			throw error;
 		}
 	}
 	token(tokenAddress: string, decimals?: number): Erc20 {
@@ -2229,7 +2261,7 @@ export class Wallet implements IClientWallet {
 		return this._utils;
 	};
 	async verifyMessage(account: string, msg: string, signature: string): Promise<boolean> {
-		await this.init(); 
+		await this.init();
 		const ethers = EthersLib.ethers;
 		try {
 			const signingAddress = ethers.verifyMessage(msg, signature);
@@ -2297,30 +2329,30 @@ export class Wallet implements IClientWallet {
 	}
 	protected convertEthersTransactionReceipt(ethersReceipt: any): TransactionReceipt {
 		return {
-            transactionHash: ethersReceipt.hash,
-            transactionIndex: BigInt(ethersReceipt.index || 0),
-            blockHash: ethersReceipt.blockHash,
-            blockNumber: BigInt(ethersReceipt.blockNumber || 0),
-            from: ethersReceipt.from,
-            to: ethersReceipt.to,
-            contractAddress: ethersReceipt.contractAddress || null,
-            cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
-            gasUsed: ethersReceipt.gasUsed,
-            logs: ethersReceipt.logs ?ethersReceipt.logs.map(log => ({
-                address: log.address,
-                data: log.data,
-                topics: [...log.topics],
-                logIndex: BigInt(log.index),
-                transactionIndex: BigInt(ethersReceipt.index),
-                transactionHash: ethersReceipt.hash,
-                blockHash: ethersReceipt.blockHash,
-                blockNumber: BigInt(ethersReceipt.blockNumber),
-                removed: log.removed, 
-            })) : [],
-            logsBloom: ethersReceipt.logsBloom,
-            status: BigInt(ethersReceipt.status || 0),
-            effectiveGasPrice: ethersReceipt.gasPrice,
-        };
+			transactionHash: ethersReceipt.hash,
+			transactionIndex: BigInt(ethersReceipt.index || 0),
+			blockHash: ethersReceipt.blockHash,
+			blockNumber: BigInt(ethersReceipt.blockNumber || 0),
+			from: ethersReceipt.from,
+			to: ethersReceipt.to,
+			contractAddress: ethersReceipt.contractAddress || null,
+			cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
+			gasUsed: ethersReceipt.gasUsed,
+			logs: ethersReceipt.logs ? ethersReceipt.logs.map(log => ({
+				address: log.address,
+				data: log.data,
+				topics: [...log.topics],
+				logIndex: BigInt(log.index),
+				transactionIndex: BigInt(ethersReceipt.index),
+				transactionHash: ethersReceipt.hash,
+				blockHash: ethersReceipt.blockHash,
+				blockNumber: BigInt(ethersReceipt.blockNumber),
+				removed: log.removed,
+			})) : [],
+			logsBloom: ethersReceipt.logsBloom,
+			status: BigInt(ethersReceipt.status || 0),
+			effectiveGasPrice: ethersReceipt.gasPrice,
+		};
 	}
 	async sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt> {
 		await this.init();
@@ -2340,13 +2372,13 @@ export class Wallet implements IClientWallet {
 		ethersReceipt.wait().then((receipt: any) => {
 			this._sendTxEventHandler.confirmation(receipt);
 		})
-		.catch((error: any) => {
-			if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
-				return;
-			}
-			if (this._sendTxEventHandler.transactionHash)
-				this._sendTxEventHandler.transactionHash(error);
-		});
+			.catch((error: any) => {
+				if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+					return;
+				}
+				if (this._sendTxEventHandler.transactionHash)
+					this._sendTxEventHandler.transactionHash(error);
+			});
 		return receipt;
 	}
 	async getTransaction(transactionHash: string): Promise<Transaction> {
@@ -2375,7 +2407,7 @@ export class Wallet implements IClientWallet {
 		}
 	}
 	async call(transaction: Transaction): Promise<any> {
-		await this.init(); 
+		await this.init();
 		const _transaction: any = {
 			to: transaction.to,
 			data: transaction.data,
@@ -2406,8 +2438,8 @@ export class Wallet implements IClientWallet {
 				["string"],
 				"0x" + msg.substring(10)
 			);
-	
-			return decodedMessage[0]; 
+
+			return decodedMessage[0];
 		} catch (error) {
 			console.error("Error decoding message:", error);
 			throw new Error("Failed to decode error message");
@@ -2430,23 +2462,61 @@ export class Wallet implements IClientWallet {
 	// 		}
 	// 	});
 	// }
-	soliditySha3(...val: any[]) {
+	protected inferSolidityType(value: any): string {
+		const ethers = EthersLib.ethers;
+		if (typeof value === 'number' || typeof value === 'bigint' || BigNumber.isBigNumber(value)) {
+			return 'uint256';
+		}
+		if (typeof value === 'boolean') {
+			return 'bool';
+		}
+		if (typeof value === 'string') {
+			if (ethers.isHexString(value)) {
+				if (value.length === 42) {
+					try {
+						ethers.getAddress(value); 
+						return 'address';
+					} catch (e) {
+						return 'bytes';
+					}
+				}
+				return 'bytes';
+			}
+			return 'string';
+		}
+		throw new Error(`Could not infer Solidity type for value: ${JSON.stringify(value)}. Please use { t: 'type', v: 'value' } format.`);
+	}	
+	soliditySha3(...val: any[]): string {
 		if (!EthersLib) {
 			return '';
 		}
 		const ethers = EthersLib.ethers;
 		const types: string[] = [];
 		const values: any[] = [];
-		val.forEach(arg => {
-			if (typeof arg === 'object' && arg !== null && 'type' in arg && 'value' in arg) {
-				types.push(arg.type);
-				values.push(arg.value);
+	
+		val.forEach(item => {
+			if (
+				typeof item === 'object' &&
+				item !== null &&
+				't' in item &&
+				'v' in item &&
+				Object.keys(item).length === 2
+			) {
+				types.push(item.t);
+				values.push(item.v);
 			} else {
-				throw new Error("Invalid input format for soliditySha3. Expected {type: string, value: any}.");
+				types.push(this.inferSolidityType(item));
+				values.push(item);
 			}
 		});
-		const soliditySha3Value = ethers.solidityPackedKeccak256(types, values);
-		return soliditySha3Value;
+	
+		try {
+			const result = ethers.solidityPackedKeccak256(types, values);
+			return result;
+		} catch (error) {
+			console.error("Error in soliditySha3 (ethers.js):", error);
+			throw error;
+		}
 	}
 	toChecksumAddress(address: string) {
 		if (!EthersLib) {
@@ -2576,7 +2646,7 @@ export class Wallet implements IClientWallet {
 			}
 			const iface = new ethers.Interface(contract._abi);
 			return iface.encodeFunctionData(String(methodName), params);
-		}		
+		}
 	}
 	decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
 		contract: T,
