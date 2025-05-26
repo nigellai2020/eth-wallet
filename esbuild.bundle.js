@@ -73,7 +73,7 @@ if (typeof(define) == 'function')
     "type": "lib"
   }, null, 4));
 
-  Fs.copyFileSync('src/lib/ethers/ethers.js', 'dist/ethers.js');
+  Fs.copyFileSync('node_modules/ethers/dist/ethers.js', 'dist/ethers.js');
   let ethers = await readFile('./dist/ethers.js');
   content = `
   define("ethers", (require,exports)=>{
