@@ -28,13 +28,12 @@ async function build() {
     plugins: [],
   }).catch(() => process.exit(1));
   let plugin = await readFile('dist/plugin.js');
-  let web3 = await readFile('src/lib/web3/4.0.3/web3.min.js');
   let bignumber = await readFile('node_modules/bignumber.js/bignumber.js');
   let sha3 = await readFile('src/sha3.js');
   let nacl = await readFile('src/nacl.js');
-//   define("aws-sdk", ()=>{});
-// define("asn1.js", ()=>{});
-// define("bn.js", ()=>{});
+  //   define("aws-sdk", ()=>{});
+  // define("asn1.js", ()=>{});
+  // define("bn.js", ()=>{});
   let content = `
 var __defineAmdValue;
 if (typeof(define) == 'function'){
@@ -65,19 +64,22 @@ if (typeof(define) == 'function'){
   __defineAmdValue = define.amd;
   define.amd = null;
 };
-${web3}
-define("web3", (require,exports)=>{
-    exports['web3'] = window["Web3"];
-});
 if (typeof(define) == 'function')
   define.amd = __defineAmdValue;
 `;
-  Fs.writeFileSync('dist/web3.js', content);
   Fs.writeFileSync('dist/scconfg.json', JSON.stringify({
     "name": packName,
     "version": packVersion,
     "type": "lib"
   }, null, 4));
-  // Fs.copyFileSync('src/lib/web3/1.9.0/web3.min.js', 'dist/web3.js');
+
+  Fs.copyFileSync('src/lib/ethers/ethers.js', 'dist/ethers.js');
+  let ethers = await readFile('./dist/ethers.js');
+  content = `
+  define("ethers", (require,exports)=>{
+  ${ethers}
+  });
+  `;
+  Fs.writeFileSync('dist/ethers.js', content);
 };
 build();

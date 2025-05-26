@@ -9,18 +9,25 @@ import { IGetMerkleLeafDataOptions, IGetMerkleProofOptions, IMerkleTreeOptions, 
 import {IMerkleTreeAbiItem, EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage} from './nodeTypes';
 import { BigNumber } from "bignumber.js";
 import { EIP712DomainAbi } from "./constants";
-let Web3 = Web3Lib();// tslint:disable-line
 
-function Web3Lib() {
-    if (typeof window !== "undefined"){
-        Web3 = window["Web3"];
-        return window["Web3"]
-    }
-    else{
-        let {Web3} = require("./web3");
-        return Web3;
-    };
-};
+let EthersLib: any;
+if (typeof window !== "undefined") {
+    EthersLib = window["ethers"];
+} else {
+    EthersLib = require("ethers");
+}
+// let Web3 = Web3Lib();// tslint:disable-line
+
+// function Web3Lib() {
+//     if (typeof window !== "undefined"){
+//         Web3 = window["Web3"];
+//         return window["Web3"]
+//     }
+//     else{
+//         let {Web3} = require("./web3");
+//         return Web3;
+//     };
+// };
 export function sleep(millisecond: number) {
     return new Promise(function (resolve) {
         setTimeout(function () {
@@ -53,44 +60,63 @@ export function stringToBytes32(value: string | stringArray): string | string[] 
             result.push(stringToBytes32(value[i]));
         }
         return result;
-    }
-    else {
-        if (value.length == 66 && value.startsWith('0x'))
-            return value;
-        return Web3.utils.padRight(Web3.utils.asciiToHex(value), 64)
+    } else {
+        if (value.length === 66 && value.startsWith('0x')) {
+            return value; 
+        }
+
+        let hex = '0x' + Array.from(value)
+            .map(char => char.charCodeAt(0).toString(16).padStart(2, '0'))
+            .join('');
+
+        if (hex.length < 66) {
+            hex = hex.padEnd(66, '0');
+        }
+        return hex;
     }
 }
 export function stringToBytes(value: string | stringArray, nByte?: number): string | string[] {
     if (Array.isArray(value)) {
         let result = [];
         for (let i = 0; i < value.length; i++) {
-            result.push(stringToBytes(value[i]));
+            result.push(stringToBytes(value[i], nByte));
         }
         return result;
-    }
-    else {
+    } else {
         if (nByte) {
-            if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
+            if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value)) {
                 return value;
+            }
             else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
-                if (value.length >= ((nByte * 2) + 2))
+                if (value.length >= ((nByte * 2) + 2)) {
                     return value;
-                else
-                    return "0x" + value.substring(2) + "00".repeat(nByte - ((value.length - 2) / 2));
-            } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
-                if (value.length >= (nByte * 2))
+                } else {
+                    return "0x" + value.substring(2).padEnd(nByte * 2, "0");
+                }
+            }
+            else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
+                if (value.length >= (nByte * 2)) {
                     return value;
-                else
-                    return "0x" + value + "00".repeat(nByte - (value.length / 2));
-            } else
-                return Web3.utils.padRight(Web3.utils.asciiToHex(value), nByte * 2)
+                } else {
+                    return "0x" + value.padEnd(nByte * 2, "0");
+                }
+            }
+            else {
+                const hex = "0x" + Array.from(value)
+                    .map(char => char.charCodeAt(0).toString(16).padStart(2, "0"))
+                    .join("");
+                return hex.padEnd(nByte * 2 + 2, "0");
+            }
         } else {
-            if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+            if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
                 return value;
-            else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+            } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
                 return "0x" + value;
-            else
-                return Web3.utils.asciiToHex(value)
+            } else {
+                return "0x" + Array.from(value)
+                    .map(char => char.charCodeAt(0).toString(16).padStart(2, "0"))
+                    .join("");
+            }
         }
     }
 }
@@ -106,7 +132,22 @@ export function bytes32ToAddress(value: string): string {
     return '0x' + value.replace('0x000000000000000000000000', '');
 }
 export function bytes32ToString(value: string): string {
-    return Web3.utils.hexToUtf8(value);
+    if (!value.startsWith("0x")) {
+        throw new Error("Invalid bytes32 value. It must start with '0x'.");
+    }
+
+    const hex = value.slice(2);
+
+    let result = "";
+    for (let i = 0; i < hex.length; i += 2) {
+        const charCode = parseInt(hex.substring(i, i + 2), 16);
+        if (charCode === 0) {
+            break; 
+        }
+        result += String.fromCharCode(charCode);
+    }
+
+    return result;
 }
 export function addressToBytes32Right(value: string, prefix?: boolean): string {
     let v = value
@@ -171,10 +212,23 @@ export function constructTypedMessageData(
 }
 
 export function soliditySha3(...val: any[]) {
-    return Web3.utils.soliditySha3(...val);
+    const ethers = EthersLib.ethers;
+    const types: string[] = [];
+    const values: any[] = [];
+    val.forEach(arg => {
+        if (typeof arg === 'object' && arg !== null && 'type' in arg && 'value' in arg) {
+            types.push(arg.type);
+            values.push(arg.value);
+        } else {
+            throw new Error("Invalid input format for soliditySha3. Expected {type: string, value: any}.");
+        }
+    });
+    const soliditySha3Value = ethers.solidityPackedKeccak256(types, values);
+    return soliditySha3Value;
 }
 export function toChecksumAddress(address: string) {
-    return Web3.utils.toChecksumAddress(address);
+    const ethers = EthersLib.ethers;
+    return ethers.getAddress(address);
 }
 
 export function getSha3HashBufferFunc(wallet: Wallet, abi: IMerkleTreeAbiItem[]) {

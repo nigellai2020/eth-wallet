@@ -4806,9 +4806,6 @@ var __spreadValues = (a, b) => {
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[Object.keys(fn)[0]])(fn = 0)), res;
-};
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
@@ -4828,34 +4825,6 @@ var __reExport = (target, module2, desc) => {
 var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
-
-// src/web3.ts
-var web3_exports = {};
-__export(web3_exports, {
-  Web3: () => Web3
-});
-var eth, utils, Web3;
-var init_web3 = __esm({
-  "src/web3.ts"() {
-    if (typeof module == "object" && module["exports"]) {
-      eth = require("web3-eth");
-      utils = require("web3-utils");
-    }
-    Web3 = class {
-      constructor(provider) {
-        this.utils = utils;
-        this.eth = new eth(provider);
-      }
-      get currentProvider() {
-        return this.eth.currentProvider;
-      }
-      setProvider(provider) {
-        return this.eth.setProvider(provider);
-      }
-    };
-    Web3.utils = utils;
-  }
-});
 
 // node_modules/@ijstech/eth-contract/lib/index.js
 var require_lib = __commonJS({
@@ -5217,8 +5186,28 @@ __export(exports, {
   getERC20Allowance: () => getERC20Allowance
 });
 
+// src/web3.ts
+var eth;
+var utils;
+if (typeof module == "object" && module["exports"]) {
+  eth = require("web3-eth");
+  utils = require("web3-utils");
+}
+var Web3 = class {
+  constructor(provider) {
+    this.utils = utils;
+    this.eth = new eth(provider);
+  }
+  get currentProvider() {
+    return this.eth.currentProvider;
+  }
+  setProvider(provider) {
+    return this.eth.setProvider(provider);
+  }
+};
+Web3.utils = utils;
+
 // src/wallet.ts
-init_web3();
 var import_bignumber3 = __toModule(require("bignumber.js"));
 
 // src/contracts/index.ts
@@ -5886,7 +5875,6 @@ __export(utils_exports, {
   constructTypedMessageData: () => constructTypedMessageData,
   fromDecimals: () => fromDecimals,
   hexToString: () => hexToString,
-  initWeb3Lib: () => initWeb3Lib,
   nullAddress: () => nullAddress,
   numberToBytes32: () => numberToBytes32,
   padLeft: () => padLeft,
@@ -5957,16 +5945,11 @@ var RpcWalletEvent;
 })(RpcWalletEvent || (RpcWalletEvent = {}));
 
 // src/utils.ts
-var Web32 = initWeb3Lib();
-function initWeb3Lib() {
-  if (typeof window !== "undefined") {
-    Web32 = window["Web3"];
-    return window["Web3"];
-  } else {
-    let { Web3: Web34 } = (init_web3(), web3_exports);
-    return Web34;
-  }
-  ;
+var EthersLib;
+if (typeof window !== "undefined") {
+  EthersLib = window["ethers"];
+} else {
+  EthersLib = require("ethers");
 }
 function sleep(millisecond) {
   return new Promise(function(resolve) {
@@ -5997,41 +5980,51 @@ function stringToBytes32(value) {
     }
     return result;
   } else {
-    if (value.length == 66 && value.startsWith("0x"))
+    if (value.length === 66 && value.startsWith("0x")) {
       return value;
-    return Web32.utils.padRight(Web32.utils.asciiToHex(value), 64);
+    }
+    let hex = "0x" + Array.from(value).map((char) => char.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+    if (hex.length < 66) {
+      hex = hex.padEnd(66, "0");
+    }
+    return hex;
   }
 }
 function stringToBytes(value, nByte) {
   if (Array.isArray(value)) {
     let result = [];
     for (let i = 0; i < value.length; i++) {
-      result.push(stringToBytes(value[i]));
+      result.push(stringToBytes(value[i], nByte));
     }
     return result;
   } else {
     if (nByte) {
-      if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value))
+      if (new RegExp(`^0x[0-9a-fA-F]{${2 * nByte}}$`).test(value)) {
         return value;
-      else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
-        if (value.length >= nByte * 2 + 2)
+      } else if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
+        if (value.length >= nByte * 2 + 2) {
           return value;
-        else
-          return "0x" + value.substring(2) + "00".repeat(nByte - (value.length - 2) / 2);
+        } else {
+          return "0x" + value.substring(2).padEnd(nByte * 2, "0");
+        }
       } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
-        if (value.length >= nByte * 2)
+        if (value.length >= nByte * 2) {
           return value;
-        else
-          return "0x" + value + "00".repeat(nByte - value.length / 2);
-      } else
-        return Web32.utils.padRight(Web32.utils.asciiToHex(value), nByte * 2);
+        } else {
+          return "0x" + value.padEnd(nByte * 2, "0");
+        }
+      } else {
+        const hex = "0x" + Array.from(value).map((char) => char.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+        return hex.padEnd(nByte * 2 + 2, "0");
+      }
     } else {
-      if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value))
+      if (/^0x([0-9a-fA-F][0-9a-fA-F])*$/.test(value)) {
         return value;
-      else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value))
+      } else if (/^([0-9a-fA-F][0-9a-fA-F])+$/.test(value)) {
         return "0x" + value;
-      else
-        return Web32.utils.asciiToHex(value);
+      } else {
+        return "0x" + Array.from(value).map((char) => char.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+      }
     }
   }
 }
@@ -6047,7 +6040,19 @@ function bytes32ToAddress(value) {
   return "0x" + value.replace("0x000000000000000000000000", "");
 }
 function bytes32ToString(value) {
-  return Web32.utils.hexToUtf8(value);
+  if (!value.startsWith("0x")) {
+    throw new Error("Invalid bytes32 value. It must start with '0x'.");
+  }
+  const hex = value.slice(2);
+  let result = "";
+  for (let i = 0; i < hex.length; i += 2) {
+    const charCode = parseInt(hex.substring(i, i + 2), 16);
+    if (charCode === 0) {
+      break;
+    }
+    result += String.fromCharCode(charCode);
+  }
+  return result;
 }
 function addressToBytes32Right(value, prefix) {
   let v = value;
@@ -6103,10 +6108,23 @@ function constructTypedMessageData(domain, customTypes, primaryType, message) {
   return data;
 }
 function soliditySha3(...val) {
-  return Web32.utils.soliditySha3(...val);
+  const ethers = EthersLib.ethers;
+  const types = [];
+  const values = [];
+  val.forEach((arg) => {
+    if (typeof arg === "object" && arg !== null && "type" in arg && "value" in arg) {
+      types.push(arg.type);
+      values.push(arg.value);
+    } else {
+      throw new Error("Invalid input format for soliditySha3. Expected {type: string, value: any}.");
+    }
+  });
+  const soliditySha3Value = ethers.solidityPackedKeccak256(types, values);
+  return soliditySha3Value;
 }
 function toChecksumAddress(address) {
-  return Web32.utils.toChecksumAddress(address);
+  const ethers = EthersLib.ethers;
+  return ethers.getAddress(address);
 }
 function registerSendTxEvents(sendTxEventHandlers) {
   const wallet = Wallet.getClientInstance();
@@ -6315,7 +6333,7 @@ var providers_json_default = {
 };
 
 // src/wallet.ts
-var Web33 = initWeb3Lib2();
+var EthersLib2;
 var Web3Modal;
 var RequireJS = {
   require(reqs, callback) {
@@ -6326,15 +6344,23 @@ var currentModuleDir;
 if (typeof window !== "undefined" && window["application"]) {
   currentModuleDir = window["application"].currentModuleDir;
 }
-function initWeb3Lib2() {
+function requireAsync(modules) {
+  return new Promise((resolve, reject) => {
+    RequireJS.require(modules, (result) => {
+      resolve(result);
+    });
+  });
+}
+async function initEthersLib() {
   if (typeof window !== "undefined") {
-    Web33 = window["Web3"];
-    return window["Web3"];
+    const ethers = await requireAsync(["ethers"]);
+    window["ethers"] = ethers;
+    EthersLib2 = ethers;
+    return ethers;
   } else {
-    let { Web3: Web34 } = (init_web3(), web3_exports);
-    return Web34;
+    EthersLib2 = require("ethers");
+    return EthersLib2;
   }
-  ;
 }
 function initWeb3ModalLib(callback) {
   if (typeof window !== "undefined") {
@@ -6418,9 +6444,6 @@ var EthereumProvider = class {
     if (hasAccounts) {
       this._selectedAddress = this.toChecksumAddress(accounts[0]);
       accountAddress = this._selectedAddress;
-      if (this.wallet.web3) {
-        this.wallet.web3.selectedAddress = this._selectedAddress;
-      }
       this.wallet.account = {
         address: accountAddress
       };
@@ -6719,9 +6742,6 @@ var Web3ModalProvider = class extends EthereumProvider {
       if (hasAccounts) {
         let accountAddress = this._provider.accounts[0];
         this._selectedAddress = self.toChecksumAddress(accountAddress);
-        if (self.wallet.web3) {
-          self.wallet.web3.selectedAddress = this._selectedAddress;
-        }
         this.wallet.account = {
           address: accountAddress
         };
@@ -6773,8 +6793,21 @@ var _Wallet = class {
       this._account = account;
     }
     ;
-    if (Web33)
+    if (EthersLib2) {
       this.init();
+    }
+    this._utils = {
+      fromDecimals,
+      fromWei: this.fromWei,
+      hexToUtf8: this.hexToUtf8,
+      sha3: this.sha3,
+      toDecimals,
+      toString,
+      toUtf8: this.toUtf8,
+      toWei: this.toWei,
+      stringToBytes,
+      stringToBytes32
+    };
   }
   static getInstance() {
     return _Wallet.instance;
@@ -6786,39 +6819,52 @@ var _Wallet = class {
     return _Wallet._rpcWalletPoolMap[instanceId];
   }
   static async initWeb3() {
-    if (!Web33 && currentModuleDir && !window["Web3"]) {
-      await window["application"].loadScript(currentModuleDir + "/web3.js");
-      Web33 = initWeb3Lib2();
-      initWeb3Lib();
-    }
-    ;
+  }
+  fromWei(value, unit) {
+    const ethers = EthersLib2.ethers;
+    const bigValue = import_bignumber3.BigNumber.isBigNumber(value) ? value : new import_bignumber3.BigNumber(value);
+    const convertedValue = ethers.formatUnits(bigValue.toFixed(), unit);
+    const formattedValue = convertedValue.endsWith(".0") ? convertedValue.slice(0, -2) : convertedValue;
+    return formattedValue;
+  }
+  toWei(value, unit) {
+    const ethers = EthersLib2.ethers;
+    const result = ethers.parseUnits(value, unit);
+    return result.toString();
+  }
+  hexToUtf8(value) {
+    const ethers = EthersLib2.ethers;
+    return ethers.toUtf8String(value);
+  }
+  toUtf8(value) {
+    const ethers = EthersLib2.ethers;
+    return ethers.toUtf8String(value);
   }
   async init() {
-    if (!this._web3) {
-      if (!Web33 && currentModuleDir && !window["Web3"]) {
-        await window["application"].loadScript(currentModuleDir + "/web3.js");
-        Web33 = initWeb3Lib2();
-        initWeb3Lib();
+    if (!EthersLib2) {
+      if (typeof window !== "undefined") {
+        await window["application"].loadScript(currentModuleDir + "/ethers.js");
       }
-      ;
-      this._web3 = new Web33(this._provider);
-      this._web3.eth.transactionConfirmationBlocks = 1;
-      this._utils = {
-        fromDecimals,
-        fromWei: this._web3.utils.fromWei,
-        hexToUtf8: this._web3.utils.hexToUtf8,
-        sha3: this._web3.utils.sha3,
-        toDecimals,
-        toString,
-        toUtf8: this._web3.utils.toUtf8,
-        toWei: this._web3.utils.toWei,
-        stringToBytes,
-        stringToBytes32
-      };
-      if (this._account && this._account.privateKey && !this._account.address)
-        this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+      EthersLib2 = await initEthersLib();
+      if (this._account && this._account.privateKey && !this._account.address) {
+        this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
+      }
     }
-    ;
+    if (this._provider) {
+      const ethers = EthersLib2.ethers;
+      if (typeof this._provider === "string") {
+        this._ethersProvider = new ethers.JsonRpcProvider(this._provider);
+      } else {
+        this._ethersProvider = new ethers.BrowserProvider(this._provider);
+      }
+    }
+  }
+  privateKeyToAccount(privateKey) {
+    const ethersWallet = new EthersLib2.Wallet(privateKey);
+    return {
+      address: ethersWallet.address,
+      privateKey: ethersWallet.privateKey
+    };
   }
   get isConnected() {
     return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
@@ -6947,28 +6993,32 @@ var _Wallet = class {
       if (this._accounts) {
         let result = [];
         for (let i = 0; i < this._accounts.length; i++) {
-          if (!this._accounts[i].address && this._accounts[i].privateKey)
-            this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
+          if (!this._accounts[i].address && this._accounts[i].privateKey) {
+            this._accounts[i].address = this.privateKeyToAccount(this._accounts[i].privateKey).address;
+          }
           result.push(this._accounts[i].address);
         }
         return resolve(result);
       } else if (this._account)
         return resolve([this._account.address]);
-      resolve(this._web3.eth.getAccounts());
+      if (this._ethersProvider) {
+        const hardhatAccounts = await this._ethersProvider.listAccounts();
+        const addresses = hardhatAccounts.map((account) => account.address);
+        resolve(addresses);
+      }
     });
   }
   get address() {
     if (this.clientSideProvider) {
       return this.clientSideProvider.selectedAddress;
-    } else if (this._web3) {
+    } else if (EthersLib2) {
       if (this._account && this._account.privateKey) {
-        if (!this._account.address)
-          this._account.address = this._web3.eth.accounts.privateKeyToAccount(this._account.privateKey).address;
+        if (!this._account.address) {
+          this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
+        }
         return this._account.address;
-      } else if (this._web3.selectedAddress) {
-        return this._web3.selectedAddress;
-      } else if (this._web3.eth.defaultAccount) {
-        return this._web3.eth.defaultAccount;
+      } else if (this._defaultAccount) {
+        return this._defaultAccount;
       }
       if (!this._account) {
         this._account = this.createAccount();
@@ -6984,8 +7034,7 @@ var _Wallet = class {
     };
   }
   set account(value) {
-    if (this._web3)
-      this._web3.eth.defaultAccount = "";
+    this._defaultAccount = "";
     this._account = value;
   }
   get infuraId() {
@@ -7016,454 +7065,305 @@ var _Wallet = class {
     }
   }
   createAccount() {
-    if (this._web3) {
-      let acc = this._web3.eth.accounts.create();
+    if (EthersLib2) {
+      let acc = EthersLib2.Wallet.createRandom();
+      this._accounts = this._accounts || [];
+      this._accounts.push({
+        address: acc.address,
+        privateKey: acc.privateKey
+      });
       return {
         address: acc.address,
         privateKey: acc.privateKey
       };
     }
-    ;
   }
   decodeLog(inputs, hexString, topics) {
-    return this.web3.eth.abi.decodeLog(inputs, hexString, topics);
+    try {
+      const eventName = "MyDecodedEvent";
+      const eventInputsAbi = inputs.map((input) => ({
+        name: input.name || "",
+        type: input.type,
+        indexed: !!input.indexed
+      }));
+      const ethers = EthersLib2.ethers;
+      const iface = new ethers.Interface([{
+        type: "event",
+        name: eventName,
+        inputs: eventInputsAbi,
+        anonymous: true
+      }]);
+      const eventFragment = iface.getEvent(eventName);
+      if (!eventFragment) {
+        throw new Error("Could not create event fragment from inputs.");
+      }
+      const decoded = iface.decodeEventLog(eventFragment, hexString, topics);
+      const result = {};
+      let i = 0;
+      eventFragment.inputs.forEach((input, index) => {
+        const value = decoded[index];
+        result[i] = value;
+        if (input.name) {
+          if (typeof value === "bigint") {
+            result[input.name] = value.toString();
+          } else {
+            result[input.name] = value;
+          }
+        }
+        i++;
+      });
+      result.__length__ = i;
+      return result;
+    } catch (error) {
+      console.error("Error decoding log with ethers.js:", error);
+      throw error;
+    }
   }
   get defaultAccount() {
     if (this._account)
       return this._account.address;
-    else if (this._web3)
-      return this._web3.eth.defaultAccount;
+    else {
+      return this._defaultAccount;
+    }
   }
   set defaultAccount(address) {
+    this._defaultAccount = address;
     if (this._accounts) {
       for (let i = 0; i < this._accounts.length; i++) {
-        if (!this._accounts[i].address && this._accounts[i].privateKey && this._web3)
-          this._accounts[i].address = this._web3.eth.accounts.privateKeyToAccount(this._accounts[i].privateKey).address;
+        if (!this._accounts[i].address && this._accounts[i].privateKey && EthersLib2) {
+          this._accounts[i].address = this.privateKeyToAccount(this._accounts[i].privateKey).address;
+        }
         if (this._accounts[i].address && this._accounts[i].address.toLowerCase() == address.toLowerCase()) {
           this._account = this._accounts[i];
+          if (EthersLib2) {
+            const ethers = EthersLib2.ethers;
+            this._ethersSigner = new ethers.Wallet(this._account.privateKey, this._ethersProvider);
+          }
           return;
         }
       }
     } else if (this._account && this._account.address && this._account.address.toLowerCase() == address.toLowerCase()) {
       return;
-    } else if (this._web3)
-      this._web3.eth.defaultAccount = address;
+    }
   }
   async getChainId() {
     await this.init();
-    if (!this.chainId)
-      this.chainId = Number(await this._web3.eth.getChainId());
+    if (!this.chainId) {
+      const network = await this._ethersProvider.getNetwork();
+      this.chainId = Number(network.chainId);
+    }
     return this.chainId;
   }
   get provider() {
     return this._provider;
   }
   set provider(value) {
-    if (this._web3)
-      this._web3.setProvider(value);
+    if (EthersLib2) {
+      const ethers = EthersLib2.ethers;
+      if (typeof value === "string") {
+        this._ethersProvider = new ethers.JsonRpcProvider(value);
+      } else {
+        this._ethersProvider = new ethers.BrowserProvider(value);
+      }
+    }
     this._provider = value;
   }
   async sendSignedTransaction(tx) {
     await this.init();
-    let _web3 = this._web3;
-    return _web3.eth.sendSignedTransaction(tx);
+    try {
+      const txResponse = await this._ethersProvider.broadcastTransaction(tx);
+      const ethersReceipt = await txResponse.wait();
+      const receipt = this.convertEthersTransactionReceipt(ethersReceipt);
+      return receipt;
+    } catch (error) {
+      console.error("Error sending signed transaction:", error);
+      throw error;
+    }
   }
   async signTransaction(tx, privateKey) {
     await this.init();
-    let _web3 = this._web3;
-    let gas = tx.gas || Number(await _web3.eth.estimateGas({
+    const ethers = EthersLib2.ethers;
+    const gas = tx.gas || await this._ethersProvider.estimateGas({
       from: this.address,
       to: tx.to,
       data: tx.data
-    }));
-    let gasLimit = tx.gasLimit || gas;
-    let nonce = tx.nonce || await _web3.eth.getTransactionCount(this.address);
+    });
+    const gasLimit = tx.gasLimit || gas;
+    const nonce = tx.nonce || await this.transactionCount();
+    const transaction = {
+      nonce,
+      gasLimit,
+      gasPrice: tx.gasPrice || (await this._ethersProvider.getFeeData()).gasPrice,
+      to: tx.to,
+      value: tx.value || 0,
+      data: tx.data
+    };
     if (privateKey || this._account && this._account.privateKey) {
-      let signedTx = await _web3.eth.accounts.signTransaction({
-        nonce,
-        gas,
-        gasLimit,
-        data: tx.data,
-        from: this.address,
-        to: tx.to
-      }, privateKey ? privateKey : this._account.privateKey);
-      return signedTx.rawTransaction;
-    } else {
-      let t = await _web3.eth.signTransaction({
-        from: this.address,
-        nonce,
-        gasLimit,
-        gas,
-        to: tx.to,
-        data: tx.data
-      }, this.address);
-      return t.raw;
+      const wallet = new ethers.Wallet(privateKey || this._account.privateKey, this._ethersProvider);
+      const signedTx2 = await wallet.signTransaction(transaction);
+      return signedTx2;
     }
+    const signer = await this.getSigner();
+    const signedTx = await signer.signTransaction(transaction);
+    return signedTx;
   }
   registerSendTxEvents(eventsOptions) {
     this._sendTxEventHandler = eventsOptions;
   }
-  getContract(abiHash) {
-    let contract;
-    if (!this._abiContractDict[abiHash]) {
-      contract = this.newContract(this._abiHashDict[abiHash]);
-      this._abiContractDict[abiHash] = contract;
-      return contract;
-    }
-    ;
-    return this._abiContractDict[abiHash];
-  }
   async _call(abiHash, address, methodName, params, options) {
     if (!address || !methodName)
       throw new Error("no contract address or method name");
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let tx = {};
-    tx.to = address;
-    tx.data = method.encodeABI();
-    if (options) {
-      if (typeof options === "number") {
-        tx.value = new import_bignumber3.BigNumber(options);
-      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
-        tx.value = options;
-      } else if (options.value) {
-        if (typeof options.value === "number") {
-          tx.value = new import_bignumber3.BigNumber(options.value);
-        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
-          tx.value = options.value;
-        }
-      }
+    const ethers = EthersLib2.ethers;
+    const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
+    let result;
+    if (params) {
+      result = await contract[methodName].staticCall(...params);
+    } else {
+      result = await contract[methodName].staticCall();
     }
-    options = options;
-    tx.from = options && options.from || this.address;
-    if (options && (options.gas || options.gasLimit)) {
-      tx.gas = options.gas || options.gasLimit;
-    }
-    let result = await method.call(__spreadValues({ from: this.address }, tx));
     return result;
   }
-  _getMethod(abiHash, address, methodName, params) {
-    let contract = this.getContract(abiHash);
-    params = params || [];
-    let bytecode;
-    if (!methodName) {
-      bytecode = params.shift();
-      contract.options.address = void 0;
-    } else
-      contract.options.address = address;
-    let abi = this._abiHashDict[abiHash];
-    let methodAbi = abi.find((e) => methodName ? e.name == methodName : e.type == "constructor");
-    if (methodAbi)
-      for (let i = 0; i < methodAbi.inputs.length; i++) {
-        if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-          params[i] = params[i] || "";
-          if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-            let a = [];
-            for (let k = 0; k < params[i].length; k++) {
-              let s = params[i][k] || "";
-              if (!params[i][k])
-                a.push("0x");
-              else
-                a.push(s);
-            }
-            params[i] = a;
-          } else if (!params[i])
-            params[i] = "0x";
-        } else if (methodAbi.inputs[i].type == "address") {
-          if (!params[i])
-            params[i] = nullAddress;
-        }
-      }
-    let method;
-    if (!methodName)
-      method = contract.deploy({ data: bytecode, arguments: params });
-    else
-      method = contract.methods[methodName].apply(this, params);
-    return method;
-  }
-  async _txObj(abiHash, address, methodName, params, options) {
-    var _a;
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let tx = {};
-    tx.from = this.address;
-    tx.to = address || void 0;
-    tx.data = method.encodeABI();
-    if (options) {
-      if (typeof options === "number") {
-        tx.value = new import_bignumber3.BigNumber(options);
-        options = void 0;
-      } else if (import_bignumber3.BigNumber.isBigNumber(options)) {
-        tx.value = options;
-        options = void 0;
-      } else if (options.value) {
-        if (typeof options.value === "number") {
-          tx.value = new import_bignumber3.BigNumber(options.value);
-        } else if (import_bignumber3.BigNumber.isBigNumber(options.value)) {
-          tx.value = options.value;
-        }
+  async _createTxData(signer, abiHash, address, methodName, params) {
+    const abi = this._abiHashDict[abiHash];
+    const ethers = EthersLib2.ethers;
+    const contract = new ethers.Contract(address, abi, signer);
+    const txParams = [];
+    for (let item of params) {
+      if (item instanceof import_bignumber3.BigNumber) {
+        txParams.push(item.toFixed());
+      } else {
+        txParams.push(item);
       }
     }
-    options = options;
-    if (options && (options.gas || options.gasLimit)) {
-      tx.gas = options.gas || options.gasLimit;
-    } else {
-      try {
-        tx.gas = Number(await method.estimateGas({ from: this.address, to: address ? address : void 0, value: (_a = tx.value) == null ? void 0 : _a.toFixed() }));
-        tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
-      } catch (e) {
-        if (e.message == "Returned error: out of gas") {
-          console.log(e.message);
-          tx.gas = Math.round(await this.blockGasLimit() * 0.5);
-        } else {
-          if (e.message.includes("Returned error: execution reverted: ")) {
-            throw e;
-          }
-          try {
-            await method.call(__spreadValues({ from: this.address }, tx));
-          } catch (e2) {
-            if (e2.message.includes("VM execution error.")) {
-              var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
-              if (msg && msg.length) {
-                msg = msg[0];
-                if (msg.startsWith("0x08c379a")) {
-                  msg = this.decodeErrorMessage(msg);
-                  throw new Error("Returned error: execution reverted: " + msg);
-                }
-              }
-            }
-          }
-          throw e;
-        }
+    const txData = await contract[methodName].populateTransaction(...txParams);
+    return txData;
+  }
+  async _createTxObj(address, txData, options) {
+    const ethers = EthersLib2.ethers;
+    const tx = {
+      to: address,
+      from: this.address
+    };
+    if (txData) {
+      tx.data = txData.data;
+    }
+    if (options) {
+      if (typeof options === "number" || import_bignumber3.BigNumber.isBigNumber(options)) {
+        tx.value = typeof options === "number" ? new import_bignumber3.BigNumber(options) : options;
+      } else if (options && typeof options === "object" && "gas" in options || "gasLimit" in options || "value" in options) {
+        if (options.value)
+          tx.value = new import_bignumber3.BigNumber(options.value);
+        if (options.gas || options.gasLimit)
+          tx.gas = new import_bignumber3.BigNumber(options.gas || options.gasLimit);
+        if (options.gasPrice)
+          tx.gasPrice = new import_bignumber3.BigNumber(options.gasPrice);
+        if (options.nonce)
+          tx.nonce = options.nonce;
       }
+    }
+    if (!tx.gas) {
+      tx.gas = Number(await this._ethersProvider.estimateGas(__spreadProps(__spreadValues({}, tx), {
+        value: tx.value instanceof import_bignumber3.BigNumber ? tx.value.toFixed() : tx.value
+      })));
+      tx.gas = Math.min(await this.blockGasLimit(), Math.round(tx.gas * 1.5));
     }
     if (!tx.gasPrice) {
-      tx.gasPrice = await this.getGasPrice();
+      tx.gasPrice = new import_bignumber3.BigNumber((await this._ethersProvider.getFeeData()).gasPrice);
     }
-    if (options && options.nonce) {
-      tx.nonce = options.nonce;
-    } else {
+    if (!tx.nonce) {
       tx.nonce = await this.transactionCount();
     }
     return tx;
   }
+  async _txObj(abiHash, address, methodName, params, options) {
+    let signer = await this.getSigner();
+    const txData = await this._createTxData(signer, abiHash, address, methodName, params);
+    const txObj = await this._createTxObj(address, txData, options);
+    return txObj;
+  }
+  async getSigner() {
+    let signer;
+    const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
+    if (isClientSide) {
+      const ethers = EthersLib2.ethers;
+      this._ethersProvider = new ethers.BrowserProvider(this.clientSideProvider.provider);
+      signer = this._ethersProvider.getSigner();
+    } else if (this._accounts && this._accounts.some((v) => v.address == this.address)) {
+      const account = this._accounts.find((v) => v.address == this.address);
+      const ethers = EthersLib2.ethers;
+      signer = new ethers.Wallet(account.privateKey, this._ethersProvider);
+    } else if (this._account && this._account.privateKey) {
+      const ethers = EthersLib2.ethers;
+      signer = new ethers.Wallet(this._account.privateKey, this._ethersProvider);
+    } else {
+      signer = await this._ethersProvider.getSigner(this.address);
+    }
+    return signer;
+  }
+  extractEthersErrorInfo(errorString) {
+    try {
+      const actionMatch = errorString.match(/action="([^"]+)"/);
+      const reasonMatch = errorString.match(/reason="([^"]+)"/);
+      const errorCodeMatch = errorString.match(/"code":\s*(\d+)/);
+      const messageMatch = errorString.match(/"message":\s*"([^"]+)"/);
+      if (!actionMatch || !reasonMatch || !errorCodeMatch || !messageMatch) {
+        throw new Error("Failed to extract required fields from error string");
+      }
+      const action = actionMatch[1];
+      const reason = reasonMatch[1];
+      const errorCode = parseInt(errorCodeMatch[1], 10);
+      const message = messageMatch[1];
+      return {
+        action,
+        reason,
+        errorCode,
+        message
+      };
+    } catch (error) {
+      console.error("Error parsing Ethers.js error string:", error);
+      return null;
+    }
+  }
   async _send(abiHash, address, methodName, params, options) {
-    let tx = await this._txObj(abiHash, address, methodName, params, options);
-    let receipt = await this.sendTransaction(tx);
+    let receipt;
+    try {
+      if (!methodName) {
+        const bytecode = params.shift();
+        const abi = this._abiHashDict[abiHash];
+        const ethers = EthersLib2.ethers;
+        let signer = await this.getSigner();
+        const factory = new ethers.ContractFactory(abi, bytecode, signer);
+        const contract = await factory.deploy(...params);
+        const ethersReceipt = await contract.deploymentTransaction().wait();
+        receipt = this.convertEthersTransactionReceipt(ethersReceipt);
+      } else {
+        let tx = await this._txObj(abiHash, address, methodName, params, options);
+        receipt = await this.sendTransaction(tx);
+      }
+    } catch (e) {
+      console.error("Error sending transaction:", methodName);
+      const errorInfo = this.extractEthersErrorInfo(e.message);
+      let error = e;
+      if (errorInfo) {
+        error = new Error(errorInfo.message);
+      }
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(error);
+    }
     return receipt;
   }
   async _txData(abiHash, address, methodName, params, options) {
-    let method = this._getMethod(abiHash, address, methodName, params);
-    let data = method.encodeABI();
+    await this.init();
+    const abi = this._abiHashDict[abiHash];
+    if (!abi) {
+      throw new Error(`ABI not found for hash: ${abiHash}`);
+    }
+    const ethers = EthersLib2.ethers;
+    const iface = new ethers.Interface(abi);
+    const data = iface.encodeFunctionData(methodName, params || []);
     return data;
   }
-  async _methods(...args) {
-    await this.init();
-    let _web3 = this._web3;
-    let result;
-    let value;
-    let method;
-    let methodAbi;
-    let byteCode;
-    let abi = args.shift();
-    let address = args.shift();
-    let methodName = args.shift();
-    if (methodName == "deploy")
-      byteCode = args.shift();
-    let contract;
-    let hash;
-    if (this._contracts[address])
-      contract = this._contracts[address];
-    else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
-      if (this._contracts[hash]) {
-        contract = this._contracts[hash];
-      }
-    }
-    if (!contract) {
-      contract = new this._web3.eth.Contract(abi);
-      this._contracts[address] = contract;
-      this._contracts[hash] = contract;
-    }
-    if (methodName == "deploy") {
-      method = contract[methodName]({
-        data: byteCode,
-        arguments: args
-      });
-    } else {
-      for (let i = 0; i < abi.length; i++) {
-        if (abi[i].name == methodName) {
-          methodAbi = abi[i];
-          break;
-        }
-      }
-      if (methodAbi.payable)
-        value = args.pop();
-      for (let i = 0; i < methodAbi.inputs.length; i++) {
-        if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-          args[i] = args[i] || "";
-          if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-            let a = [];
-            for (let k = 0; k < args[i].length; k++) {
-              let s = args[i][k] || "";
-              if (s.indexOf("0x") != 0)
-                a.push(_web3.utils.fromAscii(s));
-              else
-                a.push(s);
-            }
-            args[i] = a;
-          } else if (args[i].indexOf("0x") != 0)
-            args[i] = _web3.utils.fromAscii(args[i]);
-        } else if (methodAbi.inputs[i].type == "address") {
-          if (!args[i])
-            args[i] = _web3.eth.abi.encodeParameter("address", 0);
-        }
-      }
-      method = contract.methods[methodName].apply(contract, args);
-    }
-    let tx = {
-      to: address,
-      data: method.encodeABI()
-    };
-    return tx;
-  }
   async methods(...args) {
-    await this.init();
-    let _web3 = this._web3;
-    if (_web3.methods) {
-      return _web3.methods.apply(_web3, args);
-    } else {
-      let result;
-      let value;
-      let method;
-      let methodAbi;
-      let byteCode;
-      let abi = args.shift();
-      let address = args.shift();
-      let methodName = args.shift();
-      if (methodName == "deploy")
-        byteCode = args.shift();
-      let contract;
-      let hash;
-      if (address && this._contracts[address])
-        contract = this._contracts[address];
-      else {
-        hash = this._web3.utils.sha3(JSON.stringify(abi));
-        if (this._contracts[hash]) {
-          contract = this._contracts[hash];
-        }
-      }
-      ;
-      if (!contract) {
-        contract = new this._web3.eth.Contract(abi);
-        if (address)
-          this._contracts[address] = contract;
-        this._contracts[hash] = contract;
-      }
-      ;
-      if (methodName == "deploy") {
-        method = contract[methodName]({
-          data: byteCode,
-          arguments: args
-        });
-      } else {
-        for (let i = 0; i < abi.length; i++) {
-          if (abi[i].name == methodName) {
-            methodAbi = abi[i];
-            break;
-          }
-        }
-        if (methodAbi.payable)
-          value = args.pop();
-        for (let i = 0; i < methodAbi.inputs.length; i++) {
-          if (methodAbi.inputs[i].type.indexOf("bytes") == 0) {
-            args[i] = args[i] || "";
-            if (methodAbi.inputs[i].type.indexOf("[]") > 0) {
-              let a = [];
-              for (let k = 0; k < args[i].length; k++) {
-                let s = args[i][k] || "";
-                if (s.indexOf("0x") != 0)
-                  a.push(_web3.utils.fromAscii(s));
-                else
-                  a.push(s);
-              }
-              args[i] = a;
-            } else if (args[i].indexOf("0x") != 0)
-              args[i] = _web3.utils.fromAscii(args[i]);
-          } else if (methodAbi.inputs[i].type == "address") {
-            if (!args[i])
-              args[i] = _web3.eth.abi.encodeParameter("address", 0);
-          }
-        }
-        method = contract.methods[methodName].apply(contract, args);
-      }
-      ;
-      contract.options.address = address;
-      if (methodAbi && (methodAbi.constant || methodAbi.stateMutability == "view")) {
-        return method.call({ from: this.address });
-      }
-      if (!this._blockGasLimit) {
-        this._blockGasLimit = Number((await _web3.eth.getBlock("latest")).gasLimit);
-      }
-      let gas;
-      try {
-        gas = Number(await method.estimateGas({ from: this.address, to: address, value }));
-        gas = Math.min(this._blockGasLimit, Math.round(gas * 1.5));
-      } catch (e) {
-        if (e.message == "Returned error: out of gas") {
-          console.log(e.message);
-          gas = Math.round(this._blockGasLimit * 0.5);
-        } else {
-          try {
-            await method.call({ from: this.address, value });
-          } catch (e2) {
-            if (e2.message.includes("VM execution error.")) {
-              var msg = (e2.data || e2.message).match(/0x[0-9a-fA-F]+/);
-              if (msg && msg.length) {
-                msg = msg[0];
-                if (msg.startsWith("0x08c379a")) {
-                  msg = _web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
-                  throw new Error(msg);
-                }
-              }
-            }
-          }
-          throw e;
-        }
-      }
-      let gasPrice = Number(await _web3.eth.getGasPrice());
-      if (this._account && this._account.privateKey) {
-        let tx = {
-          gas,
-          gasPrice,
-          data: method.encodeABI(),
-          from: this.address,
-          to: address,
-          value
-        };
-        let signedTx = await _web3.eth.accounts.signTransaction(tx, this._account.privateKey);
-        result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        if (methodName == "deploy")
-          return result.contractAddress;
-        return result;
-      } else {
-        contract.options.address = address;
-        let nonce = Number(await _web3.eth.getTransactionCount(this.address));
-        let tx = {
-          from: this.address,
-          nonce,
-          gasPrice,
-          gas,
-          to: address,
-          value,
-          data: method.encodeABI()
-        };
-        let promiEvent = _web3.eth.sendTransaction(tx);
-        this.monitorTransactionEvents(promiEvent);
-        result = await promiEvent;
-        if (methodName == "deploy")
-          return result.contractAddress;
-        return result;
-      }
-    }
   }
   get balance() {
     return this.balanceOf(this.address);
@@ -7513,65 +7413,106 @@ var _Wallet = class {
           }
         } else {
           await self.init();
-          let _web3 = self._web3;
-          let result = Number(await _web3.eth.getBalance(address));
-          resolve(new import_bignumber3.BigNumber(result).div(10 ** decimals));
+          const ethers = EthersLib2.ethers;
+          const ethersProvider = new ethers.BrowserProvider(self._provider);
+          const balance = await ethersProvider.getBalance(address);
+          const balanceInEther = ethers.formatEther(balance);
+          resolve(new import_bignumber3.BigNumber(balanceInEther));
         }
       } catch (err) {
+        console.log("err", err);
         resolve(new import_bignumber3.BigNumber(0));
       }
     });
   }
-  recoverSigner(msg, signature) {
-    let self = this;
-    return new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let signing_address = await _web3.eth.accounts.recover(msg, signature);
-        resolve(signing_address);
-      } catch (err) {
-        reject(err);
-      }
-      ;
-    });
+  async recoverSigner(msg, signature) {
+    await this.init();
+    const ethers = EthersLib2.ethers;
+    try {
+      const signingAddress = ethers.verifyMessage(msg, signature);
+      return signingAddress;
+    } catch (error) {
+      console.error("Error recovering signer:", error);
+      throw error;
+    }
   }
   async getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
     await this.init();
-    if (returnTransactionObjects) {
-      return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", true);
+    try {
+      const block = await this._ethersProvider.getBlock(blockHashOrBlockNumber || "latest", returnTransactionObjects);
+      return {
+        number: BigInt(block.number),
+        hash: block.hash,
+        parentHash: block.parentHash,
+        nonce: block.nonce,
+        sha3Uncles: null,
+        logsBloom: null,
+        transactionRoot: null,
+        stateRoot: block.stateRoot,
+        receiptsRoot: block.receiptsRoot,
+        miner: block.miner,
+        extraData: block.extraData,
+        gasLimit: BigInt(block.gasLimit.toString()),
+        gasUsed: BigInt(block.gasUsed.toString()),
+        timestamp: BigInt(block.timestamp),
+        baseFeePerGas: block.baseFeePerGas ? BigInt(block.baseFeePerGas.toString()) : void 0,
+        size: null,
+        difficulty: BigInt(block.difficulty.toString()),
+        totalDifficulty: BigInt(block.difficulty.toString()),
+        uncles: null,
+        transactions: returnTransactionObjects ? block.prefetchedTransactions.map((tx) => ({
+          hash: tx.hash,
+          nonce: BigInt(tx.nonce),
+          blockHash: tx.blockHash,
+          blockNumber: BigInt(tx.blockNumber),
+          transactionIndex: BigInt(tx.index),
+          from: tx.from,
+          to: tx.to,
+          value: new import_bignumber3.BigNumber(tx.value.toString()),
+          gasPrice: new import_bignumber3.BigNumber(tx.gasPrice.toString()),
+          gas: BigInt(tx.gasLimit.toString()),
+          input: tx.data
+        })) : []
+      };
+    } catch (error) {
+      console.error("Error fetching block:", error);
+      throw error;
     }
-    return this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
   }
   async getBlockNumber() {
     await this.init();
-    return Number(await this._web3.eth.getBlockNumber());
+    if (this._ethersProvider) {
+      return await this._ethersProvider.getBlockNumber();
+    }
+    throw new Error("Ethers provider is not initialized");
   }
   async getBlockTimestamp(blockHashOrBlockNumber) {
     await this.init();
-    let block = await this._web3.eth.getBlock(blockHashOrBlockNumber || "latest", false);
-    if (typeof block.timestamp == "string")
-      return parseInt(block.timestamp);
-    else
-      return Number(block.timestamp);
+    if (this._ethersProvider) {
+      const block = await this._ethersProvider.getBlock(blockHashOrBlockNumber || "latest");
+      return block.timestamp;
+    }
+    throw new Error("Ethers provider is not initialized");
   }
   set privateKey(value) {
-    if (value && this._web3) {
-      this._web3.eth.defaultAccount = "";
-    }
     this._account = {
       address: "",
       privateKey: value
     };
   }
+  sha3(value) {
+    const ethers = EthersLib2.ethers;
+    const hashedData = ethers.keccak256(ethers.toUtf8Bytes(value));
+    return hashedData;
+  }
   async registerEvent(abi, eventMap, address, handler) {
     await this.init();
     let hash = "";
     if (typeof abi == "string") {
-      hash = this._web3.utils.sha3(abi);
+      hash = this.sha3(abi);
       abi = JSON.parse(abi);
     } else {
-      hash = this._web3.utils.sha3(JSON.stringify(abi));
+      hash = this.sha3(JSON.stringify(abi));
     }
     this.registerAbiContracts(hash, address, handler);
     this._eventTopicAbi[hash] = {};
@@ -7580,12 +7521,11 @@ var _Wallet = class {
     }
   }
   getAbiEvents(abi) {
-    if (this._web3) {
-      let _web3 = this._web3;
+    if (EthersLib2) {
       let events = abi.filter((e) => e.type == "event");
       let eventMap = {};
       for (let i = 0; i < events.length; i++) {
-        let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+        let topic = this.sha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
         eventMap[topic] = events[i];
       }
       return eventMap;
@@ -7593,15 +7533,14 @@ var _Wallet = class {
     ;
   }
   getAbiTopics(abi, eventNames) {
-    if (this._web3) {
+    if (EthersLib2) {
       if (!eventNames || eventNames.length == 0)
         eventNames = null;
-      let _web3 = this._web3;
       let result = [];
       let events = abi.filter((e) => e.type == "event");
       for (let i = 0; i < events.length; i++) {
         if (!eventNames || eventNames.indexOf(events[i].name) >= 0) {
-          let topic = _web3.utils.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
+          let topic = this.soliditySha3(events[i].name + "(" + events[i].inputs.map((e) => e.type == "tuple" ? "(" + e.components.map((f) => f.type) + ")" : e.type).join(",") + ")");
           result.push(topic);
         }
       }
@@ -7626,13 +7565,13 @@ var _Wallet = class {
     }
   }
   registerAbi(abi, address, handler) {
-    if (this._web3) {
+    if (EthersLib2) {
       let hash = "";
       if (typeof abi == "string") {
-        hash = this._web3.utils.sha3(abi);
+        hash = this.sha3(abi);
         abi = JSON.parse(abi);
       } else {
-        hash = this._web3.utils.sha3(JSON.stringify(abi));
+        hash = this.sha3(JSON.stringify(abi));
       }
       if (!address && !handler && this._abiHashDict[hash])
         return hash;
@@ -7671,7 +7610,7 @@ var _Wallet = class {
     let d;
     try {
       if (abi) {
-        d = this.web3.eth.abi.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
+        d = this.decodeLog(abi.inputs, raw.data, raw.topics.slice(1));
         if (d.__length__) {
           for (let k = 0; k < d.__length__; k++)
             delete d[k];
@@ -7714,10 +7653,12 @@ var _Wallet = class {
     return log;
   }
   encodeParameters(types, values) {
-    return this._web3.eth.abi.encodeParameters(types, values);
+    const ethers = EthersLib2.ethers;
+    return ethers.AbiCoder.defaultAbiCoder().encode(types, values);
   }
   decodeParameters(types, hexString) {
-    return this._web3.eth.abi.decodeParameters(types, hexString);
+    const ethers = EthersLib2.ethers;
+    return ethers.AbiCoder.defaultAbiCoder().decode(types, hexString);
   }
   scanEvents(param1, param2, param3, param4, param5) {
     let fromBlock;
@@ -7741,14 +7682,24 @@ var _Wallet = class {
     ;
     return new Promise(async (resolve, reject) => {
       await this.init();
-      let _web3 = this._web3;
       try {
-        let logs = await _web3.eth.getPastLogs({
+        const ethersLogs = await this._ethersProvider.getLogs({
           fromBlock,
           toBlock,
           address,
           topics: topics ? topics : null
         });
+        let logs = ethersLogs.map((log) => ({
+          address: log.address,
+          data: log.data,
+          topics: [...log.topics],
+          logIndex: log.index,
+          transactionIndex: log.transactionIndex,
+          transactionHash: log.transactionHash,
+          blockHash: log.blockHash,
+          blockNumber: log.blockNumber,
+          removed: log.removed
+        }));
         let result = [];
         for (let i = 0; i < logs.length; i++) {
           let e = logs[i];
@@ -7760,176 +7711,81 @@ var _Wallet = class {
       }
     });
   }
-  send(to, amount) {
-    let address = this.address;
-    let self = this;
-    let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
-      this.provider = this.clientSideProvider.provider;
+  async send(to, amount) {
+    await this.init();
+    const value = this.utils.toDecimals(amount);
+    const tx = await this._createTxObj(to, null, value);
+    const receipt = await this.sendTransaction(tx);
+    return receipt;
+  }
+  async setBlockTime(time) {
+    await this.init();
+    try {
+      const method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
+      const result = await this._ethersProvider.send(method, [time]);
+      if (method === "evm_increaseTime") {
+        await this._ethersProvider.send("evm_mine", []);
+      }
+      return result;
+    } catch (error) {
+      console.error("Error setting block time:", error);
+      throw error;
     }
-    let promise = new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let value = _web3.utils.numberToHex(_web3.utils.toWei(amount.toString(), "ether"));
-        let result;
-        if (self._account && self._account.privateKey) {
-          let nonce = Number(await _web3.eth.getTransactionCount(address));
-          let gas = Number(await _web3.eth.estimateGas({
-            from: address,
-            nonce,
-            to,
-            value
-          }));
-          let price = Number(await _web3.eth.getGasPrice());
-          let tx = {
-            from: address,
-            nonce,
-            gasPrice: price,
-            gasLimit: gas,
-            gas,
-            to,
-            value
-          };
-          let signedTx = await _web3.eth.accounts.signTransaction(tx, self._account.privateKey);
-          result = await _web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-          resolve(result);
-        } else {
-          result = await _web3.eth.sendTransaction({ from: address, to, value: _web3.utils.toWei(amount.toString(), "ether").toString() });
-          resolve(result);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-    promise.finally(() => {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
-    });
-    return promise;
   }
-  setBlockTime(time) {
-    return new Promise(async (resolve, reject) => {
-      await this.init();
-      let method = time > 1e9 ? "evm_mine" : "evm_increaseTime";
-      this._web3.currentProvider.send({
-        jsonrpc: "2.0",
-        method,
-        params: [time],
-        id: new Date().getTime()
-      }, (err, result) => {
-        if (err)
-          return reject(err);
-        if (method == "evm_mine") {
-          return resolve(result);
-        } else {
-          this._web3.currentProvider.send({
-            jsonrpc: "2.0",
-            method: "evm_mine",
-            params: [],
-            id: new Date().getTime()
-          }, (err2, result2) => {
-            if (err2)
-              return reject(err2);
-            return resolve(result2);
-          });
-        }
-      });
-    });
-  }
-  increaseBlockTime(value) {
-    return new Promise(async (resolve, reject) => {
-      await this.init();
-      this._web3.currentProvider.send({
-        jsonrpc: "2.0",
-        method: "evm_increaseTime",
-        params: [value],
-        id: new Date().getTime()
-      }, (err, result) => {
-        this._web3.currentProvider.send({
-          jsonrpc: "2.0",
-          method: "evm_mine",
-          params: [],
-          id: new Date().getTime()
-        }, (err2, result2) => {
-          resolve(result2);
-        });
-      });
-    });
-  }
-  signMessage(msg) {
-    let address = this.address;
-    let self = this;
-    let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
-      this.provider = this.clientSideProvider.provider;
+  async increaseBlockTime(value) {
+    await this.init();
+    try {
+      const result = await this._ethersProvider.send("evm_increaseTime", [value]);
+      await this._ethersProvider.send("evm_mine", []);
+      return result;
+    } catch (error) {
+      console.error("Error increasing block time:", error);
+      throw error;
     }
-    let promise = new Promise(async function(resolve, reject) {
-      try {
-        let result;
-        if (self._account && self._account.privateKey) {
-          await self.init();
-          let _web3 = self._web3;
-          result = await _web3.eth.accounts.sign(msg, self._account.privateKey);
-          resolve(result.signature);
-        } else if (typeof window !== "undefined" && self.clientSideProvider) {
-          result = await self.clientSideProvider.provider.request({
-            method: "personal_sign",
-            params: [msg, address]
-          });
-          resolve(result);
-        } else {
-          await self.init();
-          let _web3 = self._web3;
-          result = await _web3.eth.sign(msg, address);
-          resolve(result);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    });
-    promise.finally(() => {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
-    });
-    return promise;
   }
-  signTypedDataV4(data) {
-    let self = this;
-    let currentProvider = this.provider;
-    if (typeof window !== "undefined" && this.clientSideProvider && this.provider !== this.clientSideProvider.provider) {
-      this.provider = this.clientSideProvider.provider;
+  async signMessage(msg) {
+    await this.init();
+    const ethers = EthersLib2.ethers;
+    if (this._account && this._account.privateKey) {
+      const wallet = new ethers.Wallet(this._account.privateKey);
+      const signature = await wallet.signMessage(msg);
+      return signature;
+    } else if (this._ethersProvider) {
+      if (typeof window !== "undefined") {
+        const signer = await this._ethersProvider.getSigner(this.address);
+        const signature = await signer.signMessage(msg);
+        return signature;
+      } else {
+        const hexMessage = ethers.toUtf8Bytes(msg);
+        const signature = await this._ethersProvider.send("eth_sign", [this.address, ethers.hexlify(hexMessage)]);
+        return signature;
+      }
     }
-    let promise = new Promise(async (resolve, reject) => {
-      try {
-        self._web3.currentProvider.send({
-          jsonrpc: "2.0",
-          method: "eth_signTypedData_v4",
-          params: [
-            self.defaultAccount,
-            JSON.stringify(data)
-          ],
-          id: Date.now()
-        }, function(err, result) {
-          if (err)
-            return reject(err);
-          if (result.error)
-            return reject(result.error);
-          let signature = result.result;
-          resolve(signature);
-        });
-      } catch (e) {
-        reject(e);
-      }
-    });
-    promise.finally(() => {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
-    });
-    return promise;
+    throw new Error("No valid signer available to sign the message.");
+  }
+  async signTypedDataV4(data) {
+    await this.init();
+    try {
+      const signer = await this.getSigner();
+      console.log("signer", data.domain, data.types, data.message);
+      const signature = await signer.signTypedData(data.domain, data.types, data.message);
+      console.log("signature", signature);
+      return signature;
+    } catch (error) {
+      console.error("Error signing typed data:", error);
+      throw error;
+    }
+  }
+  async recoverTypedSignatureV4(data, signature) {
+    await this.init();
+    try {
+      const ethers = EthersLib2.ethers;
+      const recoveredAddress = ethers.verifyTypedData(data.domain, data.types, data.message, signature);
+      return this.toChecksumAddress(recoveredAddress);
+    } catch (error) {
+      console.error("Error recovering signer address:", error);
+      throw error;
+    }
   }
   token(tokenAddress, decimals) {
     return new Erc20(this, tokenAddress, decimals);
@@ -7946,27 +7802,26 @@ var _Wallet = class {
   get utils() {
     return this._utils;
   }
-  verifyMessage(account, msg, signature) {
-    let self = this;
-    return new Promise(async function(resolve, reject) {
-      await self.init();
-      let _web3 = self._web3;
-      try {
-        let signing_address = await _web3.eth.accounts.recover(msg, signature);
-        resolve(signing_address && account.toLowerCase() == signing_address.toLowerCase());
-      } catch (err) {
-        reject(err);
-      }
-      ;
-    });
+  async verifyMessage(account, msg, signature) {
+    await this.init();
+    const ethers = EthersLib2.ethers;
+    try {
+      const signingAddress = ethers.verifyMessage(msg, signature);
+      return signingAddress.toLowerCase() === account.toLowerCase();
+    } catch (error) {
+      console.error("Error verifying message:", error);
+      throw error;
+    }
   }
   blockGasLimit() {
     let self = this;
     return new Promise(async (resolve, reject) => {
       await self.init();
       try {
-        if (!this._gasLimit)
-          this._gasLimit = Number((await this._web3.eth.getBlock("latest")).gasLimit);
+        if (!this._gasLimit) {
+          const latestBlock = await this._ethersProvider.getBlock("latest");
+          this._gasLimit = Number(latestBlock.gasLimit);
+        }
         resolve(this._gasLimit);
       } catch (e) {
         reject(e);
@@ -7977,7 +7832,8 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(new import_bignumber3.BigNumber(Number(await this._web3.eth.getGasPrice())));
+        const gasPrice = Number((await this._ethersProvider.getFeeData()).gasPrice);
+        resolve(new import_bignumber3.BigNumber(gasPrice));
       } catch (e) {
         reject(e);
       }
@@ -7987,7 +7843,8 @@ var _Wallet = class {
     return new Promise(async (resolve, reject) => {
       await this.init();
       try {
-        resolve(Number(await this._web3.eth.getTransactionCount(this.address)));
+        const transactionCount = await this._ethersProvider.getTransactionCount(this.address);
+        resolve(transactionCount);
       } catch (e) {
         reject(e);
       }
@@ -8009,96 +7866,173 @@ var _Wallet = class {
       this._sendTxEventHandler.confirmation(confirmationObj.receipt);
     });
   }
+  convertEthersTransactionReceipt(ethersReceipt) {
+    return {
+      transactionHash: ethersReceipt.hash,
+      transactionIndex: BigInt(ethersReceipt.index || 0),
+      blockHash: ethersReceipt.blockHash,
+      blockNumber: BigInt(ethersReceipt.blockNumber || 0),
+      from: ethersReceipt.from,
+      to: ethersReceipt.to,
+      contractAddress: ethersReceipt.contractAddress || null,
+      cumulativeGasUsed: ethersReceipt.cumulativeGasUsed,
+      gasUsed: ethersReceipt.gasUsed,
+      logs: ethersReceipt.logs ? ethersReceipt.logs.map((log) => ({
+        address: log.address,
+        data: log.data,
+        topics: [...log.topics],
+        logIndex: BigInt(log.index),
+        transactionIndex: BigInt(ethersReceipt.index),
+        transactionHash: ethersReceipt.hash,
+        blockHash: ethersReceipt.blockHash,
+        blockNumber: BigInt(ethersReceipt.blockNumber),
+        removed: log.removed
+      })) : [],
+      logsBloom: ethersReceipt.logsBloom,
+      status: BigInt(ethersReceipt.status || 0),
+      effectiveGasPrice: ethersReceipt.gasPrice
+    };
+  }
   async sendTransaction(transaction) {
     await this.init();
-    let _transaction = __spreadProps(__spreadValues({}, transaction), {
-      value: typeof transaction.value == "string" ? transaction.value : transaction.value ? transaction.value.toFixed() : void 0,
-      gasPrice: typeof transaction.gasPrice == "string" ? transaction.gasPrice : transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0
+    let signer = await this.getSigner();
+    const signerTx = __spreadProps(__spreadValues({}, transaction), {
+      gasPrice: transaction.gasPrice instanceof import_bignumber3.BigNumber ? transaction.gasPrice.toFixed() : transaction.gasPrice
     });
-    let currentProvider = this.provider;
-    try {
-      const isClientSide = typeof window !== "undefined" && !!this.clientSideProvider;
-      if (isClientSide && this.provider !== this.clientSideProvider.provider) {
-        this.provider = this.clientSideProvider.provider;
-      }
-      if (this._account && this._account.privateKey) {
-        let signedTx = await this._web3.eth.accounts.signTransaction(_transaction, this._account.privateKey);
-        let promiEvent = this._web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        if (isClientSide) {
-          this.monitorTransactionEvents(promiEvent);
-        }
-        return await promiEvent;
-      } else {
-        let promiEvent = this._web3.eth.sendTransaction(_transaction);
-        this.monitorTransactionEvents(promiEvent);
-        return await promiEvent;
-      }
-    } catch (err) {
-      throw err;
-    } finally {
-      if (this.provider !== currentProvider) {
-        this.provider = currentProvider;
-      }
+    if (transaction.value) {
+      signerTx.value = transaction.value instanceof import_bignumber3.BigNumber ? transaction.value.toFixed() : transaction.value;
     }
+    const ethersReceipt = await signer.sendTransaction(signerTx);
+    const receipt = this.convertEthersTransactionReceipt(ethersReceipt);
+    if (this._sendTxEventHandler.transactionHash)
+      this._sendTxEventHandler.transactionHash(null, receipt.transactionHash);
+    ethersReceipt.wait().then((receipt2) => {
+      this._sendTxEventHandler.confirmation(receipt2);
+    }).catch((error) => {
+      if (error.message.startsWith("Transaction was not mined within 50 blocks")) {
+        return;
+      }
+      if (this._sendTxEventHandler.transactionHash)
+        this._sendTxEventHandler.transactionHash(error);
+    });
+    return receipt;
   }
   async getTransaction(transactionHash) {
     await this.init();
-    let web3Receipt = await this._web3.eth.getTransaction(transactionHash);
+    const ethersTransaction = await this._ethersProvider.getTransaction(transactionHash);
     return {
-      from: web3Receipt.from,
-      to: web3Receipt.to,
-      nonce: Number(web3Receipt.nonce),
-      gas: Number(web3Receipt.gas),
-      gasPrice: new import_bignumber3.BigNumber(web3Receipt.gasPrice),
-      data: web3Receipt.input,
-      value: new import_bignumber3.BigNumber(web3Receipt.value)
+      from: ethersTransaction.from,
+      to: ethersTransaction.to,
+      nonce: ethersTransaction.nonce,
+      gas: Number(ethersTransaction.gasLimit),
+      gasPrice: new import_bignumber3.BigNumber(ethersTransaction.gasPrice.toString()),
+      data: ethersTransaction.data,
+      value: ethersTransaction.value ? new import_bignumber3.BigNumber(ethersTransaction.value.toString()) : new import_bignumber3.BigNumber(0)
     };
   }
   async getTransactionReceipt(transactionHash) {
     await this.init();
-    return this._web3.eth.getTransactionReceipt(transactionHash);
+    try {
+      const ethersReceipt = await this._ethersProvider.getTransactionReceipt(transactionHash);
+      const receipt = this.convertEthersTransactionReceipt(ethersReceipt);
+      return receipt;
+    } catch (error) {
+      console.error("Error fetching transaction receipt:", error);
+      throw error;
+    }
   }
   async call(transaction) {
     await this.init();
-    let _transaction = __spreadProps(__spreadValues({}, transaction), { value: transaction.value ? transaction.value.toFixed() : void 0, gasPrice: transaction.gasPrice ? transaction.gasPrice.toFixed() : void 0 });
-    return this._web3.eth.call(_transaction);
-  }
-  newContract(abi, address) {
-    if (this._web3)
-      return new this._web3.eth.Contract(abi, address);
+    const _transaction = {
+      to: transaction.to,
+      data: transaction.data,
+      gasPrice: transaction.gasPrice instanceof import_bignumber3.BigNumber ? transaction.gasPrice.toFixed() : transaction.gasPrice
+    };
+    if (transaction.value) {
+      _transaction.value = transaction.value instanceof import_bignumber3.BigNumber ? transaction.value.toFixed() : transaction.value;
+    }
+    try {
+      const result = await this._ethersProvider.call(_transaction);
+      return result;
+    } catch (error) {
+      console.error("Error during call:", error);
+      throw error;
+    }
   }
   decodeErrorMessage(msg) {
-    if (this._web3)
-      return this._web3.eth.abi.decodeParameter("string", "0x" + msg.substring(10));
+    if (!EthersLib2) {
+      return msg;
+    }
+    const ethers = EthersLib2.ethers;
+    try {
+      const decodedMessage = ethers.AbiCoder.defaultAbiCoder().decode(["string"], "0x" + msg.substring(10));
+      return decodedMessage[0];
+    } catch (error) {
+      console.error("Error decoding message:", error);
+      throw new Error("Failed to decode error message");
+    }
   }
-  async newBatchRequest() {
-    return new Promise(async (resolve, reject) => {
-      await this.init();
-      try {
-        resolve({
-          batch: new this._web3.eth.BatchRequest(),
-          promises: [],
-          execute: (batch, promises) => {
-            batch.execute();
-            return Promise.all(promises);
+  inferSolidityType(value) {
+    const ethers = EthersLib2.ethers;
+    if (typeof value === "number" || typeof value === "bigint" || import_bignumber3.BigNumber.isBigNumber(value)) {
+      return "uint256";
+    }
+    if (typeof value === "boolean") {
+      return "bool";
+    }
+    if (typeof value === "string") {
+      if (ethers.isHexString(value)) {
+        if (value.length === 42) {
+          try {
+            ethers.getAddress(value);
+            return "address";
+          } catch (e) {
+            return "bytes";
           }
-        });
-      } catch (e) {
-        reject(e);
+        }
+        return "bytes";
       }
-    });
+      return "string";
+    }
+    throw new Error(`Could not infer Solidity type for value: ${JSON.stringify(value)}. Please use { t: 'type', v: 'value' } format.`);
   }
   soliditySha3(...val) {
-    if (this._web3)
-      return this._web3.utils.soliditySha3(...val);
+    if (!EthersLib2) {
+      return "";
+    }
+    const ethers = EthersLib2.ethers;
+    const types = [];
+    const values = [];
+    val.forEach((item) => {
+      if (typeof item === "object" && item !== null && "t" in item && "v" in item && Object.keys(item).length === 2) {
+        types.push(item.t);
+        values.push(item.v);
+      } else {
+        types.push(this.inferSolidityType(item));
+        values.push(item);
+      }
+    });
+    try {
+      const result = ethers.solidityPackedKeccak256(types, values);
+      return result;
+    } catch (error) {
+      console.error("Error in soliditySha3 (ethers.js):", error);
+      throw error;
+    }
   }
   toChecksumAddress(address) {
-    if (this._web3)
-      return this._web3.utils.toChecksumAddress(address);
+    if (!EthersLib2) {
+      return address;
+    }
+    const ethers = EthersLib2.ethers;
+    return ethers.getAddress(address);
   }
   isAddress(address) {
-    if (this._web3)
-      return this._web3.utils.isAddress(address);
+    if (!EthersLib2) {
+      return false;
+    }
+    const ethers = EthersLib2.ethers;
+    return ethers.isAddress(address);
   }
   async multiCall(calls, gasBuffer) {
     const chainId = await this.getChainId();
@@ -8113,7 +8047,7 @@ var _Wallet = class {
     return result;
   }
   async doMulticall(contracts, gasBuffer) {
-    if (!this._web3)
+    if (!EthersLib2)
       return null;
     const chainId = await this.getChainId();
     const multicallInfo = this._multicallInfoMap[chainId];
@@ -8123,8 +8057,7 @@ var _Wallet = class {
     let calls = [];
     for (let i = 0; i < contracts.length; i++) {
       const { to, contract, methodName, params } = contracts[i];
-      const abi = contract._abi.find((v) => v.name == methodName);
-      const callData = abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+      const callData = this.encodeFunctionCall(contract, methodName, params);
       calls.push({
         to,
         data: callData
@@ -8164,7 +8097,7 @@ var _Wallet = class {
       }
       const abi = contracts[i].contract._abi.find((v) => v.name == contracts[i].methodName);
       const outputs = (abi == null ? void 0 : abi.outputs) || [];
-      const decodedValues = this._web3.eth.abi.decodeParameters(outputs, callResult);
+      const decodedValues = this.decodeParameters(outputs, callResult);
       if (outputs.length == 0) {
         outputValues.push(null);
       } else if (outputs.length == 1) {
@@ -8196,20 +8129,22 @@ var _Wallet = class {
     return outputValues;
   }
   encodeFunctionCall(contract, methodName, params) {
-    if (this._web3) {
+    if (EthersLib2) {
+      const ethers = EthersLib2.ethers;
       const abi = contract._abi.find((v) => v.name == methodName);
-      return abi ? this._web3.eth.abi.encodeFunctionCall(abi, params) : "";
+      if (!abi) {
+        throw new Error(`Method ${String(methodName)} not found in ABI`);
+      }
+      const iface = new ethers.Interface(contract._abi);
+      return iface.encodeFunctionData(String(methodName), params);
     }
   }
   decodeAbiEncodedParameters(contract, methodName, hexString) {
-    if (this._web3) {
+    if (EthersLib2) {
       const abi = contract._abi.find((v) => v.name == methodName);
       const outputs = (abi == null ? void 0 : abi.outputs) || [];
-      return abi ? this._web3.eth.abi.decodeParameters(outputs, hexString) : {};
+      return abi ? this.decodeParameters(outputs, hexString) : {};
     }
-  }
-  get web3() {
-    return this._web3;
   }
 };
 var Wallet = _Wallet;
@@ -8223,9 +8158,6 @@ var RpcWallet = class extends Wallet {
     this._address = value;
   }
   setProvider(provider) {
-    if (this._web3) {
-      this._web3.setProvider(provider);
-    }
     this._provider = provider;
   }
   get isConnected() {
@@ -8258,8 +8190,8 @@ var RpcWallet = class extends Wallet {
   async switchNetwork(chainId) {
     await this.init();
     this.chainId = chainId;
-    const rpc = this.networksMap[chainId].rpcUrls[0];
-    this._web3.setProvider(rpc);
+    const ethers = EthersLib2.ethers;
+    this._ethersProvider = new ethers.JsonRpcProvider(this._provider);
     const eventId = `${this.instanceId}:${RpcWalletEvent.ChainChanged}`;
     EventBus.getInstance().dispatch(eventId, chainId);
     return null;

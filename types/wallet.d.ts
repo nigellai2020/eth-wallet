@@ -3,16 +3,13 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-declare let Web3: any;
-import { IWeb3, ConfirmationObject, TransactionReceipt } from './web3';
+import { ConfirmationObject, TransactionReceipt } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { Erc20 } from './contracts/erc20';
 import { IAbiDefinition, MessageTypes, TypedMessage } from './types';
 import { IEventBusRegistry } from './eventBus';
 export { TransactionReceipt, ConfirmationObject };
 export declare function toString(value: any): any;
-export declare function stringToBytes32(value: string | stringArray): string | string[];
-export declare function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
 export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
@@ -163,7 +160,6 @@ export interface IClientWallet extends IWallet {
     getTransaction(transactionHash: string): Promise<Transaction>;
     getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
     isConnected: boolean;
-    newContract(abi: any, address?: string): IContract;
     provider: any;
     registerEvent(abi: any, eventMap: {
         [topics: string]: any;
@@ -420,7 +416,9 @@ export interface ISendTxEventsOptions {
     confirmation?: (receipt: any) => void;
 }
 export declare class Wallet implements IClientWallet {
-    protected _web3: IWeb3;
+    protected _ethersProvider: any;
+    protected _ethersSigner: any;
+    protected _defaultAccount: string;
     protected _account: IAccount;
     private _accounts;
     protected _provider: any;
@@ -443,7 +441,12 @@ export declare class Wallet implements IClientWallet {
     static getClientInstance(): IClientWallet;
     static getRpcWalletInstance(instanceId: string): IRpcWallet;
     static initWeb3(): Promise<void>;
+    private fromWei;
+    private toWei;
+    private hexToUtf8;
+    private toUtf8;
     init(): Promise<void>;
+    protected privateKeyToAccount(privateKey: string): IAccount;
     get isConnected(): boolean;
     switchNetwork(chainId: number): Promise<any>;
     initClientWallet(config: IClientWalletConfig): void;
@@ -480,16 +483,19 @@ export declare class Wallet implements IClientWallet {
     sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
     registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
-    private getContract;
     _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
-    private _getMethod;
+    protected _createTxData(signer: any, abiHash: string, address: string, methodName: string, params?: any[]): Promise<any>;
+    protected _createTxObj(address: string, txData: any, options?: number | BigNumber | TransactionOptions): Promise<any>;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+    protected getSigner(): Promise<any>;
+    protected extractEthersErrorInfo(errorString: string): {
+        action: string;
+        reason: string;
+        errorCode: number;
+        message: string;
+    };
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
-    _methods(...args: any[]): Promise<{
-        to: any;
-        data: any;
-    }>;
     methods(...args: any): Promise<any>;
     get balance(): Promise<BigNumber>;
     balanceOf(address: string): Promise<BigNumber>;
@@ -498,6 +504,7 @@ export declare class Wallet implements IClientWallet {
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     set privateKey(value: string);
+    private sha3;
     registerEvent(abi: any, eventMap: {
         [topics: string]: any;
     }, address: string, handler: any): Promise<void>;
@@ -531,6 +538,7 @@ export declare class Wallet implements IClientWallet {
     increaseBlockTime(value: number): Promise<any>;
     signMessage(msg: string): Promise<string>;
     signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+    recoverTypedSignatureV4(data: TypedMessage<MessageTypes>, signature: string): Promise<string>;
     token(tokenAddress: string, decimals?: number): Erc20;
     tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
     get utils(): IWalletUtils;
@@ -540,13 +548,13 @@ export declare class Wallet implements IClientWallet {
     getGasPrice(): Promise<BigNumber>;
     transactionCount(): Promise<number>;
     private monitorTransactionEvents;
+    protected convertEthersTransactionReceipt(ethersReceipt: any): TransactionReceipt;
     sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
     getTransaction(transactionHash: string): Promise<Transaction>;
     getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
     call(transaction: Transaction): Promise<any>;
-    newContract(abi: any, address?: string): IContract;
-    decodeErrorMessage(msg: string): any;
-    newBatchRequest(): Promise<IBatchRequestObj>;
+    decodeErrorMessage(msg: string): string;
+    protected inferSolidityType(value: any): string;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
     isAddress(address: string): boolean;
@@ -563,10 +571,7 @@ export declare class Wallet implements IClientWallet {
     }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
-    }[keyof T]>>(contract: T, methodName: F, hexString: string): {
-        [key: string]: any;
-    };
-    get web3(): typeof Web3;
+    }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
 }
 export declare class RpcWallet extends Wallet implements IRpcWallet {
     static rpcWalletRegistry: Record<string, IRpcWallet>;
