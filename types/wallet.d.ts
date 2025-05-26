@@ -556,8 +556,8 @@ export declare class Wallet implements IClientWallet {
     decodeErrorMessage(msg: string): string;
     protected inferSolidityType(value: any): string;
     soliditySha3(...val: any[]): string;
-    toChecksumAddress(address: string): any;
-    isAddress(address: string): any;
+    toChecksumAddress(address: string): string;
+    isAddress(address: string): boolean;
     multiCall(calls: {
         to: string;
         data: string;
@@ -568,7 +568,7 @@ export declare class Wallet implements IClientWallet {
     doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
-    }[keyof T]>>(contract: T, methodName: F, params: string[]): any;
+    }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
         [K in keyof T]: T[K] extends Function ? K : never;
     }[keyof T]>>(contract: T, methodName: F, hexString: string): any;

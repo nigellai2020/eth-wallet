@@ -6860,7 +6860,11 @@ var _Wallet = class {
     }
   }
   privateKeyToAccount(privateKey) {
-    return new EthersLib2.Wallet(privateKey);
+    const ethersWallet = new EthersLib2.Wallet(privateKey);
+    return {
+      address: ethersWallet.address,
+      privateKey: ethersWallet.privateKey
+    };
   }
   get isConnected() {
     return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;

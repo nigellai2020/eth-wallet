@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 
 // let Web3 = initWeb3Lib(); // tslint:disable-line
-let EthersLib;
+let EthersLib: IEthersLib;
 import { IWeb3, ConfirmationObject, TransactionReceipt, PromiEvent } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { MultiCall } from './contracts';
@@ -15,6 +15,7 @@ import { IAbiDefinition, MessageTypes, TypedMessage, INacl } from './types';
 import { EventBus, IEventBusRegistry } from './eventBus';
 import { ClientWalletEvent, RpcWalletEvent } from './constants';
 import Providers from "./providers.json";
+import { IEthersLib } from './ethers';
 // import Ethers from 'ethers';
 export { TransactionReceipt, ConfirmationObject };
 
@@ -1009,7 +1010,11 @@ export class Wallet implements IClientWallet {
 		}
 	};
 	protected privateKeyToAccount(privateKey: string): IAccount {
-		return new EthersLib.Wallet(privateKey);
+		const ethersWallet = new EthersLib.Wallet(privateKey);
+		return {
+			address: ethersWallet.address,
+			privateKey: ethersWallet.privateKey
+		}
 	}
 	get isConnected() {
 		return this.clientSideProvider ? this.clientSideProvider.isConnected() : false;
