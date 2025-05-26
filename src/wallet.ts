@@ -1386,9 +1386,17 @@ export class Wallet implements IClientWallet {
 		this._sendTxEventHandler = eventsOptions;
 	};
 	async _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any> {
+		if (!address || !methodName)
+            throw new Error("no contract address or method name");
 		const ethers = EthersLib.ethers;
 		const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
-		const result = await contract[methodName].staticCall(...params);
+		let result;
+        if (params) {
+            result = await contract[methodName].staticCall(...params);
+        }
+        else {
+            result = await contract[methodName].staticCall();
+        }
 		return result;
 	}
 	protected async _createTxData(
@@ -2165,10 +2173,17 @@ export class Wallet implements IClientWallet {
 			const signature = await wallet.signMessage(msg);
 			return signature;
 		}
-		if (this._ethersProvider) {
-			const signer = await this._ethersProvider.getSigner(this.address);
-			const signature = await signer.signMessage(msg);
-			return signature;
+		else if (this._ethersProvider) {
+			if (typeof window !== "undefined") {
+				const signer = await this._ethersProvider.getSigner(this.address);
+				const signature = await signer.signMessage(msg);
+				return signature;
+			}
+			else {
+				const hexMessage = ethers.toUtf8Bytes(msg);
+				const signature = await this._ethersProvider.send("eth_sign", [this.address, ethers.hexlify(hexMessage)]);
+				return signature;
+			}
 		}
 	
 		throw new Error("No valid signer available to sign the message.");

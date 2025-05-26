@@ -5945,16 +5945,11 @@ var RpcWalletEvent;
 })(RpcWalletEvent || (RpcWalletEvent = {}));
 
 // src/utils.ts
-var EthersLib = initEthersLib();
-function initEthersLib() {
-  console.log("initEthersLib");
-  if (typeof window !== "undefined") {
-    EthersLib = window["ethers"];
-    return window["ethers"];
-  } else {
-    EthersLib = require("ethers");
-    return EthersLib;
-  }
+var EthersLib;
+if (typeof window !== "undefined") {
+  EthersLib = window["ethers"];
+} else {
+  EthersLib = require("ethers");
 }
 function sleep(millisecond) {
   return new Promise(function(resolve) {
@@ -6356,7 +6351,7 @@ function requireAsync(modules) {
     });
   });
 }
-async function initEthersLib2() {
+async function initEthersLib() {
   if (typeof window !== "undefined") {
     const ethers = await requireAsync(["ethers"]);
     window["ethers"] = ethers;
@@ -6850,7 +6845,7 @@ var _Wallet = class {
       if (typeof window !== "undefined") {
         await window["application"].loadScript(currentModuleDir + "/ethers.js");
       }
-      EthersLib2 = await initEthersLib2();
+      EthersLib2 = await initEthersLib();
       if (this._account && this._account.privateKey && !this._account.address) {
         this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
       }
@@ -7212,9 +7207,16 @@ var _Wallet = class {
     this._sendTxEventHandler = eventsOptions;
   }
   async _call(abiHash, address, methodName, params, options) {
+    if (!address || !methodName)
+      throw new Error("no contract address or method name");
     const ethers = EthersLib2.ethers;
     const contract = new ethers.Contract(address, this._abiHashDict[abiHash], this._ethersProvider);
-    const result = await contract[methodName].staticCall(...params);
+    let result;
+    if (params) {
+      result = await contract[methodName].staticCall(...params);
+    } else {
+      result = await contract[methodName].staticCall();
+    }
     return result;
   }
   async _createTxData(signer, abiHash, address, methodName, params) {
@@ -7715,11 +7717,16 @@ var _Wallet = class {
       const wallet = new ethers.Wallet(this._account.privateKey);
       const signature = await wallet.signMessage(msg);
       return signature;
-    }
-    if (this._ethersProvider) {
-      const signer = await this._ethersProvider.getSigner(this.address);
-      const signature = await signer.signMessage(msg);
-      return signature;
+    } else if (this._ethersProvider) {
+      if (typeof window !== "undefined") {
+        const signer = await this._ethersProvider.getSigner(this.address);
+        const signature = await signer.signMessage(msg);
+        return signature;
+      } else {
+        const hexMessage = ethers.toUtf8Bytes(msg);
+        const signature = await this._ethersProvider.send("eth_sign", [this.address, ethers.hexlify(hexMessage)]);
+        return signature;
+      }
     }
     throw new Error("No valid signer available to sign the message.");
   }
