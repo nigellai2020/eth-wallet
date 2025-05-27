@@ -6,8 +6,6 @@
 
 import {IWallet, TransactionReceipt, Event, EventLog, IBatchRequestObj} from "./wallet";
 
-// import * as W3 from 'web3';
-// const Web3 = require('web3'); // tslint:disable-line
 module Contract {
     export interface EventType{
 		name: string

@@ -16,18 +16,7 @@ if (typeof window !== "undefined") {
 } else {
     EthersLib = require("ethers");
 }
-// let Web3 = Web3Lib();// tslint:disable-line
 
-// function Web3Lib() {
-//     if (typeof window !== "undefined"){
-//         Web3 = window["Web3"];
-//         return window["Web3"]
-//     }
-//     else{
-//         let {Web3} = require("./web3");
-//         return Web3;
-//     };
-// };
 export function sleep(millisecond: number) {
     return new Promise(function (resolve) {
         setTimeout(function () {

@@ -2232,7 +2232,6 @@ declare module "@ijstech/eth-wallet/wallet.ts" {
         static getInstance(): IWallet;
         static getClientInstance(): IClientWallet;
         static getRpcWalletInstance(instanceId: string): IRpcWallet;
-        static initWeb3(): Promise<void>;
         private fromWei;
         private toWei;
         private hexToUtf8;

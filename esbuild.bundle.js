@@ -15,6 +15,21 @@ async function readFile(fileName) {
   })
 }
 
+function convertExports(input) {
+  return input.replace(/export\s*\{([^}]+)\}/, (match, group) => {
+    const items = group.split(',').map(item => item.trim());
+    const replacement = items.map(item => {
+      if (item.includes(' as ')) {
+        const [original, alias] = item.split(' as ').map(part => part.trim());
+        return `exports.${alias} = ${original};`;
+      } else {
+        return `exports.${item} = ${item};`;
+      }
+    }).join('\n');
+    return replacement;
+  });
+}
+
 async function build() {
   let result = await require('esbuild').build({
     entryPoints: ['src/plugin.ts'],
@@ -75,9 +90,10 @@ if (typeof(define) == 'function')
 
   Fs.copyFileSync('node_modules/ethers/dist/ethers.js', 'dist/ethers.js');
   let ethers = await readFile('./dist/ethers.js');
+
   content = `
   define("ethers", (require,exports)=>{
-  ${ethers}
+  ${convertExports(ethers)}
   });
   `;
   Fs.writeFileSync('dist/ethers.js', content);
