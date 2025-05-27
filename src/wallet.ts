@@ -4,9 +4,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-// let Web3 = initWeb3Lib(); // tslint:disable-line
 let EthersLib: IEthersLib;
-import { IWeb3, ConfirmationObject, TransactionReceipt, PromiEvent } from './web3';
+import { ConfirmationObject, TransactionReceipt, PromiEvent } from './web3';
 import { BigNumber } from 'bignumber.js';
 import { MultiCall } from './contracts';
 import { Erc20 } from './contracts/erc20';
@@ -16,7 +15,6 @@ import { EventBus, IEventBusRegistry } from './eventBus';
 import { ClientWalletEvent, RpcWalletEvent } from './constants';
 import Providers from "./providers.json";
 import { IEthersLib } from './ethers';
-// import Ethers from 'ethers';
 export { TransactionReceipt, ConfirmationObject };
 
 let Web3Modal: any;
@@ -30,16 +28,7 @@ let currentModuleDir: string;
 if (typeof window !== "undefined" && window["application"]) {
 	currentModuleDir = window["application"].currentModuleDir;
 };
-// function initWeb3Lib() {
-// 	if (typeof window !== "undefined") {
-// 		Web3 = window["Web3"];
-// 		return window["Web3"]
-// 	}
-// 	else {
-// 		let { Web3 } = require("./web3");
-// 		return Web3;
-// 	};
-// };
+
 function requireAsync(modules: string[]): Promise<any> {
 	return new Promise((resolve, reject) => {
 		RequireJS.require(modules, (result) => {
@@ -534,9 +523,6 @@ export class EthereumProvider implements IClientSideProvider {
 		if (hasAccounts) {
 			this._selectedAddress = this.toChecksumAddress(accounts[0]);
 			accountAddress = this._selectedAddress;
-			// if (this.wallet.web3) {
-			// 	(<any>this.wallet.web3).selectedAddress = this._selectedAddress;
-			// }
 			this.wallet.account = {
 				address: accountAddress
 			};
@@ -849,9 +835,6 @@ export class Web3ModalProvider extends EthereumProvider {
 			if (hasAccounts) {
 				let accountAddress = this._provider.accounts[0];
 				this._selectedAddress = self.toChecksumAddress(accountAddress);
-				// if (self.wallet.web3) {
-				// 	(<any>self.wallet.web3).selectedAddress = this._selectedAddress;
-				// }
 				this.wallet.account = {
 					address: accountAddress
 				};
@@ -893,7 +876,6 @@ export interface ISendTxEventsOptions {
 	confirmation?: (receipt: any) => void;
 };
 export class Wallet implements IClientWallet {
-	// protected _web3: IWeb3;
 	protected _ethersProvider: any;
 	protected _ethersSigner: any;
 	protected _defaultAccount: string;
@@ -923,8 +905,6 @@ export class Wallet implements IClientWallet {
 		else {
 			this._account = account;
 		};
-		// if (Web3)
-		// 	this.init();
 		if (EthersLib) {
 			this.init();
 		}
@@ -951,13 +931,6 @@ export class Wallet implements IClientWallet {
 	static getRpcWalletInstance(instanceId: string): IRpcWallet {
 		return Wallet._rpcWalletPoolMap[instanceId];
 	}
-	static async initWeb3() {
-		// if (!Web3 && currentModuleDir && !window['Web3']) {
-		// 	await window['application'].loadScript(currentModuleDir + '/web3.js');
-		// 	Web3 = initWeb3Lib();
-		// 	Utils.initWeb3Lib();
-		// };
-	};
 	private fromWei(value: string | BigNumber, unit: string): string {
 		const ethers = EthersLib.ethers;
 		const bigValue = BigNumber.isBigNumber(value) ? value : new BigNumber(value);
@@ -981,20 +954,11 @@ export class Wallet implements IClientWallet {
 		return ethers.toUtf8String(value);
 	}
 	async init() {
-		// if (!this._web3) {
-		// 	if (!Web3 && currentModuleDir && !window['Web3']) {
-		// 		await window['application'].loadScript(currentModuleDir + '/web3.js');
-		// 		Web3 = initWeb3Lib();
-		// 		Utils.initWeb3Lib();
-		// 	};
-		// 	this._web3 = new Web3(this._provider);
-		// }
 		if (!EthersLib) {
 			if (typeof window !== "undefined") {
 				await window['application'].loadScript(currentModuleDir + '/ethers.js');
 			}
 			EthersLib = await initEthersLib();
-			// Utils.initWeb3Lib();
 			if (this._account && this._account.privateKey && !this._account.address) {
 				this._account.address = this.privateKeyToAccount(this._account.privateKey).address;
 			}
@@ -1175,9 +1139,6 @@ export class Wallet implements IClientWallet {
 				}
 				return this._account.address;
 			}
-			// else if ((<any>this._web3).selectedAddress) {
-			// 	return (<any>this._web3).selectedAddress
-			// }
 			else if (this._defaultAccount) {
 				return this._defaultAccount;
 			}
@@ -2205,25 +2166,18 @@ export class Wallet implements IClientWallet {
 	async signMessage(msg: string): Promise<string> {
 		await this.init();
 		const ethers = EthersLib.ethers;
-		if (this._account && this._account.privateKey) {
-			const wallet = new ethers.Wallet(this._account.privateKey);
-			const signature = await wallet.signMessage(msg);
-			return signature;
+		let signature;
+		if (typeof window === "undefined" && !this._account) {
+			const hexMessage = ethers.toUtf8Bytes(msg);
+			signature = await this._ethersProvider.send("eth_sign", [this.address, ethers.hexlify(hexMessage)]);
 		}
-		else if (this._ethersProvider) {
-			if (typeof window !== "undefined") {
-				const signer = await this._ethersProvider.getSigner(this.address);
-				const signature = await signer.signMessage(msg);
-				return signature;
-			}
-			else {
-				const hexMessage = ethers.toUtf8Bytes(msg);
-				const signature = await this._ethersProvider.send("eth_sign", [this.address, ethers.hexlify(hexMessage)]);
-				return signature;
+		else {
+			let signer = await this.getSigner();
+			if (signer) {
+				signature = await signer.signMessage(msg);
 			}
 		}
-
-		throw new Error("No valid signer available to sign the message.");
+		return signature;
 	};
 	async signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string> {
 		await this.init();
@@ -2664,9 +2618,6 @@ export class Wallet implements IClientWallet {
 			return abi ? this.decodeParameters(outputs, hexString) : {};
 		}
 	}
-	// public get web3(): typeof Web3 {
-	// 	return this._web3;
-	// }
 }
 export class RpcWallet extends Wallet implements IRpcWallet {
 	public static rpcWalletRegistry: Record<string, IRpcWallet> = {};
