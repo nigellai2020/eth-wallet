@@ -82,7 +82,7 @@ if (typeof(define) == 'function'){
 if (typeof(define) == 'function')
   define.amd = __defineAmdValue;
 `;
-  Fs.writeFileSync('dist/scconfg.json', JSON.stringify({
+  Fs.writeFileSync('dist/scconfig.json', JSON.stringify({
     "name": packName,
     "version": packVersion,
     "type": "lib"
